@@ -969,6 +969,7 @@ static uacpi_iteration_decision do_match_gpe_methods(
 
 void uacpi_events_match_post_dynamic_table_load(void)
 {
+    struct gpe_interrupt_ctx *irq_ctx;
     struct gpe_match_ctx match_ctx = {
         .post_dynamic_table_load = UACPI_TRUE,
     };
@@ -978,7 +979,7 @@ void uacpi_events_match_post_dynamic_table_load(void)
     if (uacpi_unlikely_error(uacpi_recursive_lock_acquire(&g_event_lock)))
         goto out;
 
-    struct gpe_interrupt_ctx *irq_ctx = g_gpe_interrupt_head;
+    irq_ctx = g_gpe_interrupt_head;
 
     while (irq_ctx) {
         match_ctx.block = irq_ctx->gpe_head;
@@ -2201,6 +2202,7 @@ void uacpi_deinitialize_events(void)
 {
     struct gpe_interrupt_ctx *ctx, *next_ctx = g_gpe_interrupt_head;
     uacpi_size i;
+    struct gpe_block *block, *next_block;
 
     g_gpes_finalized = UACPI_FALSE;
 
@@ -2215,7 +2217,7 @@ void uacpi_deinitialize_events(void)
         ctx = next_ctx;
         next_ctx = ctx->next;
 
-        struct gpe_block *block, *next_block = ctx->gpe_head;
+        next_block = ctx->gpe_head;
         while (next_block) {
             block = next_block;
             next_block = block->next;

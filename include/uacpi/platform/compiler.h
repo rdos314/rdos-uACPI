@@ -93,13 +93,7 @@
         #define UACPI_POINTER_SIZE __SIZEOF_POINTER__
     #elif defined(__WATCOMC__)
         #include <stdint.h>
-        #if UINTPTR_MAX == 0xFFFFFFFF
-            #define UACPI_POINTER_SIZE 4
-        #elif UINTPTR_MAX == 0xFFFF
-            #error uACPI does not support 16-bit mode compilation
-        #else
-            #error Unknown UINTPTR_MAX value
-        #endif
+        #define UACPI_POINTER_SIZE 4
     #else
         #error Failed to detect pointer size
     #endif
