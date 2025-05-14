@@ -422,6 +422,7 @@ static void async_run_gpe_handler(uacpi_handle opaque)
     switch (event->handler_type) {
     case GPE_HANDLER_TYPE_AML_HANDLER: {
         uacpi_object *method_obj;
+        uacpi_object_name name;
 
         method_obj = uacpi_namespace_node_get_object_typed(
             event->aml_handler, UACPI_OBJECT_METHOD_BIT
@@ -431,9 +432,10 @@ static void async_run_gpe_handler(uacpi_handle opaque)
             break;
         }
 
+        name = uacpi_namespace_node_name(event->aml_handler);
         uacpi_trace(
             "executing GPE(%02X) handler %.4s\n",
-            event->idx, uacpi_namespace_node_name(event->aml_handler).text
+            event->idx, name.text
         );
 
         ret = uacpi_execute_control_method(
@@ -967,7 +969,6 @@ static uacpi_iteration_decision do_match_gpe_methods(
 
 void uacpi_events_match_post_dynamic_table_load(void)
 {
-    struct gpe_interrupt_ctx *irq_ctx;
     struct gpe_match_ctx match_ctx = {
         .post_dynamic_table_load = UACPI_TRUE,
     };
@@ -977,7 +978,7 @@ void uacpi_events_match_post_dynamic_table_load(void)
     if (uacpi_unlikely_error(uacpi_recursive_lock_acquire(&g_event_lock)))
         goto out;
 
-    irq_ctx = g_gpe_interrupt_head;
+    struct gpe_interrupt_ctx *irq_ctx = g_gpe_interrupt_head;
 
     while (irq_ctx) {
         match_ctx.block = irq_ctx->gpe_head;
@@ -1014,7 +1015,7 @@ static uacpi_status create_gpe_block(
     struct gpe_block *block;
     struct gpe_register *reg;
     struct gp_event *event;
-    struct acpi_gas tmp_gas;
+    struct acpi_gas tmp_gas = { 0 };
     uacpi_size i, j;
 
     tmp_gas.address_space_id = address_space_id;
@@ -1159,7 +1160,7 @@ static struct gp_event *get_gpe(
     uacpi_namespace_node *gpe_device, uacpi_u16 idx
 )
 {
-    struct gpe_search_ctx ctx;
+    struct gpe_search_ctx ctx = { 0 };
 
     ctx.gpe_device = gpe_device;
     ctx.idx = idx;
@@ -2056,7 +2057,7 @@ uacpi_status uacpi_uninstall_gpe_block(
 {
     uacpi_status ret;
     uacpi_bool is_dev;
-    struct gpe_search_ctx search_ctx;
+    struct gpe_search_ctx search_ctx = { 0 };
 
     search_ctx.idx = 0;
     search_ctx.gpe_device = gpe_device;
@@ -2200,8 +2201,6 @@ void uacpi_deinitialize_events(void)
 {
     struct gpe_interrupt_ctx *ctx, *next_ctx = g_gpe_interrupt_head;
     uacpi_size i;
-    struct gpe_block *block;
-    struct gpe_block *next_block;
 
     g_gpes_finalized = UACPI_FALSE;
 
@@ -2216,7 +2215,7 @@ void uacpi_deinitialize_events(void)
         ctx = next_ctx;
         next_ctx = ctx->next;
 
-        next_block = ctx->gpe_head;
+        struct gpe_block *block, *next_block = ctx->gpe_head;
         while (next_block) {
             block = next_block;
             next_block = block->next;

@@ -1309,8 +1309,6 @@ static uacpi_status handle_load_table(struct execution_context *ctx)
     uacpi_buffer *root_path, *param_path;
     uacpi_control_method *method;
     uacpi_namespace_node *root_node, *param_node = UACPI_NULL;
-    uacpi_size idx;
-    struct uacpi_table utbl;
 
     /*
      * If we already have the last true/false object loaded, this is a second
@@ -1319,9 +1317,12 @@ static uacpi_status handle_load_table(struct execution_context *ctx)
      * remove the target.
      */
     if (item_array_size(items) == 12) {
+        uacpi_size idx;
+        struct uacpi_table tmp_table = { 0 };
+
         idx = item_array_at(items, 2)->immediate;
-        utbl.index = idx;
-        uacpi_table_unref(&utbl);
+        tmp_table.index = idx;
+        uacpi_table_unref(&tmp_table);
 
         /*
          * If this load failed, remove the target that was provided via

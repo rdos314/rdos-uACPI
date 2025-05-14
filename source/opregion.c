@@ -321,7 +321,6 @@ static void region_uninstall_handler(
     uacpi_object *obj;
     uacpi_address_space_handler *handler;
     uacpi_operation_region *region, *link;
-    uacpi_region_detach_data detach_data;
 
     obj = uacpi_namespace_node_get_object_typed(
         node, UACPI_OBJECT_OPERATION_REGION_BIT
@@ -349,6 +348,8 @@ static void region_uninstall_handler(
 
 out:
     if (region->state_flags & UACPI_OP_REGION_STATE_ATTACHED) {
+        uacpi_region_detach_data detach_data = { 0 };
+
         detach_data.region_node = node;
         detach_data.region_context = region->user_context;
         detach_data.handler_context = handler->user_context;
@@ -524,7 +525,7 @@ static uacpi_status reg_or_unreg_all_opregions(
     uacpi_address_space_handlers *handlers;
     uacpi_bool is_connect;
     enum uacpi_permanent_only perm_only;
-    struct reg_run_ctx ctx;
+    struct reg_run_ctx ctx = { 0 };
 
     ctx.space = space;
     ctx.connection_code = connection_code;
@@ -857,7 +858,6 @@ uacpi_status uacpi_dispatch_opregion_io(
     uacpi_u64 abs_offset, offset_end = offset;
     uacpi_bool is_oob = UACPI_FALSE;
     uacpi_region_op orig_op = op;
-    uacpi_data_view view;
 
     union {
         uacpi_region_rw_data rw;
@@ -943,9 +943,9 @@ uacpi_status uacpi_dispatch_opregion_io(
          * ACPI 6.5: 14.3. Extended PCC Subspace Shared Memory Region
          */
         if (offset >= 12 && offset < 16) {
-	        view.bytes = region->internal_buffer;
-            view.length = region->length;
-            handler_data.pcc.buffer = view;
+            uacpi_memzero(&handler_data.pcc.buffer, sizeof(handler_data.pcc.buffer));
+            handler_data.pcc.buffer.bytes = region->internal_buffer;
+            handler_data.pcc.buffer.length = region->length;
 
             op = UACPI_REGION_OP_PCC_SEND;
             break;

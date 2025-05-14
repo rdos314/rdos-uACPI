@@ -1759,7 +1759,7 @@ static uacpi_iteration_decision do_aml_resource_to_native(
                 void *ptr;
                 uacpi_resource_source *source;
                 uacpi_resource_label *label;
-            } dst_name;
+            } dst_name = { 0 };
 
             dst_name.ptr = dst;
 
@@ -2006,6 +2006,7 @@ uacpi_status uacpi_native_resources_from_aml(
     resources->length = ctx.size;
     resources->entries = UACPI_PTR_ADD(resources, sizeof(uacpi_resources));
 
+    uacpi_memzero(&ctx, sizeof(ctx));
     ctx.buf = resources->entries;
 
     ret = uacpi_for_each_aml_resource(aml_buffer, do_aml_resource_to_native, &ctx);
@@ -2038,6 +2039,7 @@ uacpi_status uacpi_get_resource_from_buffer(
     if (uacpi_unlikely(resource == UACPI_NULL))
         return UACPI_STATUS_OUT_OF_MEMORY;
 
+    uacpi_memzero(&ctx, sizeof(ctx));
     ctx.buf = resource;
     ctx.just_one = UACPI_TRUE;
 
@@ -2265,7 +2267,7 @@ static uacpi_iteration_decision do_native_resource_to_aml(
                 void *ptr;
                 uacpi_resource_source *source;
                 uacpi_resource_label *label;
-            } src_name;
+            } src_name = { 0 };
 
             src_name.ptr = src;
 
@@ -2445,9 +2447,8 @@ static uacpi_status native_resources_to_aml(
 )
 {
     uacpi_status ret;
-    struct resource_conversion_ctx ctx;
-    uacpi_resource tmp_res;
-	
+    struct resource_conversion_ctx ctx = { 0 };
+
     ctx.buf = aml_buffer;
 
     ret = uacpi_for_each_resource(
@@ -2455,8 +2456,9 @@ static uacpi_status native_resources_to_aml(
     );
     if (ret == UACPI_STATUS_NO_RESOURCE_END_TAG) {
         // An end tag is always included
-		tmp_res.type = UACPI_RESOURCE_TYPE_END_TAG;
-        do_native_resource_to_aml(&ctx, &tmp_res);
+        uacpi_resource end_tag = { .type = UACPI_RESOURCE_TYPE_END_TAG };
+
+        do_native_resource_to_aml(&ctx, &end_tag);
         ret = UACPI_STATUS_OK;
     }
     if (uacpi_unlikely_error(ret))
@@ -2496,15 +2498,15 @@ uacpi_status uacpi_native_resources_to_aml(
     uacpi_object *obj;
     void *buffer;
     struct resource_conversion_ctx ctx = { 0 };
-    uacpi_resource tmp_res;
 
     ret = uacpi_for_each_resource(
         resources, accumulate_aml_buffer_size, &ctx
     );
     if (ret == UACPI_STATUS_NO_RESOURCE_END_TAG) {
         // An end tag is always included
-		tmp_res.type = UACPI_RESOURCE_TYPE_END_TAG;
-        accumulate_aml_buffer_size(&ctx, &tmp_res);
+        uacpi_resource end_tag = { .type = UACPI_RESOURCE_TYPE_END_TAG };
+
+        accumulate_aml_buffer_size(&ctx, &end_tag);
         ret = UACPI_STATUS_OK;
     }
     if (uacpi_unlikely_error(ret))

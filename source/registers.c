@@ -129,6 +129,8 @@ static uacpi_status map_one(
 
         ret = uacpi_map_gas_noalloc(gas, &mapping->mappings[idx]);
     } else {
+        struct acpi_gas temp_gas = { 0 };
+
         if (idx != 0) {
             mapping->states[idx] = REGISTER_MAPPING_STATE_NOT_NEEDED;
             return ret;

@@ -564,6 +564,8 @@ uacpi_status uacpi_reboot(void)
         ret = uacpi_write_register(UACPI_REGISTER_RESET, fadt->reset_value);
         break;
     case UACPI_ADDRESS_SPACE_PCI_CONFIG: {
+        uacpi_pci_address address = { 0 };
+
         // Bus is assumed to be 0 here
         address.segment = 0;
         address.bus = 0;

@@ -11,6 +11,14 @@
 
 #define UACPI_ALIGN(x) __declspec(align(x))
 
+#if defined(__WATCOMC__)
+#define UACPI_STATIC_ASSERT(expr, msg)
+#elif defined(__cplusplus)
+#define UACPI_STATIC_ASSERT static_assert
+#else
+#define UACPI_STATIC_ASSERT _Static_assert
+#endif
+
 #ifdef _MSC_VER
     #include <intrin.h>
 
@@ -83,8 +91,15 @@
         #endif
     #elif defined(__GNUC__)
         #define UACPI_POINTER_SIZE __SIZEOF_POINTER__
-    #elif __WATCOMC__
-        #define UACPI_POINTER_SIZE 4
+    #elif defined(__WATCOMC__)
+        #include <stdint.h>
+        #if UINTPTR_MAX == 0xFFFFFFFF
+            #define UACPI_POINTER_SIZE 4
+        #elif UINTPTR_MAX == 0xFFFF
+            #error uACPI does not support 16-bit mode compilation
+        #else
+            #error Unknown UINTPTR_MAX value
+        #endif
     #else
         #error Failed to detect pointer size
     #endif

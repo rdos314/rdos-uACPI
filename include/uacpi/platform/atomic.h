@@ -86,154 +86,224 @@ UACPI_MAKE_MSVC_CMPXCHG(16, short, 16)
 #define uacpi_atomic_dec16(ptr) UACPI_MSVC_ATOMIC_DEC(ptr, short, 16)
 #define uacpi_atomic_dec32(ptr) UACPI_MSVC_ATOMIC_DEC(ptr, long,)
 #define uacpi_atomic_dec64(ptr) UACPI_MSVC_ATOMIC_DEC(ptr, __int64, 64)
-#elif __WATCOMC__
+#elif defined(__WATCOMC__)
 
-int uacpi_atomic_cmpxchg16(void *ptr, short *expected, short desired);
-#pragma aux uacpi_atomic_cmpxchg16 =\
-    "mov edx,eax" \
-    "xchg ax,[esi]" \
-	"mov [edi],ax" \
-	"cmp ax,dx" \
-	"jne fail" \
-	"mov eax,1" \
-	"jmp done" \
-	"fail: "\
-	"xor eax,eax" \
-	"done: " \
-    __parm [__esi] [__edi] [__ax] \
-    __value [__eax] \
-    __modify [__edx]
+#include <stdint.h>
 
-int uacpi_atomic_cmpxchg32(void *ptr, int *expected, int desired);
-#pragma aux uacpi_atomic_cmpxchg32 =\
-    "mov edx,eax" \
-    "xchg eax,[esi]" \
-	"mov [edi],eax" \
-	"cmp eax,edx" \
-	"jne fail" \
-	"mov eax,1" \
-	"jmp done" \
-	"fail: "\
-	"xor eax,eax" \
-	"done: " \
-    __parm [__esi] [__edi] [__eax] \
-    __value [__eax] \
-    __modify [__edx]
+static int uacpi_do_atomic_cmpxchg16(volatile uint16_t *ptr, volatile uint16_t *expected, uint16_t desired);
+#pragma aux uacpi_do_atomic_cmpxchg16 = \
+    ".486"                              \
+    "mov ax, [esi]"                     \
+    "lock cmpxchg [edi], bx"            \
+    "mov [esi], ax"                     \
+    "setz al"                           \
+    "movzx eax, al"                     \
+    parm [ edi ] [ esi ] [ ebx ]        \
+    value [ eax ]
 
-int uacpi_atomic_cmpxchg64(void *ptr, long long *expected, long long desired);
-#pragma aux uacpi_atomic_cmpxchg64 =\
-    "mov ebx,eax" \
-	"mov ecx,edx" \
-    "xchg eax,[esi]" \
-    "xchg edx,[esi+4]" \
-	"mov [edi],eax" \
-	"mov [edi+4],edx" \
-	"cmp eax,ebx" \
-	"jne fail" \
-	"cmp edx,ecx" \
-	"jne fail" \
-	"mov eax,1" \
-	"jmp done" \
-	"fail: "\
-	"xor eax,eax" \
-	"done: " \
-    __parm [__esi] [__edi] [__edx __eax] \
-    __value [__eax] \
-    __modify [__ebx __ecx]
+static int uacpi_do_atomic_cmpxchg32(volatile uint32_t *ptr, volatile uint32_t *expected, uint32_t desired);
+#pragma aux uacpi_do_atomic_cmpxchg32 = \
+    ".486"                              \
+    "mov eax, [esi]"                    \
+    "lock cmpxchg [edi], ebx"           \
+    "mov [esi], eax"                    \
+    "setz al"                           \
+    "movzx eax, al"                     \
+    parm [ edi ] [ esi ] [ ebx ]        \
+    value [ eax ]
 
+static int uacpi_do_atomic_cmpxchg64_asm(volatile uint64_t *ptr, volatile uint64_t *expected, uint32_t low, uint32_t high);
+#pragma aux uacpi_do_atomic_cmpxchg64_asm = \
+    ".586"                                  \
+    "mov eax, [esi]"                        \
+    "mov edx, [esi + 4]"                    \
+    "lock cmpxchg8b [edi]"                  \
+    "mov [esi], eax"                        \
+    "mov [esi + 4], edx"                    \
+    "setz al"                               \
+    "movzx eax, al"                         \
+    modify [ edx ]                          \
+    parm [ edi ] [ esi ] [ ebx ] [ ecx ]    \
+    value [ eax ]
 
-char uacpi_atomic_load8(void *ptr);
-#pragma aux uacpi_atomic_load8 =\
-	"mov al,[esi]" \
-    __parm [__esi] \
-    __value [__al]
+static inline int uacpi_do_atomic_cmpxchg64(volatile uint64_t *ptr, volatile uint64_t *expected, uint64_t desired) {
+    return uacpi_do_atomic_cmpxchg64_asm(ptr, expected, desired, desired >> 32);
+}
 
-short uacpi_atomic_load16(void *ptr);
-#pragma aux uacpi_atomic_load16 =\
-	"mov ax,[esi]" \
-    __parm [__esi] \
-    __value [__ax]
+#define uacpi_atomic_cmpxchg16(ptr, expected, desired) \
+    uacpi_do_atomic_cmpxchg16((volatile uint16_t*)ptr, (volatile uint16_t*)expected, (uint16_t)desired)
+#define uacpi_atomic_cmpxchg32(ptr, expected, desired) \
+    uacpi_do_atomic_cmpxchg32((volatile uint32_t*)ptr, (volatile uint32_t*)expected, (uint32_t)desired)
+#define uacpi_atomic_cmpxchg64(ptr, expected, desired) \
+    uacpi_do_atomic_cmpxchg64((volatile uint64_t*)ptr, (volatile uint64_t*)expected, (uint64_t)desired)
 
-int uacpi_atomic_load32(void *ptr);
-#pragma aux uacpi_atomic_load32 =\
-	"mov eax,[esi]" \
-    __parm [__esi] \
-    __value [__eax]
+static uint8_t uacpi_do_atomic_load8(volatile uint8_t *ptr);
+#pragma aux uacpi_do_atomic_load8 = \
+    "mov al, [esi]"                 \
+    parm [ esi ]                    \
+    value [ al ]
 
-long long uacpi_atomic_load64(void *ptr);
-#pragma aux uacpi_atomic_load64 =\
-	"mov eax,[esi]" \
-	"mov edx,[esi+4]" \
-    __parm [__esi] \
-    __value [__edx __eax]
+static uint16_t uacpi_do_atomic_load16(volatile uint16_t *ptr);
+#pragma aux uacpi_do_atomic_load16 = \
+    "mov ax, [esi]"                  \
+    parm [ esi ]                     \
+    value [ ax ]
 
-void uacpi_atomic_store8(void *ptr, char val);
-#pragma aux uacpi_atomic_store8 =\
-	"mov [esi],al" \
-    __parm [__esi] [__al]
+static uint32_t uacpi_do_atomic_load32(volatile uint32_t *ptr);
+#pragma aux uacpi_do_atomic_load32 = \
+    "mov eax, [esi]"                 \
+    parm [ esi ]                     \
+    value [ eax ]
 
-void uacpi_atomic_store16(void *ptr, short val);
-#pragma aux uacpi_atomic_store16 =\
-	"mov [esi],ax" \
-    __parm [__esi] [__ax]
+static void uacpi_do_atomic_load64_asm(volatile uint64_t *ptr, uint64_t *out);
+#pragma aux uacpi_do_atomic_load64_asm =   \
+    ".586"                                 \
+    "xor eax, eax"                         \
+    "xor ebx, ebx"                         \
+    "xor ecx, ecx"                         \
+    "xor edx, edx"                         \
+    "lock cmpxchg8b [esi]"                 \
+    "mov [edi], eax"                       \
+    "mov [edi + 4], edx"                   \
+    modify [ eax ebx ecx edx ]             \
+    parm [ esi ] [ edi ]
 
-void uacpi_atomic_store32(void *ptr, int val);
-#pragma aux uacpi_atomic_store32 =\
-	"mov [esi],eax" \
-    __parm [__esi] [__eax]
+static inline uint64_t uacpi_do_atomic_load64(volatile uint64_t *ptr) {
+    uint64_t value;
+    uacpi_do_atomic_load64_asm(ptr, &value);
+    return value;
+}
 
-void uacpi_atomic_store64(void *ptr, long long val);
-#pragma aux uacpi_atomic_store64 =\
-	"mov [esi],eax" \
-	"mov [esi+4],edx" \
-    __parm [__esi] [__edx __eax]
+#define uacpi_atomic_load8(ptr) uacpi_do_atomic_load8((volatile uint8_t*)ptr)
+#define uacpi_atomic_load16(ptr) uacpi_do_atomic_load16((volatile uint16_t*)ptr)
+#define uacpi_atomic_load32(ptr) uacpi_do_atomic_load32((volatile uint32_t*)ptr)
+#define uacpi_atomic_load64(ptr) uacpi_do_atomic_load64((volatile uint64_t*)ptr)
 
-short uacpi_atomic_inc16(void *ptr);
-#pragma aux uacpi_atomic_inc16 =\
-    "lock add word ptr [esi],1" \
-	"mov ax,[esi]" \
-    __parm [__esi] \
-    __value [__ax]
+static void uacpi_do_atomic_store8(volatile uint8_t *ptr, uint8_t value);
+#pragma aux uacpi_do_atomic_store8 = \
+    "mov [edi], al"                  \
+    parm [ edi ] [ eax ]
 
-int uacpi_atomic_inc32(void *ptr);
-#pragma aux uacpi_atomic_inc32 =\
-    "lock add dword ptr [esi],1" \
-	"mov eax,[esi]" \
-    __parm [__esi] \
-    __value [__eax]
+static void uacpi_do_atomic_store16(volatile uint16_t *ptr, uint16_t value);
+#pragma aux uacpi_do_atomic_store16 = \
+    "mov [edi], ax"                   \
+    parm [ edi ] [ eax ]
 
-long long uacpi_atomic_inc64(void *ptr);
-#pragma aux uacpi_atomic_inc64 =\
-    "lock add dword ptr [esi],1" \
-    "lock adc dword ptr [esi+4],0" \
-	"mov eax,[esi]" \
-	"mov edx,[esi+4]" \
-    __parm [__esi] \
-    __value [__edx __eax]
+static void uacpi_do_atomic_store32(volatile uint32_t *ptr, uint32_t value);
+#pragma aux uacpi_do_atomic_store32 = \
+    "mov [edi], eax"                  \
+    parm [ edi ] [ eax ]
 
-short uacpi_atomic_dec16(void *ptr);
-#pragma aux uacpi_atomic_dec16 =\
-    "lock sub word ptr [esi],1" \
-	"mov ax,[esi]" \
-    __parm [__esi] \
-    __value [__ax]
+static void uacpi_do_atomic_store64_asm(volatile uint64_t *ptr, uint32_t low, uint32_t high);
+#pragma aux uacpi_do_atomic_store64_asm =  \
+    ".586"                                 \
+    "xor eax, eax"                         \
+    "xor edx, edx"                         \
+    "retry: lock cmpxchg8b [edi]"          \
+    "jnz retry"                            \
+    modify [ eax edx ]                     \
+    parm [ edi ] [ ebx ] [ ecx ]
 
-int uacpi_atomic_dec32(void *ptr);
-#pragma aux uacpi_atomic_dec32 =\
-    "lock sub dword ptr [esi],1" \
-	"mov eax,[esi]" \
-    __parm [__esi] \
-    __value [__eax]
+static inline void uacpi_do_atomic_store64(volatile uint64_t *ptr, uint64_t value) {
+    uacpi_do_atomic_store64_asm(ptr, value, value >> 32);
+}
 
-long long uacpi_atomic_dec64(void *ptr);
-#pragma aux uacpi_atomic_dec64 =\
-    "lock sub dword ptr [esi],1" \
-    "lock sbb dword ptr [esi+4],0" \
-	"mov eax,[esi]" \
-	"mov edx,[esi+4]" \
-    __parm [__esi] \
-    __value [__edx __eax]
+#define uacpi_atomic_store8(ptr, value) uacpi_do_atomic_store8((volatile uint8_t*)ptr, (uint8_t)value)
+#define uacpi_atomic_store16(ptr, value) uacpi_do_atomic_store16((volatile uint16_t*)ptr, (uint16_t)value)
+#define uacpi_atomic_store32(ptr, value) uacpi_do_atomic_store32((volatile uint32_t*)ptr, (uint32_t)value)
+#define uacpi_atomic_store64(ptr, value) uacpi_do_atomic_store64((volatile uint64_t*)ptr, (uint64_t)value)
 
+static uint16_t uacpi_do_atomic_inc16(volatile uint16_t *ptr);
+#pragma aux uacpi_do_atomic_inc16 = \
+    ".486"                          \
+    "mov ax, 1"                     \
+    "lock xadd [edi], ax"           \
+    "add ax, 1"                     \
+    parm [ edi ]                    \
+    value [ ax ]
+
+static uint32_t uacpi_do_atomic_inc32(volatile uint32_t *ptr);
+#pragma aux uacpi_do_atomic_inc32 = \
+    ".486"                          \
+    "mov eax, 1"                    \
+    "lock xadd [edi], eax"          \
+    "add eax, 1"                    \
+    parm [ edi ]                    \
+    value [ eax ]
+
+static void uacpi_do_atomic_inc64_asm(volatile uint64_t *ptr, uint64_t *out);
+#pragma aux uacpi_do_atomic_inc64_asm = \
+    ".586"                              \
+    "xor eax, eax"                      \
+    "xor edx, edx"                      \
+    "mov ebx, 1"                        \
+    "mov ecx, 1"                        \
+    "retry: lock cmpxchg8b [esi]"       \
+    "mov ebx, eax"                      \
+    "mov ecx, edx"                      \
+    "add ebx, 1"                        \
+    "adc ecx, 0"                        \
+    "jnz retry"                         \
+    "mov [edi], ebx"                    \
+    "mov [edi + 4], ecx"                \
+    modify [ eax ebx ecx edx ]          \
+    parm [ esi ] [ edi ]
+
+static uint64_t uacpi_do_atomic_inc64(volatile uint64_t *ptr) {
+    uint64_t value;
+    uacpi_do_atomic_inc64_asm(ptr, &value);
+    return value;
+}
+
+#define uacpi_atomic_inc16(ptr) uacpi_do_atomic_inc16((volatile uint16_t*)ptr)
+#define uacpi_atomic_inc32(ptr) uacpi_do_atomic_inc32((volatile uint32_t*)ptr)
+#define uacpi_atomic_inc64(ptr) uacpi_do_atomic_inc64((volatile uint64_t*)ptr)
+
+static uint16_t uacpi_do_atomic_dec16(volatile uint16_t *ptr);
+#pragma aux uacpi_do_atomic_dec16 = \
+    ".486"                          \
+    "mov ax, -1"                    \
+    "lock xadd [edi], ax"           \
+    "add ax, -1"                    \
+    parm [ edi ]                    \
+    value [ ax ]
+
+static uint32_t uacpi_do_atomic_dec32(volatile uint32_t *ptr);
+#pragma aux uacpi_do_atomic_dec32 = \
+    ".486"                          \
+    "mov eax, -1"                   \
+    "lock xadd [edi], eax"          \
+    "add eax, -1"                   \
+    parm [ edi ]                    \
+    value [ eax ]
+
+static void uacpi_do_atomic_dec64_asm(volatile uint64_t *ptr, uint64_t *out);
+#pragma aux uacpi_do_atomic_dec64_asm = \
+    ".586"                              \
+    "xor eax, eax"                      \
+    "xor edx, edx"                      \
+    "mov ebx, -1"                       \
+    "mov ecx, -1"                       \
+    "retry: lock cmpxchg8b [esi]"       \
+    "mov ebx, eax"                      \
+    "mov ecx, edx"                      \
+    "sub ebx, 1"                        \
+    "sbb ecx, 0"                        \
+    "jnz retry"                         \
+    "mov [edi], ebx"                    \
+    "mov [edi + 4], ecx"                \
+    modify [ eax ebx ecx edx ]          \
+    parm [ esi ] [ edi ]
+
+static uint64_t uacpi_do_atomic_dec64(volatile uint64_t *ptr) {
+    uint64_t value;
+    uacpi_do_atomic_dec64_asm(ptr, &value);
+    return value;
+}
+
+#define uacpi_atomic_dec16(ptr) uacpi_do_atomic_dec16((volatile uint16_t*)ptr)
+#define uacpi_atomic_dec32(ptr) uacpi_do_atomic_dec32((volatile uint32_t*)ptr)
+#define uacpi_atomic_dec64(ptr) uacpi_do_atomic_dec64((volatile uint64_t*)ptr)
 #else
 
 #define UACPI_DO_CMPXCHG(ptr, expected, desired)           \
