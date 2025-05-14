@@ -13,18 +13,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#ifdef __WATCOMC__
-
-#define uintptr_t unsigned int *
-#ifndef NULL
-#define NULL 0
-#endif
-
-#else
-
-
-#endif
-
 #include <stdarg.h>
 
 #include <uacpi/helpers.h>
