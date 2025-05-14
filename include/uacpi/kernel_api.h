@@ -46,12 +46,18 @@ void *uacpi_kernel_map(uacpi_phys_addr addr, uacpi_size len);
  */
 void uacpi_kernel_unmap(void *addr, uacpi_size len);
 
+#ifdef __WATCOMC__
+UACPI_PRINTF_DECL(2, 3)
+void uacpi_kernel_log(uacpi_log_level, const uacpi_char*, ...);
+void uacpi_kernel_vlog(uacpi_log_level, const uacpi_char*, uacpi_va_list);
+#else
 #ifndef UACPI_FORMATTED_LOGGING
 void uacpi_kernel_log(uacpi_log_level, const uacpi_char*);
 #else
 UACPI_PRINTF_DECL(2, 3)
 void uacpi_kernel_log(uacpi_log_level, const uacpi_char*, ...);
 void uacpi_kernel_vlog(uacpi_log_level, const uacpi_char*, uacpi_va_list);
+#endif
 #endif
 
 /*
