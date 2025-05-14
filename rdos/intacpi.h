@@ -20,26 +20,23 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# acpi.cpp
-# Main acpi server
+# acpiint.cpp
+# ACPI interface
 #
 ########################################################################*/
 
-#include "rdos.h"
-#include "intacpi.h"
+#ifndef INT_ACPI
+#define INT_ACPI
 
-/*##########################################################################
-#
-#   Name       : main
-#
-#   Purpose....:
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-int main(int argc, char **argv)
-{
-    return InitAcpi();
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+bool InitAcpi();
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif
+

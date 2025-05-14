@@ -20,17 +20,19 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# acpi.cpp
-# Main acpi server
+# intacpi.cpp
+# ACPI interface
 #
 ########################################################################*/
 
-#include "rdos.h"
+#include <stdio.h>
+#include <uacpi/uacpi.h>
+#include <uacpi/event.h>
 #include "intacpi.h"
 
 /*##########################################################################
 #
-#   Name       : main
+#   Name       : InitAcpi
 #
 #   Purpose....:
 #
@@ -39,7 +41,16 @@
 #   Returns....: *
 #
 ##########################################################################*/
-int main(int argc, char **argv)
+bool InitAcpi()
 {
-    return InitAcpi();
+	uacpi_status ret;
+	
+	ret = uacpi_initialize(0);
+	if (uacpi_unlikely_error(ret))
+	{
+		printf("uacpi_initialize error: %s", uacpi_status_to_string(ret));
+		return false;
+	}
+	
+	return true;
 }
