@@ -114,7 +114,6 @@ static uacpi_status map_one(
 )
 {
     uacpi_status ret = UACPI_STATUS_OK;
-    struct acpi_gas temp_gas;
 
     if (mapping->states[idx] != REGISTER_MAPPING_STATE_NONE)
         return ret;
