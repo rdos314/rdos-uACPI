@@ -90,11 +90,11 @@ void uacpi_kernel_unmap(void *addr, uacpi_size len)
 ##########################################################################*/
 void uacpi_kernel_log(uacpi_log_level level, const uacpi_char* fmt, ...)
 {
-    uacpi_va_list vlist;
+    va_list args;
 
-    uacpi_va_start(vlist, fmt);
-    printf(fmt, vlist);
-    uacpi_va_end(vlist);
+    va_start(args, fmt);
+    printf(fmt, args);
+    va_end(args);
 }
 
 /*##########################################################################
