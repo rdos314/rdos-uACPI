@@ -5,11 +5,8 @@
 #include <uacpi/log.h>
 
 #ifdef __WATCOMC__
-UACPI_PRINTF_DECL(2, 3)
-void uacpi_log(uacpi_log_level, const uacpi_char*, ...);
-#define uacpi_log_lvl(lvl, ...) uacpi_log
-
-#else
+#define UACPI_FORMATTED_LOGGING 1
+#endif
 
 #ifdef UACPI_FORMATTED_LOGGING
 #define uacpi_log uacpi_kernel_log
@@ -20,8 +17,6 @@ void uacpi_log(uacpi_log_level, const uacpi_char*, ...);
 
 #define uacpi_log_lvl(lvl, ...) \
     do { if (uacpi_should_log(lvl)) uacpi_log(lvl, __VA_ARGS__); } while (0)
-
-#endif
 
 #define uacpi_debug(...) uacpi_log_lvl(UACPI_LOG_DEBUG, __VA_ARGS__)
 #define uacpi_trace(...) uacpi_log_lvl(UACPI_LOG_TRACE, __VA_ARGS__)
