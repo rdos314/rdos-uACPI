@@ -28,10 +28,9 @@
         __pragma(pack(push, 1)) \
         decl;                   \
         __pragma(pack(pop))
-#elif __WATCOMC__
-    #pragma pack( __push, 1 )
-    #define UACPI_ALWAYS_INLINE
-    #define UACPI_PACKED(decl) decl;
+#elif defined(__WATCOMC__)
+    #define UACPI_ALWAYS_INLINE inline
+    #define UACPI_PACKED(decl) _Packed decl;
 #else
     #define UACPI_ALWAYS_INLINE inline __attribute__((always_inline))
     #define UACPI_PACKED(decl) decl __attribute__((packed));
@@ -92,8 +91,13 @@
     #elif defined(__GNUC__)
         #define UACPI_POINTER_SIZE __SIZEOF_POINTER__
     #elif defined(__WATCOMC__)
-        #include <stdint.h>
-        #define UACPI_POINTER_SIZE 4
+        #ifdef __386__
+            #define UACPI_POINTER_SIZE 4
+        #elif defined(__I86__)
+            #error uACPI does not support 16-bit mode compilation
+        #else
+            #error Unknown target architecture
+        #endif
     #else
         #error Failed to detect pointer size
     #endif

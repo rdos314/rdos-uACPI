@@ -973,6 +973,7 @@ void uacpi_events_match_post_dynamic_table_load(void)
     struct gpe_match_ctx match_ctx = {
         .post_dynamic_table_load = UACPI_TRUE,
     };
+    struct gpe_interrupt_ctx *irq_ctx;
 
     uacpi_namespace_write_unlock();
 
@@ -2214,6 +2215,8 @@ void uacpi_deinitialize_events(void)
     }
 
     while (next_ctx) {
+        struct gpe_block *block, *next_block;
+
         ctx = next_ctx;
         next_ctx = ctx->next;
 

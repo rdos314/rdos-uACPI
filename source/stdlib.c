@@ -501,11 +501,11 @@ uacpi_i32 uacpi_vsnprintf(
     uacpi_va_list vlist
 )
 {
+    struct fmt_buf_state fb_state = { 0 };
     uacpi_u64 value;
     const uacpi_char *next_conversion;
     uacpi_size next_offset;
     uacpi_char flag;
-    struct fmt_buf_state fb_state = { 0 };
 
     fb_state.buffer = buffer;
     fb_state.capacity = capacity;
