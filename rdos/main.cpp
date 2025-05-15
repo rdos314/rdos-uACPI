@@ -25,8 +25,55 @@
 #
 ########################################################################*/
 
+#include <stdio.h>
+#include <uacpi/uacpi.h>
+#include <uacpi/event.h>
 #include "rdos.h"
-#include "intacpi.h"
+
+/*##########################################################################
+#
+#   Name       : InitAcpi
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool InitAcpi()
+{
+	uacpi_status ret;
+	
+	ret = uacpi_initialize(0);
+	if (uacpi_unlikely_error(ret))
+	{
+		printf("uacpi_initialize error: %s\n", uacpi_status_to_string(ret));
+		return false;
+	}
+	
+	ret = uacpi_namespace_load();
+	if (uacpi_unlikely_error(ret))
+	{
+		printf("uacpi_namespace_load error: %s\n", uacpi_status_to_string(ret));
+		return false;
+	}
+
+	ret = uacpi_namespace_initialize();
+	if (uacpi_unlikely_error(ret))
+	{
+		printf("uacpi_namespace_initialize error: %s\n", uacpi_status_to_string(ret));
+		return false;
+	}
+	ret = uacpi_finalize_gpe_initialization();
+	if (uacpi_unlikely_error(ret))
+	{
+		printf("uacpi_finalize_gpe_initialization error: %s\n", uacpi_status_to_string(ret));
+		return false;
+	}
+	
+	return true;
+}
 
 /*##########################################################################
 #
