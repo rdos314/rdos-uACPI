@@ -88,13 +88,37 @@ void uacpi_kernel_unmap(void *addr, uacpi_size len)
 #   Returns....: *
 #
 ##########################################################################*/
-void uacpi_kernel_log(uacpi_log_level level, const uacpi_char* fmt, ...)
+void uacpi_kernel_log(enum uacpi_log_level lvl, const uacpi_char *text)
 {
-    va_list args;
+	const char *lstr;
 
-    va_start(args, fmt);
-    printf(fmt, args);
-    va_end(args);
+	switch (lvl) 
+	{
+		case UACPI_LOG_DEBUG:
+			lstr = "DEBUG";
+			break;
+
+		case UACPI_LOG_TRACE:
+			lstr = "TRACE";
+			break;
+			
+		case UACPI_LOG_INFO:
+			lstr = "INFO";
+			break;
+			
+		case UACPI_LOG_WARN:
+			lstr = "WARN";
+			break;
+			
+		case UACPI_LOG_ERROR:
+			lstr = "ERROR";
+			break;
+			
+		default:
+			lstr = "";
+			break;
+	}
+	printf("[%s] %s", lstr, text);
 }
 
 /*##########################################################################

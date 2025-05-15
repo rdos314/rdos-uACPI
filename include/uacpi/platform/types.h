@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-
 #include <uacpi/helpers.h>
 
 typedef uint8_t uacpi_u8;
