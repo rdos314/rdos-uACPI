@@ -4,10 +4,6 @@
 #include <uacpi/internal/context.h>
 #include <uacpi/log.h>
 
-#ifdef __WATCOMC__
-#define UACPI_FORMATTED_LOGGING 1
-#endif
-
 #ifdef UACPI_FORMATTED_LOGGING
 #define uacpi_log uacpi_kernel_log
 #else

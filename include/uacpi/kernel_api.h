@@ -46,10 +46,6 @@ void *uacpi_kernel_map(uacpi_phys_addr addr, uacpi_size len);
  */
 void uacpi_kernel_unmap(void *addr, uacpi_size len);
 
-#ifdef __WATCOMC__
-#define UACPI_FORMATTED_LOGGING 1
-#endif
-
 #ifndef UACPI_FORMATTED_LOGGING
 void uacpi_kernel_log(uacpi_log_level, const uacpi_char*);
 #else
