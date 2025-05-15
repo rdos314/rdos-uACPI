@@ -83,6 +83,8 @@
 #define serv_gate_serv_update_file 0x0000004D
 
 #define serv_gate_uacpi_get_rdsp 0x0000004E
+#define serv_gate_uacpi_map 0x0000004F
+#define serv_gate_uacpi_unmap 0x00000050
 
 #define ServGate_invalid_serv 0x55 0x67 0x9a 0 0 0 0 4 0 0x5d
 #define ServGate_test_serv 0x55 0x67 0x9a 1 0 0 0 4 0 0x5d
@@ -169,4 +171,6 @@
 #define ServGate_serv_update_file 0x55 0x67 0x9a 77 0 0 0 4 0 0x5d
 
 #define ServGate_uacpi_get_rdsp 0x55 0x67 0x9a 78 0 0 0 4 0 0x5d
+#define ServGate_uacpi_map 0x55 0x67 0x9a 79 0 0 0 4 0 0x5d
+#define ServGate_uacpi_unmap 0x55 0x67 0x9a 80 0 0 0 4 0 0x5d
 
