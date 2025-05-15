@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <uacpi/kernel_api.h>
 #include "rdos.h"
+#include "serv.h"
 
 /*##########################################################################
 #
@@ -43,7 +44,7 @@
 ##########################################################################*/
 uacpi_status uacpi_kernel_get_rsdp(uacpi_phys_addr *out_rsdp_address)
 {
-	return 0;
+	return ServUacpiGetRdsp();
 }
 
 /*##########################################################################
