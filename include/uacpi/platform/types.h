@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 
 #include <uacpi/helpers.h>
@@ -56,7 +57,6 @@ UACPI_BUILD_BUG_ON_WITH_MSG(
     sizeof(unsigned long long) < 8,
     "unsigned long long must be at least 64 bits large as per C99"
 );
-
 #define UACPI_PRIu64 "llu"
 #define UACPI_PRIx64 "llx"
 #define UACPI_PRIX64 "llX"
