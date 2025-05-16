@@ -38,6 +38,12 @@ struct io_map
 	int size;
 };
 
+struct event_t
+{
+	int wait;
+	int handle;
+};
+
 int lock_spinlock(int *spinlock);
 #pragma aux lock_spinlock = \
 	"mov eax,[esi]" \
@@ -634,8 +640,13 @@ void uacpi_kernel_free_mutex(uacpi_handle handle)
 ##########################################################################*/
 uacpi_handle uacpi_kernel_create_event(void)
 {
-	printf("create event\n");
-	return 0;
+	struct event_t *ev = (struct event_t *)malloc(sizeof(struct event_t));
+
+    ev->wait = RdosCreateWait();
+	ev->handle = RdosCreateSignal();
+	RdosAddWaitForSignal(ev->wait, ev->handle, 1);
+
+	return (uacpi_handle)ev;
 }
 
 /*##########################################################################
@@ -651,7 +662,10 @@ uacpi_handle uacpi_kernel_create_event(void)
 ##########################################################################*/
 void uacpi_kernel_free_event(uacpi_handle handle)
 {
-	printf("free event\n");
+	struct event_t *ev = (struct event_t *)handle;
+	
+	RdosFreeSignal(ev->handle);
+	RdosCloseWait(ev->wait);
 }
 
 /*##########################################################################
