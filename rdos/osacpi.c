@@ -44,7 +44,7 @@
 ##########################################################################*/
 uacpi_status uacpi_kernel_get_rsdp(uacpi_phys_addr *out_rsdp_address)
 {
-	long long phys = ServUacpiGetRdsp();
+	long long phys = ServUacpiGetAcpi();
 	
 	if (phys)
 	{

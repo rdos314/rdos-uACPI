@@ -363,8 +363,8 @@
     __parm [__ebx]
 
 
-#pragma aux ServUacpiGetRdsp = \
-    ServGate_uacpi_get_rdsp  \
+#pragma aux ServUacpiGetAcpi = \
+    ServGate_uacpi_get_acpi  \
     __value [__edx __eax]
 
 #pragma aux ServUacpiMap = \
