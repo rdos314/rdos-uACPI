@@ -31,6 +31,12 @@
 #include "rdos.h"
 #include "serv.h"
 
+struct io_map
+{
+	int base;
+	int size;
+};
+
 int lock_spinlock(int *spinlock);
 #pragma aux lock_spinlock = \
 	"mov eax,[esi]" \
@@ -41,6 +47,39 @@ int lock_spinlock(int *spinlock);
 	"done: " \
     parm [ esi ] \
 	value [ eax ]
+
+char in_byte(int port);
+#pragma aux in_byte = \
+	"in al,dx" \
+    parm [ edx ] \
+	value [ al ]
+
+short in_word(int port);
+#pragma aux in_word = \
+	"in ax,dx" \
+    parm [ edx ] \
+	value [ ax ]
+
+char in_dword(int port);
+#pragma aux in_dword = \
+	"in eax,dx" \
+    parm [ edx ] \
+	value [ al ]
+
+void out_byte(int port, char val);
+#pragma aux out_byte = \
+	"out dx,al" \
+    parm [ edx ] [ al ]
+
+void out_word(int port, short val);
+#pragma aux out_word = \
+	"out dx,ax" \
+    parm [ edx ] [ ax ]
+
+void out_dword(int port, int val);
+#pragma aux out_dword = \
+	"out dx,eax" \
+    parm [ edx ] [ eax ]
 
 /*##########################################################################
 #
@@ -156,6 +195,7 @@ void uacpi_kernel_log(enum uacpi_log_level lvl, const uacpi_char *text)
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handle *out_handle)
 {
+	printf("device open\n");
 	return 0;
 }
 
@@ -172,6 +212,7 @@ uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handl
 ##########################################################################*/
 void uacpi_kernel_pci_device_close(uacpi_handle handle)
 {
+	printf("device close\n");
 }
 
 /*##########################################################################
@@ -187,6 +228,7 @@ void uacpi_kernel_pci_device_close(uacpi_handle handle)
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacpi_u8 *value)
 {
+	printf("pci read byte\n");
 	return 0;
 }
 
@@ -203,6 +245,7 @@ uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacp
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uacpi_u16 *value)
 {
+	printf("pci read word\n");
 	return 0;
 }
 
@@ -219,6 +262,7 @@ uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uacpi_u32 *value)
 {
+	printf("pci read dword\n");
 	return 0;
 }
 
@@ -235,6 +279,7 @@ uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uacpi_u8 value)
 {
+	printf("pci write byte\n");
 	return 0;
 }
 
@@ -251,6 +296,7 @@ uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, uacpi_u16 value)
 {
+	printf("pci write word\n");
 	return 0;
 }
 
@@ -267,6 +313,7 @@ uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, ua
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_write32(uacpi_handle device, uacpi_size offset, uacpi_u32 value)
 {
+	printf("pci write dword\n");
 	return 0;
 }
 
@@ -283,7 +330,15 @@ uacpi_status uacpi_kernel_pci_write32(uacpi_handle device, uacpi_size offset, ua
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_map(uacpi_io_addr base, uacpi_size len, uacpi_handle *out_handle)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)malloc(sizeof(struct io_map));
+
+	map->base = base;
+	map->size = len;
+
+    ServUacpiEnableIo(base, len);	
+
+	*out_handle = map;
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -299,6 +354,10 @@ uacpi_status uacpi_kernel_io_map(uacpi_io_addr base, uacpi_size len, uacpi_handl
 ##########################################################################*/
 void uacpi_kernel_io_unmap(uacpi_handle handle)
 {
+	struct io_map *map = (struct io_map *)handle;
+
+    ServUacpiDisableIo(map->base, map->size);	
+	free(map);
 }
 
 /*##########################################################################
@@ -314,7 +373,10 @@ void uacpi_kernel_io_unmap(uacpi_handle handle)
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_read8(uacpi_handle handle, uacpi_size offset, uacpi_u8 *out_value)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)handle;
+
+	*out_value = in_byte(map->base + offset);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -330,7 +392,10 @@ uacpi_status uacpi_kernel_io_read8(uacpi_handle handle, uacpi_size offset, uacpi
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_read16(uacpi_handle handle, uacpi_size offset, uacpi_u16 *out_value)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)handle;
+
+	*out_value = in_word(map->base + offset);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -346,7 +411,10 @@ uacpi_status uacpi_kernel_io_read16(uacpi_handle handle, uacpi_size offset, uacp
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_read32(uacpi_handle handle, uacpi_size offset, uacpi_u32 *out_value)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)handle;
+
+	*out_value = in_dword(map->base + offset);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -362,7 +430,10 @@ uacpi_status uacpi_kernel_io_read32(uacpi_handle handle, uacpi_size offset, uacp
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_write8(uacpi_handle handle, uacpi_size offset, uacpi_u8 in_value)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)handle;
+
+	out_byte(map->base + offset, in_value);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -378,7 +449,10 @@ uacpi_status uacpi_kernel_io_write8(uacpi_handle handle, uacpi_size offset, uacp
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_write16(uacpi_handle handle, uacpi_size offset, uacpi_u16 in_value)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)handle;
+
+	out_word(map->base + offset, in_value);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -394,7 +468,10 @@ uacpi_status uacpi_kernel_io_write16(uacpi_handle handle, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_io_write32(uacpi_handle handle, uacpi_size offset, uacpi_u32 in_value)
 {
-	return 0;
+	struct io_map *map = (struct io_map *)handle;
+
+	out_dword(map->base + offset, in_value);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -442,6 +519,7 @@ void uacpi_kernel_free(void *mem)
 ##########################################################################*/
 uacpi_u64 uacpi_kernel_get_nanoseconds_since_boot(void)
 {
+	printf("ns since boot\n");
 	return 0;
 }
 
@@ -529,6 +607,7 @@ void uacpi_kernel_free_mutex(uacpi_handle handle)
 ##########################################################################*/
 uacpi_handle uacpi_kernel_create_event(void)
 {
+	printf("create event\n");
 	return 0;
 }
 
@@ -545,6 +624,7 @@ uacpi_handle uacpi_kernel_create_event(void)
 ##########################################################################*/
 void uacpi_kernel_free_event(uacpi_handle handle)
 {
+	printf("free event\n");
 }
 
 /*##########################################################################
@@ -560,6 +640,8 @@ void uacpi_kernel_free_event(uacpi_handle handle)
 ##########################################################################*/
 uacpi_thread_id uacpi_kernel_get_thread_id(void)
 {
+	printf("get thread\n");
+
 	return (void *)RdosGetThreadHandle();
 }
 
@@ -613,6 +695,7 @@ void uacpi_kernel_release_mutex(uacpi_handle handle)
 ##########################################################################*/
 uacpi_bool uacpi_kernel_wait_for_event(uacpi_handle handle, uacpi_u16 timeout)
 {
+	printf("wait event\n");
 	return false;
 }
 
@@ -629,6 +712,7 @@ uacpi_bool uacpi_kernel_wait_for_event(uacpi_handle handle, uacpi_u16 timeout)
 ##########################################################################*/
 void uacpi_kernel_signal_event(uacpi_handle handle)
 {
+	printf("signal event\n");
 }
 
 /*##########################################################################
@@ -644,6 +728,7 @@ void uacpi_kernel_signal_event(uacpi_handle handle)
 ##########################################################################*/
 void uacpi_kernel_reset_event(uacpi_handle handle)
 {
+	printf("reset event\n");
 }
 
 /*##########################################################################
@@ -659,7 +744,7 @@ void uacpi_kernel_reset_event(uacpi_handle handle)
 ##########################################################################*/
 uacpi_status uacpi_kernel_handle_firmware_request(uacpi_firmware_request *req)
 {
-	_asm int 3
+	printf("fw req\n");
 	return 0;
 }
 
@@ -676,6 +761,7 @@ uacpi_status uacpi_kernel_handle_firmware_request(uacpi_firmware_request *req)
 ##########################################################################*/
 uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32 irq, uacpi_interrupt_handler handler, uacpi_handle ctx, uacpi_handle *out_irq_handle)
 {
+	printf("install IRQ handler\n");
 	return 0;
 }
 
@@ -692,6 +778,7 @@ uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32 irq, uacpi_interru
 ##########################################################################*/
 uacpi_status uacpi_kernel_uninstall_interrupt_handler(uacpi_interrupt_handler handler, uacpi_handle irq_handle)
 {
+	printf("uninstall IRQ handler\n");
 	return 0;
 }
 
@@ -791,6 +878,7 @@ void uacpi_kernel_unlock_spinlock(uacpi_handle handle, uacpi_cpu_flags flags)
 ##########################################################################*/
 uacpi_status uacpi_kernel_schedule_work(uacpi_work_type type, uacpi_work_handler handler, uacpi_handle ctx)
 {
+	printf("schedule work\n");
 	return 0;
 }
 
@@ -807,5 +895,6 @@ uacpi_status uacpi_kernel_schedule_work(uacpi_work_type type, uacpi_work_handler
 ##########################################################################*/
 uacpi_status uacpi_kernel_wait_for_work_completion(void)
 {
+	printf("wait for work\n");
 	return 0;
 }
