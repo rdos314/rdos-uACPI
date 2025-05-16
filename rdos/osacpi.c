@@ -82,6 +82,8 @@ void out_dword(int port, int val);
 	"out dx,eax" \
     parm [ edx ] [ eax ]
 
+static long long TimeBase = 0;
+
 /*##########################################################################
 #
 #   Name       : get rdsp
@@ -537,8 +539,15 @@ void uacpi_kernel_free(void *mem)
 ##########################################################################*/
 uacpi_u64 uacpi_kernel_get_nanoseconds_since_boot(void)
 {
-	printf("ns since boot\n");
-	return 0;
+	long long diff;
+
+	if (!TimeBase)
+		TimeBase = RdosGetLongSysTime();
+	
+	diff = RdosGetLongSysTime() - TimeBase;
+	diff = diff * 1000000 / 1193;
+	
+	return diff;
 }
 
 /*##########################################################################
@@ -658,9 +667,7 @@ void uacpi_kernel_free_event(uacpi_handle handle)
 ##########################################################################*/
 uacpi_thread_id uacpi_kernel_get_thread_id(void)
 {
-	printf("get thread\n");
-
-	return (void *)RdosGetThreadHandle();
+	return (uacpi_thread_id)RdosGetThreadHandle();
 }
 
 /*##########################################################################
