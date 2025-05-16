@@ -31,6 +31,17 @@
 #include "rdos.h"
 #include "serv.h"
 
+int lock_spinlock(int *spinlock);
+#pragma aux lock_spinlock = \
+	"mov eax,[esi]" \
+	"or eax,eax" \
+	"jnz done" \
+	"inc eax" \
+	"xchg eax,[esi]" \
+	"done: " \
+    parm [ esi ] \
+	value [ eax ]
+
 /*##########################################################################
 #
 #   Name       : get rdsp
@@ -479,7 +490,11 @@ void uacpi_kernel_sleep(uacpi_u64 msec)
 ##########################################################################*/
 uacpi_handle uacpi_kernel_create_mutex(void)
 {
-	return 0;
+	struct RdosFutex *futex = (struct RdosFutex *)malloc(sizeof(struct RdosFutex));
+
+    RdosInitFutex(futex, "UACPI");
+
+	return (uacpi_handle)futex;
 }
 
 /*##########################################################################
@@ -495,6 +510,10 @@ uacpi_handle uacpi_kernel_create_mutex(void)
 ##########################################################################*/
 void uacpi_kernel_free_mutex(uacpi_handle handle)
 {
+	struct RdosFutex *futex = (struct RdosFutex *)handle;
+
+	RdosResetFutex(futex);
+	free(futex);
 }
 
 /*##########################################################################
@@ -557,7 +576,10 @@ uacpi_thread_id uacpi_kernel_get_thread_id(void)
 ##########################################################################*/
 uacpi_status uacpi_kernel_acquire_mutex(uacpi_handle handle, uacpi_u16 timeout)
 {
-	return 0;
+	struct RdosFutex *futex = (struct RdosFutex *)handle;
+	
+    RdosEnterFutex(futex);
+	return UACPI_STATUS_OK;
 }
 
 /*##########################################################################
@@ -573,6 +595,9 @@ uacpi_status uacpi_kernel_acquire_mutex(uacpi_handle handle, uacpi_u16 timeout)
 ##########################################################################*/
 void uacpi_kernel_release_mutex(uacpi_handle handle)
 {
+	struct RdosFutex *futex = (struct RdosFutex *)handle;
+	
+    RdosLeaveFutex(futex);
 }
 
 /*##########################################################################
@@ -683,7 +708,10 @@ uacpi_status uacpi_kernel_uninstall_interrupt_handler(uacpi_interrupt_handler ha
 ##########################################################################*/
 uacpi_handle uacpi_kernel_create_spinlock(void)
 {
-	return 0;
+	int *lock = (int *)malloc(sizeof(int));
+	
+	*lock = 0;
+	return (uacpi_handle)lock;
 }
 
 /*##########################################################################
@@ -699,6 +727,9 @@ uacpi_handle uacpi_kernel_create_spinlock(void)
 ##########################################################################*/
 void uacpi_kernel_free_spinlock(uacpi_handle handle)
 {
+	int *lock = (int *)handle;
+	
+	free(lock);
 }
 
 /*##########################################################################
@@ -714,6 +745,19 @@ void uacpi_kernel_free_spinlock(uacpi_handle handle)
 ##########################################################################*/
 uacpi_cpu_flags uacpi_kernel_lock_spinlock(uacpi_handle handle)
 {
+	int *lock = (int *)handle;
+	bool done = false;
+	int val;
+
+    while (!done)
+    {
+		val = lock_spinlock(lock);
+		if (val)
+			RdosWaitMilli(10);
+		else
+			done = true;
+    }		
+	
 	return 0;
 }
 
@@ -730,6 +774,8 @@ uacpi_cpu_flags uacpi_kernel_lock_spinlock(uacpi_handle handle)
 ##########################################################################*/
 void uacpi_kernel_unlock_spinlock(uacpi_handle handle, uacpi_cpu_flags flags)
 {
+	int *lock = (int *)handle;
+	*lock = 0;
 }
 
 /*##########################################################################
