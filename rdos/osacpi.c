@@ -208,7 +208,8 @@ uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handl
 
     if (address.segment == 0)
 	{
-		ads = (address.bus & 0xFF) << 16;
+		ads = 0x80000000;
+		ads |= (address.bus & 0xFF) << 16;
 		ads |= (address.device & 0x1F) << 11;
 		ads |= (address.function & 0x7) << 8;
 		*out_handle = (uacpi_handle)ads;
@@ -253,7 +254,7 @@ uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacp
 	
 	if (offset < 0x100)
 	{
-		*value = ServUacpiReadPciByte(dev + offset & 0xFF);
+		*value = ServUacpiReadPciByte(dev + (offset & 0xFF));
 		return UACPI_STATUS_OK;
 	}
 	else
@@ -280,7 +281,7 @@ uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uac
 
 	if (offset < 0x100)
 	{
-		*value = ServUacpiReadPciWord(dev + offset & 0xFF);
+		*value = ServUacpiReadPciWord(dev + (offset & 0xFF));
 		return UACPI_STATUS_OK;
 	}
 	else
@@ -307,7 +308,7 @@ uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uac
 
 	if (offset < 0x100)
 	{
-		*value = ServUacpiReadPciDword(dev + offset & 0xFF);
+		*value = ServUacpiReadPciDword(dev + (offset & 0xFF));
 		return UACPI_STATUS_OK;
 	}
 	else
@@ -334,7 +335,7 @@ uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uac
 
 	if (offset < 0x100)
 	{
-		ServUacpiWritePciByte(dev + offset & 0xFF, value);
+		ServUacpiWritePciByte(dev + (offset & 0xFF), value);
 		return UACPI_STATUS_OK;
 	}
 	else
@@ -361,7 +362,7 @@ uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, ua
 
 	if (offset < 0x100)
 	{
-		ServUacpiWritePciWord(dev + offset & 0xFF, value);
+		ServUacpiWritePciWord(dev + (offset & 0xFF), value);
 		return UACPI_STATUS_OK;
 	}
 	else
@@ -388,7 +389,7 @@ uacpi_status uacpi_kernel_pci_write32(uacpi_handle device, uacpi_size offset, ua
 
 	if (offset < 0x100)
 	{
-		ServUacpiWritePciDword(dev + offset & 0xFF, value);
+		ServUacpiWritePciDword(dev + (offset & 0xFF), value);
 		return UACPI_STATUS_OK;
 	}
 	else

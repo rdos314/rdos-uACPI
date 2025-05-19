@@ -88,10 +88,10 @@ bool InitAcpi()
 ##########################################################################*/
 int main(int argc, char **argv)
 {
-	bool start = false;
+//	bool start = false;
 	
-	while (!start)
-		RdosWaitMilli(50);
+//	while (!start)
+//		RdosWaitMilli(50);
 	
     InitAcpi();
 	
