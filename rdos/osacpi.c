@@ -31,13 +31,6 @@
 #include "rdos.h"
 #include "serv.h"
 
-struct pci_dev
-{
-	int bus;
-	int device;
-	int function;
-};
-
 struct io_map
 {
 	bool kernel;
@@ -211,14 +204,21 @@ void uacpi_kernel_log(enum uacpi_log_level lvl, const uacpi_char *text)
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handle *out_handle)
 {
-	struct pci_dev *dev = (struct pci_dev *)malloc(sizeof(struct pci_dev));
+	int ads;
 
-	dev->bus = address.bus;
-	dev->device = address.device;
-	dev->function = address.function;
-
-	*out_handle = (uacpi_handle *)dev;
-	return UACPI_STATUS_OK;
+    if (address.segment == 0)
+	{
+		ads = (address.bus & 0xFF) << 16;
+		ads |= (address.device & 0x1F) << 11;
+		ads |= (address.function & 0x7) << 8;
+		*out_handle = (uacpi_handle)ads;
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI segment not supported %d\n", address.segment);
+		return UACPI_STATUS_NOT_FOUND;
+	}
 }
 
 /*##########################################################################
@@ -234,8 +234,6 @@ uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handl
 ##########################################################################*/
 void uacpi_kernel_pci_device_close(uacpi_handle handle)
 {
-	struct pci_dev *dev = (struct pci_dev *)handle;
-	free(dev);
 }
 
 /*##########################################################################
@@ -251,10 +249,18 @@ void uacpi_kernel_pci_device_close(uacpi_handle handle)
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacpi_u8 *value)
 {
-	struct pci_dev *dev = (struct pci_dev *)device;
-
-    *value = ServUacpiReadPciByte(dev->bus, dev->device, dev->function, offset);
-	return UACPI_STATUS_OK;
+	int dev = (int)device;
+	
+	if (offset < 0x100)
+	{
+		*value = ServUacpiReadPciByte(dev + offset & 0xFF);
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI offset error %d\n", offset);
+		return UACPI_STATUS_NOT_FOUND;
+	}	
 }
 
 /*##########################################################################
@@ -270,10 +276,18 @@ uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacp
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uacpi_u16 *value)
 {
-	struct pci_dev *dev = (struct pci_dev *)device;
+	int dev = (int)device;
 
-    *value = ServUacpiReadPciWord(dev->bus, dev->device, dev->function, offset);
-	return UACPI_STATUS_OK;
+	if (offset < 0x100)
+	{
+		*value = ServUacpiReadPciWord(dev + offset & 0xFF);
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI offset error %d\n", offset);
+		return UACPI_STATUS_NOT_FOUND;
+	}	
 }
 
 /*##########################################################################
@@ -289,10 +303,18 @@ uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uacpi_u32 *value)
 {
-	struct pci_dev *dev = (struct pci_dev *)device;
+	int dev = (int)device;
 
-    *value = ServUacpiReadPciDword(dev->bus, dev->device, dev->function, offset);
-	return UACPI_STATUS_OK;
+	if (offset < 0x100)
+	{
+		*value = ServUacpiReadPciDword(dev + offset & 0xFF);
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI offset error %d\n", offset);
+		return UACPI_STATUS_NOT_FOUND;
+	}	
 }
 
 /*##########################################################################
@@ -308,10 +330,18 @@ uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uacpi_u8 value)
 {
-	struct pci_dev *dev = (struct pci_dev *)device;
+	int dev = (int)device;
 
-    ServUacpiWritePciByte(dev->bus, dev->device, dev->function, offset, value);
-	return UACPI_STATUS_OK;
+	if (offset < 0x100)
+	{
+		ServUacpiWritePciByte(dev + offset & 0xFF, value);
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI offset error %d\n", offset);
+		return UACPI_STATUS_NOT_FOUND;
+	}	
 }
 
 /*##########################################################################
@@ -327,10 +357,18 @@ uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uac
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, uacpi_u16 value)
 {
-	struct pci_dev *dev = (struct pci_dev *)device;
+	int dev = (int)device;
 
-    ServUacpiWritePciWord(dev->bus, dev->device, dev->function, offset, value);
-	return UACPI_STATUS_OK;
+	if (offset < 0x100)
+	{
+		ServUacpiWritePciWord(dev + offset & 0xFF, value);
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI offset error %d\n", offset);
+		return UACPI_STATUS_NOT_FOUND;
+	}	
 }
 
 /*##########################################################################
@@ -346,10 +384,18 @@ uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, ua
 ##########################################################################*/
 uacpi_status uacpi_kernel_pci_write32(uacpi_handle device, uacpi_size offset, uacpi_u32 value)
 {
-	struct pci_dev *dev = (struct pci_dev *)device;
+	int dev = (int)device;
 
-    ServUacpiWritePciDword(dev->bus, dev->device, dev->function, offset, value);
-	return UACPI_STATUS_OK;
+	if (offset < 0x100)
+	{
+		ServUacpiWritePciDword(dev + offset & 0xFF, value);
+		return UACPI_STATUS_OK;
+	}
+	else
+	{
+		printf("PCI offset error %d\n", offset);
+		return UACPI_STATUS_NOT_FOUND;
+	}	
 }
 
 /*##########################################################################

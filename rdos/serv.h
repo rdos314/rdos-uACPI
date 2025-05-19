@@ -113,12 +113,12 @@ void RDOSAPI ServUacpiUnmap(void *base, int size);
 int RDOSAPI ServUacpiEnableIo(int base, int size);
 int RDOSAPI ServUacpiIn(int port, int size);
 void RDOSAPI ServUacpiOut(int port, int data, int size);
-char RDOSAPI ServUacpiReadPciByte(int bus, int dev, int func, int reg);
-short RDOSAPI ServUacpiReadPciWord(int bus, int dev, int func, int reg);
-int RDOSAPI ServUacpiReadPciDword(int bus, int dev, int func, int reg);
-void RDOSAPI ServUacpiWritePciByte(int bus, int dev, int func, int reg, char val);
-void RDOSAPI ServUacpiWritePciWord(int bus, int dev, int func, int reg, short val);
-void RDOSAPI ServUacpiWritePciDword(int bus, int dev, int func, int reg, int val);
+char RDOSAPI ServUacpiReadPciByte(int dev);
+short RDOSAPI ServUacpiReadPciWord(int dev);
+int RDOSAPI ServUacpiReadPciDword(int dev);
+void RDOSAPI ServUacpiWritePciByte(int dev, char val);
+void RDOSAPI ServUacpiWritePciWord(int dev, short val);
+void RDOSAPI ServUacpiWritePciDword(int dev, int val);
 
 #ifdef __cplusplus
 }
