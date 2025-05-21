@@ -91,6 +91,120 @@ static long long TimeBase = 0;
 
 /*##########################################################################
 #
+#   Name       : read_pci_byte
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static char read_pci_byte(int ads)
+{
+	char val;
+	
+	out_dword(0xCF8, ads & 0xFFFFFFFC);
+	val = in_byte(0xCFC + (ads & 3));
+
+	return val;
+}		
+
+/*##########################################################################
+#
+#   Name       : read_pci_word
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static short read_pci_word(int ads)
+{
+	short val;
+	
+	out_dword(0xCF8, ads & 0xFFFFFFFC);
+	val = in_word(0xCFC + (ads & 2));
+
+	return val;
+}		
+
+/*##########################################################################
+#
+#   Name       : read_pci_dword
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static int read_pci_dword(int ads)
+{
+	int val;
+	
+	out_dword(0xCF8, ads & 0xFFFFFFFC);
+	val = in_dword(0xCFC);
+
+	return val;
+}		
+
+/*##########################################################################
+#
+#   Name       : write_pci_byte
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void write_pci_byte(int ads, char val)
+{
+	out_dword(0xCF8, ads & 0xFFFFFFFC);
+	out_byte(0xCFC + (ads & 3), val);
+}		
+
+/*##########################################################################
+#
+#   Name       : write_pci_word
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void write_pci_word(int ads, short val)
+{
+	out_dword(0xCF8, ads & 0xFFFFFFFC);
+	out_word(0xCFC + (ads & 2), val);
+}		
+
+/*##########################################################################
+#
+#   Name       : write_pci_dword
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void write_pci_dword(int ads, int val)
+{
+	out_dword(0xCF8, ads & 0xFFFFFFFC);
+	out_dword(0xCFC, val);
+}		
+
+/*##########################################################################
+#
 #   Name       : get rdsp
 #
 #   Purpose....:
@@ -989,4 +1103,162 @@ uacpi_status uacpi_kernel_wait_for_work_completion(void)
 {
 	printf("wait for work\n");
 	return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : InitPci
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void InitPci()
+{
+	ServUacpiEnableIo(0xCF8, 4);	
+	ServUacpiEnableIo(0xCFC, 4);	
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciByte
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+char ReadPciByte(unsigned char bus, char device, char function, char reg)
+{
+	int ads;
+
+	ads = 0x80000000;
+	ads |= bus << 16;
+	ads |= (device & 0x1F) << 11;
+	ads |= (function & 0x7) << 8;
+	ads |= reg;
+	
+	return read_pci_byte(ads);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciWord
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short ReadPciWord(unsigned char bus, char device, char function, char reg)
+{
+	int ads;
+
+	ads = 0x80000000;
+	ads |= bus << 16;
+	ads |= (device & 0x1F) << 11;
+	ads |= (function & 0x7) << 8;
+	ads |= reg;
+	
+	return read_pci_word(ads);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciDword
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int ReadPciDword(unsigned char bus, char device, char function, char reg)
+{
+	int ads;
+
+	ads = 0x80000000;
+	ads |= bus << 16;
+	ads |= (device & 0x1F) << 11;
+	ads |= (function & 0x7) << 8;
+	ads |= reg;
+	
+	return read_pci_dword(ads);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciByte
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePciByte(unsigned char bus, char device, char function, char reg, char val)
+{
+	int ads;
+
+	ads = 0x80000000;
+	ads |= bus << 16;
+	ads |= (device & 0x1F) << 11;
+	ads |= (function & 0x7) << 8;
+	ads |= reg;
+	write_pci_byte(ads, val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciWord
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePciWord(unsigned char bus, char device, char function, char reg, short val)
+{
+	int ads;
+
+	ads = 0x80000000;
+	ads |= bus << 16;
+	ads |= (device & 0x1F) << 11;
+	ads |= (function & 0x7) << 8;
+	ads |= reg;
+	write_pci_word(ads, val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciDword
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePciDword(unsigned char bus, char device, char function, char reg, int val)
+{
+	int ads;
+
+	ads = 0x80000000;
+	ads |= bus << 16;
+	ads |= (device & 0x1F) << 11;
+	ads |= (function & 0x7) << 8;
+	ads |= reg;
+	write_pci_dword(ads, val);
 }

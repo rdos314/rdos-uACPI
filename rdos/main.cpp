@@ -31,6 +31,19 @@
 #include <uacpi/utilities.h>
 #include "rdos.h"
 
+extern "C" 
+{
+
+void InitPci();
+char ReadPciByte(unsigned char bus, char device, char function, char reg);
+short ReadPciWord(unsigned char bus, char device, char function, char reg);
+int ReadPciDword(unsigned char bus, char device, char function, char reg);
+void WritePciByte(unsigned char bus, char device, char function, char reg, char val);
+void WritePciWord(unsigned char bus, char device, char function, char reg, short val);
+void WritePciDword(unsigned char bus, char device, char function, char reg, int val);
+
+};
+
 /*##########################################################################
 #
 #   Name       : AddAscend
@@ -98,6 +111,7 @@ uacpi_iteration_decision AddDescend(void *ctx, uacpi_namespace_node *node, uacpi
     uacpi_free_namespace_node_info(info);
     return UACPI_ITERATION_DECISION_CONTINUE;
 }
+
 /*##########################################################################
 #
 #   Name       : InitAcpi
@@ -162,7 +176,8 @@ int main(int argc, char **argv)
 	
 	while (!start)
 		RdosWaitMilli(50);
-	
+
+    InitPci();
     InitAcpi();
 	
 	for (;;)
