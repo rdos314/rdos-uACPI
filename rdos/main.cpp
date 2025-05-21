@@ -46,56 +46,102 @@ void WritePciDword(unsigned char bus, char device, char function, char reg, int 
 
 };
 
-static int level;
 static TAcpiObject *ObjArr[256] = {0};
 
+static int DeviceCount = 0;
+static int DeviceSize = 0;
+static TAcpiDevice **DeviceArr;
+
+static int ProcessorCount = 0;
+static int ProcessorSize = 0;
+static TAcpiProcessor **ProcessorArr;
+
 /*##########################################################################
 #
-#   Name       : HandleDevice
+#   Name       : AddDevice
 #
-#   Purpose....: Handle device
+#   Purpose....: Add device
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-void HandleDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *info, int depth)
+TAcpiDevice *AddDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	ObjArr[depth] = new TAcpiDevice(node, info);
+	TAcpiDevice *dev = new TAcpiDevice(node, info);
+	TAcpiDevice **arr;
+	int size;
+	int i;
+	
+	if (DeviceSize == DeviceCount)
+	{
+		if (DeviceSize)
+		{
+			size = 2 * DeviceSize;
+			arr = new TAcpiDevice *[size];
+			
+			for (i = 0; i < DeviceSize; i++)
+				arr[i] = DeviceArr[i];
+			
+			delete DeviceArr;
+			DeviceArr = arr;
+			DeviceSize = size;
+		}
+		else
+		{
+			DeviceSize = 4;
+			DeviceArr = new TAcpiDevice *[DeviceSize];
+		}
+	}
+	DeviceArr[DeviceCount] = dev;
+	DeviceCount++;
+
+	return dev;
 }
 
 /*##########################################################################
 #
-#   Name       : HandleProcessor
+#   Name       : AddProcessor
 #
-#   Purpose....: Handle processor
+#   Purpose....: Add processor
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-void HandleProcessor(uacpi_namespace_node *node, uacpi_namespace_node_info *info, int depth)
+TAcpiProcessor *AddProcessor(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	ObjArr[depth] = new TAcpiProcessor(node, info);
-}
+	TAcpiProcessor *proc = new TAcpiProcessor(node, info);
+	TAcpiProcessor **arr;
+	int size;
+	int i;
+	
+	if (ProcessorSize == ProcessorCount)
+	{
+		if (ProcessorSize)
+		{
+			size = 2 * ProcessorSize;
+			arr = new TAcpiProcessor *[size];
+			
+			for (i = 0; i < ProcessorSize; i++)
+				arr[i] = ProcessorArr[i];
+			
+			delete ProcessorArr;
+			ProcessorArr = arr;
+			ProcessorSize = size;
+		}
+		else
+		{
+			ProcessorSize = 4;
+			ProcessorArr = new TAcpiProcessor *[ProcessorSize];
+		}
+	}
+	ProcessorArr[ProcessorCount] = proc;
+	ProcessorCount++;
 
-/*##########################################################################
-#
-#   Name       : HandleOther
-#
-#   Purpose....: Handle other
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void HandleOther(uacpi_namespace_node *node, uacpi_namespace_node_info *info, int depth)
-{
-	TAcpiObject *obj = new TAcpiObject(node, info);
-	delete obj;
+	return proc;
 }
 
 /*##########################################################################
@@ -113,6 +159,9 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
 {
     uacpi_namespace_node_info *info;
     uacpi_status ret;
+	TAcpiObject *obj;
+	TAcpiDevice *dev;
+	TAcpiProcessor *proc;
 
     ret = uacpi_get_namespace_node_info(node, &info);
     if (uacpi_unlikely_error(ret)) 
@@ -127,15 +176,24 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
 	switch (info->type)
 	{
 		case UACPI_OBJECT_DEVICE:
-			HandleDevice(node, info, node_depth);
+			dev = AddDevice(node, info);
+//			if (ObjArr[node_depth - 1])
+//				ObjArr[node_depth]->AddDevice(dev);
+			ObjArr[node_depth] = dev;
 			break;
 			
 		case UACPI_OBJECT_PROCESSOR:
-			HandleProcessor(node, info, node_depth);
+			proc = AddProcessor(node, info);
+			ObjArr[node_depth] = proc;
 			break;
 			
 		default:
-			HandleOther(node, info, node_depth);
+			if (ObjArr[node_depth - 1])
+			{
+				obj = new TAcpiObject(node, info);
+				ObjArr[node_depth - 1]->AddObject(obj);
+			}
+			ObjArr[node_depth] = 0;
 			break;
 	}
     return UACPI_ITERATION_DECISION_CONTINUE;
@@ -183,7 +241,6 @@ bool InitAcpi()
 		return false;
 	}
 	
-	level = 0;
 	uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, NULL, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 	
 	return true;
@@ -202,13 +259,16 @@ bool InitAcpi()
 ##########################################################################*/
 int main(int argc, char **argv)
 {
-	bool start = false;
+//	bool start = false;
 	
-	while (!start)
-		RdosWaitMilli(50);
+//	while (!start)
+//		RdosWaitMilli(50);
 
     InitPci();
     InitAcpi();
+	
+	printf("%d processor cores\r\n", ProcessorCount);
+	printf("%d devices\r\n", DeviceCount);
 	
 	for (;;)
 		RdosWaitMilli(250);

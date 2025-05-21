@@ -25,6 +25,7 @@
 #
 ########################################################################*/
 
+#include <memory.h>
 #include "obj.h"
 
 /*##########################################################################
@@ -42,6 +43,12 @@ TAcpiObject::TAcpiObject(uacpi_namespace_node *node, uacpi_namespace_node_info *
 {
 	FNode = node;
 	FInfo = info;
+	FArr = 0;
+	FCount = 0;
+	FSize = 0;
+	
+	memcpy(Name, info->name.text, 4);
+	Name[4] = 0;
 }
 
 /*##########################################################################
@@ -57,6 +64,16 @@ TAcpiObject::TAcpiObject(uacpi_namespace_node *node, uacpi_namespace_node_info *
 ##########################################################################*/
 TAcpiObject::~TAcpiObject()
 {
+	int i;
+
+	if (FArr)
+	{
+		for (i = 0; i < FCount; i++)
+			delete FArr[i];
+
+		delete FArr;
+	}
+	
     uacpi_free_namespace_node_info(FInfo);
 }
 
@@ -90,4 +107,45 @@ bool TAcpiObject::IsDevice()
 bool TAcpiObject::IsProcessor()
 {
 	return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::AddObject
+#
+#   Purpose....: Add object
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiObject::AddObject(TAcpiObject *obj)
+{
+	TAcpiObject **arr;
+	int size;
+	int i;
+	
+	if (FSize == FCount)
+	{
+		if (FSize)
+		{
+			size = 2 * FSize;
+			arr = new TAcpiObject *[size];
+			
+			for (i = 0; i < FSize; i++)
+				arr[i] = FArr[i];
+			
+			delete FArr;
+			FArr = arr;
+			FSize = size;
+		}
+		else
+		{
+			FSize = 4;
+			FArr = new TAcpiObject *[FSize];
+		}
+	}
+	FArr[FCount] = obj;
+	FCount++;
 }

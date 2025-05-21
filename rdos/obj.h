@@ -30,6 +30,7 @@
 
 #include <uacpi/uacpi.h>
 #include <uacpi/utilities.h>
+#include "str.h"
 
 class TAcpiObject
 {
@@ -40,9 +41,17 @@ public:
 	virtual bool IsDevice();
 	virtual bool IsProcessor();
 	
+	void AddObject(TAcpiObject *obj);
+	
+	char Name[5];
+	
 protected:
 	uacpi_namespace_node *FNode;
 	uacpi_namespace_node_info *FInfo;
+	
+	int FSize;
+	int FCount;
+	TAcpiObject **FArr;
 };
 
 #endif
