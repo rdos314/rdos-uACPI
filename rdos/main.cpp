@@ -30,6 +30,8 @@
 #include <uacpi/event.h>
 #include <uacpi/utilities.h>
 #include "rdos.h"
+#include "dev.h"
+#include "proc.h"
 
 extern "C" 
 {
@@ -44,52 +46,70 @@ void WritePciDword(unsigned char bus, char device, char function, char reg, int 
 
 };
 
+static int level;
+static TAcpiObject *ObjArr[256] = {0};
+
 /*##########################################################################
 #
-#   Name       : AddAscend
+#   Name       : HandleDevice
 #
-#   Purpose....: Add ascend
+#   Purpose....: Handle device
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-uacpi_iteration_decision AddAscend(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
+void HandleDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *info, int depth)
 {
-    uacpi_namespace_node_info *info;
-    uacpi_status ret;
-
-    ret = uacpi_get_namespace_node_info(node, &info);
-    if (uacpi_unlikely_error(ret)) 
-	{
-        const char *path = uacpi_namespace_node_generate_absolute_path(node);
-        printf("unable to retrieve node %s information: %s",
-                  path, uacpi_status_to_string(ret));
-        uacpi_free_absolute_path(path);
-        return UACPI_ITERATION_DECISION_CONTINUE;
-    }
-
-    if (info->flags & UACPI_NS_NODE_INFO_HAS_HID) {
-        // Match the HID against every existing acpi_driver pnp id list
-    }
-
-    uacpi_free_namespace_node_info(info);
-    return UACPI_ITERATION_DECISION_CONTINUE;
+	ObjArr[depth] = new TAcpiDevice(node, info);
 }
 
 /*##########################################################################
 #
-#   Name       : AddDescend
+#   Name       : HandleProcessor
 #
-#   Purpose....: Add descend
+#   Purpose....: Handle processor
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-uacpi_iteration_decision AddDescend(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
+void HandleProcessor(uacpi_namespace_node *node, uacpi_namespace_node_info *info, int depth)
+{
+	ObjArr[depth] = new TAcpiProcessor(node, info);
+}
+
+/*##########################################################################
+#
+#   Name       : HandleOther
+#
+#   Purpose....: Handle other
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void HandleOther(uacpi_namespace_node *node, uacpi_namespace_node_info *info, int depth)
+{
+	TAcpiObject *obj = new TAcpiObject(node, info);
+	delete obj;
+}
+
+/*##########################################################################
+#
+#   Name       : AddObj
+#
+#   Purpose....: Add obj
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
 {
     uacpi_namespace_node_info *info;
     uacpi_status ret;
@@ -104,11 +124,20 @@ uacpi_iteration_decision AddDescend(void *ctx, uacpi_namespace_node *node, uacpi
         return UACPI_ITERATION_DECISION_CONTINUE;
     }
 
-    if (info->flags & UACPI_NS_NODE_INFO_HAS_HID) {
-        // Match the HID against every existing acpi_driver pnp id list
-    }
-
-    uacpi_free_namespace_node_info(info);
+	switch (info->type)
+	{
+		case UACPI_OBJECT_DEVICE:
+			HandleDevice(node, info, node_depth);
+			break;
+			
+		case UACPI_OBJECT_PROCESSOR:
+			HandleProcessor(node, info, node_depth);
+			break;
+			
+		default:
+			HandleOther(node, info, node_depth);
+			break;
+	}
     return UACPI_ITERATION_DECISION_CONTINUE;
 }
 
@@ -153,8 +182,9 @@ bool InitAcpi()
 		printf("uacpi_finalize_gpe_initialization error: %s\n", uacpi_status_to_string(ret));
 		return false;
 	}
-
-	uacpi_namespace_for_each_child(uacpi_namespace_root(), AddDescend, AddAscend, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
+	
+	level = 0;
+	uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, NULL, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 	
 	return true;
 }
