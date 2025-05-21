@@ -33,7 +33,6 @@
 
 struct io_map
 {
-	bool kernel;
 	int base;
 	int size;
 };
@@ -416,8 +415,7 @@ uacpi_status uacpi_kernel_io_map(uacpi_io_addr base, uacpi_size len, uacpi_handl
 
 	map->base = base;
 	map->size = len;
-
-    map->kernel = !ServUacpiEnableIo(base, len);	
+    ServUacpiEnableIo(base, len);	
 
 	*out_handle = map;
 	return UACPI_STATUS_OK;
@@ -456,10 +454,7 @@ uacpi_status uacpi_kernel_io_read8(uacpi_handle handle, uacpi_size offset, uacpi
 {
 	struct io_map *map = (struct io_map *)handle;
 
-    if (map->kernel)
-		*out_value = (uacpi_u8)ServUacpiIn(map->base + offset, 1);
-	else
-		*out_value = in_byte(map->base + offset);
+	*out_value = in_byte(map->base + offset);
 	return UACPI_STATUS_OK;
 }
 
@@ -478,10 +473,7 @@ uacpi_status uacpi_kernel_io_read16(uacpi_handle handle, uacpi_size offset, uacp
 {
 	struct io_map *map = (struct io_map *)handle;
 
-    if (map->kernel)
-		*out_value = (uacpi_u16)ServUacpiIn(map->base + offset, 2);
-	else
-		*out_value = in_word(map->base + offset);
+	*out_value = in_word(map->base + offset);
 	return UACPI_STATUS_OK;
 }
 
@@ -500,10 +492,7 @@ uacpi_status uacpi_kernel_io_read32(uacpi_handle handle, uacpi_size offset, uacp
 {
 	struct io_map *map = (struct io_map *)handle;
 
-    if (map->kernel)
-		*out_value = (uacpi_u32)ServUacpiIn(map->base + offset, 4);
-	else
-		*out_value = in_dword(map->base + offset);
+	*out_value = in_dword(map->base + offset);
 	return UACPI_STATUS_OK;
 }
 
@@ -522,10 +511,7 @@ uacpi_status uacpi_kernel_io_write8(uacpi_handle handle, uacpi_size offset, uacp
 {
 	struct io_map *map = (struct io_map *)handle;
 
-    if (map->kernel)
-		ServUacpiOut(map->base + offset, in_value, 1);
-	else
-		out_byte(map->base + offset, in_value);
+	out_byte(map->base + offset, in_value);
 	return UACPI_STATUS_OK;
 }
 
@@ -544,10 +530,7 @@ uacpi_status uacpi_kernel_io_write16(uacpi_handle handle, uacpi_size offset, uac
 {
 	struct io_map *map = (struct io_map *)handle;
 
-    if (map->kernel)
-		ServUacpiOut(map->base + offset, in_value, 2);
-	else
-		out_word(map->base + offset, in_value);
+	out_word(map->base + offset, in_value);
 	return UACPI_STATUS_OK;
 }
 
@@ -566,10 +549,7 @@ uacpi_status uacpi_kernel_io_write32(uacpi_handle handle, uacpi_size offset, uac
 {
 	struct io_map *map = (struct io_map *)handle;
 
-    if (map->kernel)
-		ServUacpiOut(map->base + offset, in_value, 4);
-	else
-		out_dword(map->base + offset, in_value);
+	out_dword(map->base + offset, in_value);
 	return UACPI_STATUS_OK;
 }
 
