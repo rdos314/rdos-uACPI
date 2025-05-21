@@ -28,8 +28,76 @@
 #include <stdio.h>
 #include <uacpi/uacpi.h>
 #include <uacpi/event.h>
+#include <uacpi/utilities.h>
 #include "rdos.h"
 
+/*##########################################################################
+#
+#   Name       : AddAscend
+#
+#   Purpose....: Add ascend
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+uacpi_iteration_decision AddAscend(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
+{
+    uacpi_namespace_node_info *info;
+    uacpi_status ret;
+
+    ret = uacpi_get_namespace_node_info(node, &info);
+    if (uacpi_unlikely_error(ret)) 
+	{
+        const char *path = uacpi_namespace_node_generate_absolute_path(node);
+        printf("unable to retrieve node %s information: %s",
+                  path, uacpi_status_to_string(ret));
+        uacpi_free_absolute_path(path);
+        return UACPI_ITERATION_DECISION_CONTINUE;
+    }
+
+    if (info->flags & UACPI_NS_NODE_INFO_HAS_HID) {
+        // Match the HID against every existing acpi_driver pnp id list
+    }
+
+    uacpi_free_namespace_node_info(info);
+    return UACPI_ITERATION_DECISION_CONTINUE;
+}
+
+/*##########################################################################
+#
+#   Name       : AddDescend
+#
+#   Purpose....: Add descend
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+uacpi_iteration_decision AddDescend(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
+{
+    uacpi_namespace_node_info *info;
+    uacpi_status ret;
+
+    ret = uacpi_get_namespace_node_info(node, &info);
+    if (uacpi_unlikely_error(ret)) 
+	{
+        const char *path = uacpi_namespace_node_generate_absolute_path(node);
+        printf("unable to retrieve node %s information: %s",
+                  path, uacpi_status_to_string(ret));
+        uacpi_free_absolute_path(path);
+        return UACPI_ITERATION_DECISION_CONTINUE;
+    }
+
+    if (info->flags & UACPI_NS_NODE_INFO_HAS_HID) {
+        // Match the HID against every existing acpi_driver pnp id list
+    }
+
+    uacpi_free_namespace_node_info(info);
+    return UACPI_ITERATION_DECISION_CONTINUE;
+}
 /*##########################################################################
 #
 #   Name       : InitAcpi
@@ -71,6 +139,8 @@ bool InitAcpi()
 		printf("uacpi_finalize_gpe_initialization error: %s\n", uacpi_status_to_string(ret));
 		return false;
 	}
+
+	uacpi_namespace_for_each_child(uacpi_namespace_root(), AddDescend, AddAscend, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 	
 	return true;
 }
@@ -88,10 +158,10 @@ bool InitAcpi()
 ##########################################################################*/
 int main(int argc, char **argv)
 {
-//	bool start = false;
+	bool start = false;
 	
-//	while (!start)
-//		RdosWaitMilli(50);
+	while (!start)
+		RdosWaitMilli(50);
 	
     InitAcpi();
 	

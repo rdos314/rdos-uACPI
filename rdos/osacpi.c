@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <uacpi/kernel_api.h>
 #include "rdos.h"
-#include "serv.h"
+#include "acpi.h"
 
 struct io_map
 {
