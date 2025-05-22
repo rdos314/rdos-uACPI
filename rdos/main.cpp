@@ -26,9 +26,11 @@
 ########################################################################*/
 
 #include <stdio.h>
+#include <memory.h>
 #include <uacpi/uacpi.h>
 #include <uacpi/event.h>
 #include <uacpi/utilities.h>
+#include <uacpi/resources.h>
 #include "rdos.h"
 #include "dev.h"
 #include "proc.h"
@@ -73,7 +75,149 @@ TAcpiDevice *AddDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 	TAcpiDevice **arr;
 	int size;
 	int i;
+	uacpi_status ret;
+	uacpi_resources *resources;
+	uacpi_resource *resource;
+	unsigned int start;
+	unsigned int end;
 	
+	ret = uacpi_get_current_resources(node, &resources);
+	if (ret == UACPI_STATUS_OK)
+	{
+        const char *path = uacpi_namespace_node_generate_absolute_path(node);
+		printf("Device: %s ", path);
+
+		resource = resources->entries;
+		while (resource->type != UACPI_RESOURCE_TYPE_END_TAG)
+		{
+			switch (resource->type)
+			{
+				 case UACPI_RESOURCE_TYPE_IRQ:
+					printf("IRQ [");
+					for (i = 0; i < resource->irq.num_irqs; i++)
+					{
+						if (i)
+							printf(" ");
+						printf("%d", resource->irq.irqs[i]);
+					}
+					printf("] ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_EXTENDED_IRQ:
+					printf("ExtIRQ ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_DMA:
+					printf("DMA ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_FIXED_DMA:
+					printf("ExtDMA ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_IO:
+					printf("IO [%04hX] ", resource->io.minimum);
+					break;
+					
+				case UACPI_RESOURCE_TYPE_FIXED_IO:
+					printf("FixedIO ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_ADDRESS16:
+					printf("Ads16 ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_ADDRESS32:
+					printf("Ads32 ");
+					break;
+				
+				case UACPI_RESOURCE_TYPE_ADDRESS64:
+					printf("Ads64 ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_ADDRESS64_EXTENDED:
+					printf("ExtAds64 ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_MEMORY24:
+					printf("Mem24 ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_MEMORY32:
+					printf("Mem32 ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_FIXED_MEMORY32:
+					start = resource->fixed_memory32.address;
+					end = start + resource->fixed_memory32.length - 1;
+					printf("Mem [%08lX-%08lX] ", start, end);
+					break;
+					
+				case UACPI_RESOURCE_TYPE_START_DEPENDENT:
+					printf("StartDep ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_END_DEPENDENT:
+					printf("EndDep ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_VENDOR_SMALL:
+					printf("VendSmall ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_VENDOR_LARGE:
+					printf("VendLarge ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_GENERIC_REGISTER:
+					printf("GenReg ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_SERIAL_I2C_CONNECTION:
+					printf("I2C ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_SERIAL_SPI_CONNECTION:
+					printf("SPI ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_SERIAL_UART_CONNECTION:
+					printf("UART ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_SERIAL_CSI2_CONNECTION:
+					printf("CSI2 ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_PIN_FUNCTION:
+					printf("PinFunc ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_PIN_CONFIGURATION:
+					printf("PinConfig ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_PIN_GROUP:
+					printf("PinGroup ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION:
+					printf("PinGroupFunc ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_PIN_GROUP_CONFIGURATION:
+					printf("PinGroupConfig ");
+					break;
+					
+				case UACPI_RESOURCE_TYPE_CLOCK_INPUT:
+					printf("ClkInput ");
+					break;
+			}
+			resource = UACPI_NEXT_RESOURCE(resource);
+		}
+		printf("\n");
+	}
+
 	if (DeviceSize == DeviceCount)
 	{
 		if (DeviceSize)
@@ -228,12 +372,20 @@ bool InitAcpi()
 		return false;
 	}
 
+	ret = uacpi_set_interrupt_model(UACPI_INTERRUPT_MODEL_IOAPIC);
+	if (uacpi_unlikely_error(ret))
+	{
+		printf("uacpi_set_interrupt_model: %s\n", uacpi_status_to_string(ret));
+		return false;
+	}
+
 	ret = uacpi_namespace_initialize();
 	if (uacpi_unlikely_error(ret))
 	{
 		printf("uacpi_namespace_initialize error: %s\n", uacpi_status_to_string(ret));
 		return false;
 	}
+
 	ret = uacpi_finalize_gpe_initialization();
 	if (uacpi_unlikely_error(ret))
 	{
@@ -259,10 +411,10 @@ bool InitAcpi()
 ##########################################################################*/
 int main(int argc, char **argv)
 {
-//	bool start = false;
+	bool start = false;
 	
-//	while (!start)
-//		RdosWaitMilli(50);
+	while (!start)
+		RdosWaitMilli(50);
 
     InitPci();
     InitAcpi();
