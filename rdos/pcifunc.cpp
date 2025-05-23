@@ -20,80 +20,98 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# pcidev.cpp
-# PCI device
+# pcifunc.cpp
+# PCI function
 #
 ########################################################################*/
 
+#include "pcifunc.h"
 #include "pcidev.h"
-#include "pcibrg.h"
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::TPciDevice
+#   Name       : TPciFunction::TPciFunction
 #
-#   Purpose....: Constructor for TPciDevice
+#   Purpose....: Constructor for TPciFunction
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TPciDevice::TPciDevice(TPciBridge *parent, int device)
+TPciFunction::TPciFunction()
 {
-	int i;
-	
-	FParent = parent;
+	FDevice = 0;
+	FFunction = 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::TPciFunction
+#
+#   Purpose....: Constructor for TPciFunction
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciFunction::TPciFunction(TPciDevice *device, int function)
+{
 	FDevice = device;
-	
-	for (i = 0; i < 8; i++)
-		FFuncArr[i] = 0;
+	FFunction = function;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::~TPciDevice
+#   Name       : TPciFunction::~TPciFunction
 #
-#   Purpose....: Destructor for TPciDevice
+#   Purpose....: Destructor for TPciFunction
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TPciDevice::~TPciDevice()
+TPciFunction::~TPciFunction()
 {
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::Add
+#   Name       : TPciFunction::SetDevice
 #
-#   Purpose....: Add function
+#   Purpose....: Set device
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TPciFunction *TPciDevice::Add(int function)
+void TPciFunction::SetDevice(TPciDevice *device)
 {
-	TPciFunction *func = 0;
-	
-	if (function >= 0 && function < 8)
-	{
-		if (!FFuncArr[function])
-		{
-			func = new TPciFunction(this, function);
-			FFuncArr[function] = func;
-		}
-	}
-	return func;
+	FDevice = device;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::GetSegment
+#   Name       : TPciFunction::IsPciFunction
+#
+#   Purpose....: Is PCI function?
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::IsPciFunction()
+{
+	return true;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetSegment
 #
 #   Purpose....: Get PCI segment
 #
@@ -102,14 +120,17 @@ TPciFunction *TPciDevice::Add(int function)
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciDevice::GetSegment()
+int TPciFunction::GetSegment()
 {
-	return FParent->GetBridgeSegment();
+	if (FDevice)
+		return FDevice->GetSegment();
+	else
+		return 0;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::GetBus
+#   Name       : TPciFunction::GetBus
 #
 #   Purpose....: Get PCI bus
 #
@@ -118,14 +139,17 @@ int TPciDevice::GetSegment()
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciDevice::GetBus()
+int TPciFunction::GetBus()
 {
-	return FParent->GetBridgeBus();
+	if (FDevice)
+		return FDevice->GetBus();
+	else
+		return 0;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::GetDevice
+#   Name       : TPciFunction::GetDevice
 #
 #   Purpose....: Get PCI device
 #
@@ -134,14 +158,17 @@ int TPciDevice::GetBus()
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciDevice::GetDevice()
+int TPciFunction::GetDevice()
 {
-	return FDevice;
+	if (FDevice)
+		return FDevice->GetDevice();
+	else
+		return 0;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::GetFunction
+#   Name       : TPciFunction::GetFunction
 #
 #   Purpose....: Get PCI function
 #
@@ -150,17 +177,36 @@ int TPciDevice::GetDevice()
 #   Returns....: *
 #
 ##########################################################################*/
-TPciFunction *TPciDevice::GetFunction(int function)
+int TPciFunction::GetFunction()
 {
-	if (function >= 0 && function < 8)
-		return FFuncArr[function];
-	else
-		return 0;
+	return FFunction;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::ReadConfigByte
+#   Name       : TPciFunction::Check
+#
+#   Purpose....: Check if this device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+{
+	int device = (info->adr >> 16) & 0xFFFF;
+	int function = info->adr & 0xFFFF;
+	
+	if (FDevice)
+		if (device == FDevice->GetDevice() && function == FFunction)
+			return true;
+	return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::ReadConfigByte
 #
 #   Purpose....: Read config byte
 #
@@ -169,14 +215,17 @@ TPciFunction *TPciDevice::GetFunction(int function)
 #   Returns....: *
 #
 ##########################################################################*/
-char TPciDevice::ReadConfigByte(int func, char reg)
+char TPciFunction::ReadConfigByte(char reg)
 {
-	return FParent->ReadConfigByte(this, func, reg);
+	if (FDevice)
+		return FDevice->ReadConfigByte(FFunction, reg);
+	else
+		return -1;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::ReadConfigWord
+#   Name       : TPciFunction::ReadConfigWord
 #
 #   Purpose....: Read config word
 #
@@ -185,14 +234,17 @@ char TPciDevice::ReadConfigByte(int func, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-short TPciDevice::ReadConfigWord(int func, char reg)
+short TPciFunction::ReadConfigWord(char reg)
 {
-	return FParent->ReadConfigWord(this, func, reg);
+	if (FDevice)
+		return FDevice->ReadConfigWord(FFunction, reg);
+	else
+		return -1;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::ReadConfigDword
+#   Name       : TPciFunction::ReadConfigDword
 #
 #   Purpose....: Read config dword
 #
@@ -201,14 +253,17 @@ short TPciDevice::ReadConfigWord(int func, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciDevice::ReadConfigDword(int func, char reg)
+int TPciFunction::ReadConfigDword(char reg)
 {
-	return FParent->ReadConfigDword(this, func, reg);
+	if (FDevice)
+		return FDevice->ReadConfigDword(FFunction, reg);
+	else
+		return -1;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::WriteConfigByte
+#   Name       : TPciFunction::WriteConfigByte
 #
 #   Purpose....: Write config byte
 #
@@ -217,14 +272,15 @@ int TPciDevice::ReadConfigDword(int func, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciDevice::WriteConfigByte(int func, char reg, char val)
+void TPciFunction::WriteConfigByte(char reg, char val)
 {
-	FParent->WriteConfigByte(this, func, reg, val);
+	if (FDevice)
+		FDevice->WriteConfigByte(FFunction, reg, val);
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::WriteConfigWord
+#   Name       : TPciFunction::WriteConfigWord
 #
 #   Purpose....: Write config word
 #
@@ -233,14 +289,15 @@ void TPciDevice::WriteConfigByte(int func, char reg, char val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciDevice::WriteConfigWord(int func, char reg, short val)
+void TPciFunction::WriteConfigWord(char reg, short val)
 {
-	FParent->WriteConfigWord(this, func, reg, val);
+	if (FDevice)
+		FDevice->WriteConfigWord(FFunction, reg, val);
 }
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::WriteConfigDword
+#   Name       : TPciFunction::WriteConfigDword
 #
 #   Purpose....: Write config dword
 #
@@ -249,7 +306,8 @@ void TPciDevice::WriteConfigWord(int func, char reg, short val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciDevice::WriteConfigDword(int func, char reg, int val)
+void TPciFunction::WriteConfigDword(char reg, int val)
 {
-	FParent->WriteConfigDword(this, func, reg, val);
+	if (FDevice)
+		FDevice->WriteConfigDword(FFunction, reg, val);
 }

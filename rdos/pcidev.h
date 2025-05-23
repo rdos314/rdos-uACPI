@@ -28,33 +28,34 @@
 #define _PCI_DEV_H
 
 #include "dev.h"
+#include "pcibrg.h"
 
-class TPciBridge;
+class TPciFunction;
 
-class TPciDevice : public TAcpiDevice
+class TPciDevice
 {
 public:
-	TPciDevice(TAcpiObject *parent, int device, int function);
+	TPciDevice(TPciBridge *parent, int device);
 	virtual ~TPciDevice();
 	
-	virtual bool IsPciDevice();
+	TPciFunction *Add(int function);
 
+	int GetSegment();
 	int GetBus();
 	int GetDevice();
-	int GetFunction();
-	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+	TPciFunction *GetFunction(int function);
 
-	char ReadConfigByte(char reg);
-	short ReadConfigWord(char reg);
-	int ReadConfigDword(char reg);
-	void WriteConfigByte(char reg, char val);
-	void WriteConfigWord(char reg, short val);
-	void WriteConfigDword(char reg, int val);
+	char ReadConfigByte(int func, char reg);
+	short ReadConfigWord(int func, char reg);
+	int ReadConfigDword(int func, char reg);
+	void WriteConfigByte(int func, char reg, char val);
+	void WriteConfigWord(int func, char reg, short val);
+	void WriteConfigDword(int func, char reg, int val);
 	
 protected:
+	TPciFunction *FFuncArr[8];
 	TPciBridge *FParent;
 	int FDevice;
-	int FFunction;
 };
 
 #endif

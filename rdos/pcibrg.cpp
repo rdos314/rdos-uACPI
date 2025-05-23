@@ -28,6 +28,7 @@
 #include <uacpi/resources.h>
 #include "acpi.h"
 #include "pcibrg.h"
+#include "pcidev.h"
 
 char in_byte(int port);
 #pragma aux in_byte = \
@@ -73,9 +74,31 @@ void out_dword(int port, int val);
 #   Returns....: *
 #
 ##########################################################################*/
-TPciBridge::TPciBridge(TAcpiObject *parent, int bus, int device, int function)
- : TPciDevice(parent, device, function)
+TPciBridge::TPciBridge(TPciFunction *parent, int bus)
 {
+	SetAcpiParent(parent);
+	
+	FSeg = 0;
+	FBus = bus;
+	FIo = 0xCF8;
+}
+	
+/*##########################################################################
+#
+#   Name       : TPciBridge::TPciBridge
+#
+#   Purpose....: Constructor for TPciBridge
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function)
+ : TPciFunction(device, function)
+{
+	SetAcpiParent(parent);
+	
 	FSeg = 0;
 	FBus = bus;
 	FIo = 0xCF8;
@@ -216,6 +239,10 @@ void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 	ret = uacpi_eval_simple_integer(node, "_BBN", &val);
 	if (ret == UACPI_STATUS_OK)
 		FBus = (int)val;
+
+	ret = uacpi_eval_simple_integer(node, "_SEG", &val);
+	if (ret == UACPI_STATUS_OK)
+		FSeg = (int)val;
 	
 	ret = uacpi_get_current_resources(FNode, &resources);
 	if (ret == UACPI_STATUS_OK)
@@ -252,14 +279,14 @@ void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 #   Returns....: *
 #
 ##########################################################################*/
-char TPciBridge::ReadConfigByte(TPciDevice *dev, char reg)
+char TPciBridge::ReadConfigByte(TPciDevice *dev, int func, char reg)
 {
 	int ads;
 
 	ads = 0x80000000;
 	ads |= FBus << 16;
 	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (dev->GetFunction() & 0x7) << 8;
+	ads |= (func & 0x7) << 8;
 	ads |= reg;
 	out_dword(FIo, ads & 0xFFFFFFFC);
 	return in_byte(FIo + 4 + (ads & 3));
@@ -276,14 +303,14 @@ char TPciBridge::ReadConfigByte(TPciDevice *dev, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-short TPciBridge::ReadConfigWord(TPciDevice *dev, char reg)
+short TPciBridge::ReadConfigWord(TPciDevice *dev, int func, char reg)
 {
 	int ads;
 
 	ads = 0x80000000;
 	ads |= FBus << 16;
 	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (dev->GetFunction() & 0x7) << 8;
+	ads |= (func & 0x7) << 8;
 	ads |= reg;
 	out_dword(FIo, ads & 0xFFFFFFFC);
 	return in_word(FIo + 4 + (ads & 3));
@@ -300,14 +327,14 @@ short TPciBridge::ReadConfigWord(TPciDevice *dev, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciBridge::ReadConfigDword(TPciDevice *dev, char reg)
+int TPciBridge::ReadConfigDword(TPciDevice *dev, int func, char reg)
 {
 	int ads;
 
 	ads = 0x80000000;
 	ads |= FBus << 16;
 	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (dev->GetFunction() & 0x7) << 8;
+	ads |= (func & 0x7) << 8;
 	ads |= reg;
 	out_dword(FIo, ads & 0xFFFFFFFC);
 	return in_dword(FIo + 4 + (ads & 3));
@@ -324,14 +351,14 @@ int TPciBridge::ReadConfigDword(TPciDevice *dev, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciBridge::WriteConfigByte(TPciDevice *dev, char reg, char val)
+void TPciBridge::WriteConfigByte(TPciDevice *dev, int func, char reg, char val)
 {
 	int ads;
 
 	ads = 0x80000000;
 	ads |= FBus << 16;
 	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (dev->GetFunction() & 0x7) << 8;
+	ads |= (func & 0x7) << 8;
 	ads |= reg;
 	out_dword(FIo, ads & 0xFFFFFFFC);
 	out_byte(FIo + 4 + (ads & 3), val);
@@ -348,14 +375,14 @@ void TPciBridge::WriteConfigByte(TPciDevice *dev, char reg, char val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciBridge::WriteConfigWord(TPciDevice *dev, char reg, short val)
+void TPciBridge::WriteConfigWord(TPciDevice *dev, int func, char reg, short val)
 {
 	int ads;
 
 	ads = 0x80000000;
 	ads |= FBus << 16;
 	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (dev->GetFunction() & 0x7) << 8;
+	ads |= (func & 0x7) << 8;
 	ads |= reg;
 	out_dword(FIo, ads & 0xFFFFFFFC);
 	out_word(FIo + 4 + (ads & 3), val);
@@ -372,14 +399,14 @@ void TPciBridge::WriteConfigWord(TPciDevice *dev, char reg, short val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciBridge::WriteConfigDword(TPciDevice *dev, char reg, int val)
+void TPciBridge::WriteConfigDword(TPciDevice *dev, int func, char reg, int val)
 {
 	int ads;
 
 	ads = 0x80000000;
 	ads |= FBus << 16;
 	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (dev->GetFunction() & 0x7) << 8;
+	ads |= (func & 0x7) << 8;
 	ads |= reg;
 	out_dword(FIo, ads & 0xFFFFFFFC);
 	out_dword(FIo + 4 + (ads & 3), val);

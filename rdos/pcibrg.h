@@ -28,12 +28,13 @@
 #ifndef _PCI_BRIDGE_H
 #define _PCI_BRIDGE_H
 
-#include "pcidev.h"
+#include "pcifunc.h"
 
-class TPciBridge : public TPciDevice
+class TPciBridge : public TPciFunction
 {
 public:
-	TPciBridge(TAcpiObject *parent, int bus, int device, int function);
+	TPciBridge(TPciFunction *parent, int bus);
+	TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function);
 	virtual ~TPciBridge();
 	
 	virtual bool IsPciBridge();
@@ -43,12 +44,12 @@ public:
 	int GetBridgeBus();
 	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 
-	char ReadConfigByte(TPciDevice *dev, char reg);
-	short ReadConfigWord(TPciDevice *dev, char reg);
-	int ReadConfigDword(TPciDevice *dev, char reg);
-	void WriteConfigByte(TPciDevice *dev, char reg, char val);
-	void WriteConfigWord(TPciDevice *dev, char reg, short val);
-	void WriteConfigDword(TPciDevice *dev, char reg, int val);
+	char ReadConfigByte(TPciDevice *dev, int func, char reg);
+	short ReadConfigWord(TPciDevice *dev, int func, char reg);
+	int ReadConfigDword(TPciDevice *dev, int func, char reg);
+	void WriteConfigByte(TPciDevice *dev, int func, char reg, char val);
+	void WriteConfigWord(TPciDevice *dev, int func, char reg, short val);
+	void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
 	
 protected:
 	int FSeg;

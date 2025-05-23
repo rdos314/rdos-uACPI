@@ -39,6 +39,29 @@
 #   Returns....: *
 #
 ##########################################################################*/
+TAcpiObject::TAcpiObject()
+{
+	FParent = 0;
+	FNode = 0;
+	FInfo = 0;
+	FArr = 0;
+	FCount = 0;
+	FSize = 0;
+	
+	FName[0] = 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::TAcpiObject
+#
+#   Purpose....: Constructor for TAcpiObject
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
 TAcpiObject::TAcpiObject(TAcpiObject *parent)
 {
 	FParent = parent;
@@ -95,16 +118,16 @@ bool TAcpiObject::IsDevice()
 
 /*##########################################################################
 #
-#   Name       : TAcpiObject::IsPciDevice
+#   Name       : TAcpiObject::IsPciFunction
 #
-#   Purpose....: Is PCI device?
+#   Purpose....: Is PCI function?
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-bool TAcpiObject::IsPciDevice()
+bool TAcpiObject::IsPciFunction()
 {
 	return false;
 }
@@ -139,6 +162,22 @@ bool TAcpiObject::IsPciBridge()
 bool TAcpiObject::IsProcessor()
 {
 	return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::SetAcpiParent
+#
+#   Purpose....: Set ACPI parent
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiObject::SetAcpiParent(TAcpiObject *parent)
+{
+	FParent = parent;
 }
 
 /*##########################################################################

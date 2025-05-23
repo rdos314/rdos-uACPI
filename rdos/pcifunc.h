@@ -20,49 +20,44 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# obj.cpp
-# ACPI object
+# pcifunc.cpp
+# PCI function
 #
 ########################################################################*/
 
-#ifndef _OBJ_H
-#define _OBJ_H
+#ifndef _PCI_FUNC_H
+#define _PCI_FUNC_H
 
-#include <uacpi/uacpi.h>
-#include <uacpi/utilities.h>
-#include "str.h"
+#include "dev.h"
 
-class TAcpiObject
+class TPciDevice;
+
+class TPciFunction : public TAcpiDevice
 {
 public:
-	TAcpiObject();
-	TAcpiObject(TAcpiObject *parent);
-	virtual ~TAcpiObject();
+	TPciFunction();
+	TPciFunction(TPciDevice *dev, int function);
+	virtual ~TPciFunction();
 	
-	virtual bool IsDevice();
 	virtual bool IsPciFunction();
-	virtual bool IsPciBridge();
-	virtual bool IsProcessor();
-	virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
-	virtual void Update();
-	
-	void SetAcpiParent(TAcpiObject *parent);
-	void AddObject(TAcpiObject *obj);
-	int EvalInt(int def);
-	const char *GetName();
-	TAcpiObject *Find(const char *name);
+
+	void SetDevice(TPciDevice *dev);
+	int GetSegment();
+	int GetBus();
+	int GetDevice();
+	int GetFunction();
+	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+
+	char ReadConfigByte(char reg);
+	short ReadConfigWord(char reg);
+	int ReadConfigDword(char reg);
+	void WriteConfigByte(char reg, char val);
+	void WriteConfigWord(char reg, short val);
+	void WriteConfigDword(char reg, int val);
 	
 protected:
-	TAcpiObject *FParent;
-	uacpi_namespace_node *FNode;
-	uacpi_namespace_node_info *FInfo;
-	
-	char FName[5];
-	
-	int FSize;
-	int FCount;
-	TAcpiObject **FArr;
+	TPciDevice *FDevice;
+	int FFunction;
 };
 
 #endif
-

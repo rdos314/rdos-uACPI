@@ -33,11 +33,12 @@
 class TAcpiDevice : public TAcpiObject
 {
 public:
+	TAcpiDevice();
 	TAcpiDevice(TAcpiObject *parent);
 	virtual ~TAcpiDevice();
 
 	virtual bool IsDevice();
-	
+
 	int EvalObjectInt(const char *name, int def);
 };
 

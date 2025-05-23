@@ -45,6 +45,21 @@ TAcpiDevice::TAcpiDevice(TAcpiObject *parent)
 
 /*##########################################################################
 #
+#   Name       : TAcpiDevice::TAcpiDevice
+#
+#   Purpose....: Constructor for TAcpiDevice
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiDevice::TAcpiDevice()
+{
+}
+
+/*##########################################################################
+#
 #   Name       : TAcpiDevice::~TAcpiDevice
 #
 #   Purpose....: Destructor for TAcpiDevice
