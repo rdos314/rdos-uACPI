@@ -151,3 +151,111 @@ bool TPciDevice::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 	else
 		return false;
 }
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::ReadConfigByte
+#
+#   Purpose....: Read config byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+char TPciDevice::ReadConfigByte(char reg)
+{
+	if (FParent)
+		return FParent->ReadConfigByte(this, reg);
+	else
+		return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::ReadConfigWord
+#
+#   Purpose....: Read config word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short TPciDevice::ReadConfigWord(char reg)
+{
+	if (FParent)
+		return FParent->ReadConfigWord(this, reg);
+	else
+		return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::ReadConfigDword
+#
+#   Purpose....: Read config dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciDevice::ReadConfigDword(char reg)
+{
+	if (FParent)
+		return FParent->ReadConfigDword(this, reg);
+	else
+		return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::WriteConfigByte
+#
+#   Purpose....: Write config byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciDevice::WriteConfigByte(char reg, char val)
+{
+	if (FParent)
+		FParent->WriteConfigByte(this, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::WriteConfigWord
+#
+#   Purpose....: Write config word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciDevice::WriteConfigWord(char reg, short val)
+{
+	if (FParent)
+		FParent->WriteConfigWord(this, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::WriteConfigDword
+#
+#   Purpose....: Write config dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciDevice::WriteConfigDword(char reg, int val)
+{
+	if (FParent)
+		FParent->WriteConfigDword(this, reg, val);
+}

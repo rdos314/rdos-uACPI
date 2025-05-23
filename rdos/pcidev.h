@@ -20,8 +20,7 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# pcidev.cpp
-# PCI device
+# pcidev.cpp# PCI device
 #
 ########################################################################*/
 
@@ -44,6 +43,13 @@ public:
 	int GetDevice();
 	int GetFunction();
 	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+
+	char ReadConfigByte(char reg);
+	short ReadConfigWord(char reg);
+	int ReadConfigDword(char reg);
+	void WriteConfigByte(char reg, char val);
+	void WriteConfigWord(char reg, short val);
+	void WriteConfigDword(char reg, int val);
 	
 protected:
 	TPciBridge *FParent;

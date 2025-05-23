@@ -37,12 +37,21 @@ public:
 	virtual ~TPciBridge();
 	
 	virtual bool IsPciBridge();
-	virtual void Update();
+	virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 
+	int GetBridgeSegment();
 	int GetBridgeBus();
 	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+
+	char ReadConfigByte(TPciDevice *dev, char reg);
+	short ReadConfigWord(TPciDevice *dev, char reg);
+	int ReadConfigDword(TPciDevice *dev, char reg);
+	void WriteConfigByte(TPciDevice *dev, char reg, char val);
+	void WriteConfigWord(TPciDevice *dev, char reg, short val);
+	void WriteConfigDword(TPciDevice *dev, char reg, int val);
 	
 protected:
+	int FSeg;
 	int FBus;
 	int FIo;
 };

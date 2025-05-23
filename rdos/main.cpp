@@ -52,6 +52,8 @@ void WritePciDword(unsigned char bus, char device, char function, char reg, int 
 
 static TAcpiObject *ObjArr[256] = {0};
 
+static TPciBridge *PciRootArr[256] = {0};
+
 static int DeviceCount = 0;
 static int DeviceSize = 0;
 static TAcpiDevice **DeviceArr;
@@ -97,8 +99,20 @@ bool IsPciRoot(uacpi_id_string *hid)
 ##########################################################################*/
 TAcpiDevice *AddPciRoot(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
+	int seg;
 	TPciBridge *bridge = new TPciBridge(parent, 0, 0, 0);
+
 	bridge->Setup(node, info);
+	seg = bridge->GetBridgeSegment();
+	if (PciRootArr[seg])
+	{
+		printf("Multiple identical PCI segments %d\r\n", seg);
+		delete bridge;
+		bridge = 0;
+	}
+	else
+		PciRootArr[seg] = bridge;
+	
 	return bridge;
 }
 
