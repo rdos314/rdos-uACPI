@@ -66,11 +66,11 @@ short in_word(int port);
     parm [ edx ] \
 	value [ ax ]
 
-char in_dword(int port);
+int in_dword(int port);
 #pragma aux in_dword = \
 	"in eax,dx" \
     parm [ edx ] \
-	value [ al ]
+	value [ eax ]
 
 void out_byte(int port, char val);
 #pragma aux out_byte = \

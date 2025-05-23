@@ -52,9 +52,16 @@ public:
 	void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
 	
 protected:
+	void ScanForDevices();
+
+	TPciDevice *FDevArr[32];
 	int FSeg;
 	int FBus;
 	int FIo;
+
+private:
+	void Init();
+
 };
 
 #endif

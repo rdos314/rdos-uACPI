@@ -67,28 +67,30 @@ TPciDevice::~TPciDevice()
 
 /*##########################################################################
 #
-#   Name       : TPciDevice::Add
+#   Name       : TPciDevice::ScanForFunctions
 #
-#   Purpose....: Add function
+#   Purpose....: Scan for functions
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TPciFunction *TPciDevice::Add(int function)
+void TPciDevice::ScanForFunctions()
 {
-	TPciFunction *func = 0;
+	int i;
+	int val;
+	TPciFunction *func;
 	
-	if (function >= 0 && function < 8)
+	for (i = 0; i < 8; i++)
 	{
-		if (!FFuncArr[function])
+		val = ReadConfigDword(i, 0);
+		if (val != 0xFFFFFFFF)
 		{
-			func = new TPciFunction(this, function);
-			FFuncArr[function] = func;
+			func = new TPciFunction(this, i);
+			FFuncArr[i] = func;
 		}
 	}
-	return func;
 }
 
 /*##########################################################################

@@ -42,11 +42,11 @@ short in_word(int port);
     parm [ edx ] \
 	value [ ax ]
 
-char in_dword(int port);
+int in_dword(int port);
 #pragma aux in_dword = \
 	"in eax,dx" \
     parm [ edx ] \
-	value [ al ]
+	value [ eax ]
 
 void out_byte(int port, char val);
 #pragma aux out_byte = \
@@ -78,9 +78,8 @@ TPciBridge::TPciBridge(TPciFunction *parent, int bus)
 {
 	SetAcpiParent(parent);
 	
-	FSeg = 0;
 	FBus = bus;
-	FIo = 0xCF8;
+	Init();
 }
 	
 /*##########################################################################
@@ -99,9 +98,8 @@ TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int fu
 {
 	SetAcpiParent(parent);
 	
-	FSeg = 0;
 	FBus = bus;
-	FIo = 0xCF8;
+	Init();
 }
 
 /*##########################################################################
@@ -117,6 +115,34 @@ TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int fu
 ##########################################################################*/
 TPciBridge::~TPciBridge()
 {
+	int i;
+	
+	for (i = 0; i < 32; i++)
+		if (FDevArr[i])
+			delete FDevArr[i];
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::Init
+#
+#   Purpose....: Init
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciBridge::Init()
+{
+	int i;
+
+	FSeg = 0;
+	FBus = 0;
+	FIo = 0xCF8;
+	
+	for (i = 0; i < 32; i++)
+		FDevArr[i] = 0;
 }
 
 /*##########################################################################
@@ -165,6 +191,51 @@ int TPciBridge::GetBridgeBus()
 int TPciBridge::GetBridgeSegment()
 {
 	return FSeg;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::ScanPciDevices
+#
+#   Purpose....: Scan for PCI devices
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciBridge::ScanForDevices()
+{
+	int dev;
+	int func;
+	int ads;
+	int val;
+	bool found;
+	TPciDevice *pdev;
+	
+	for (dev = 0; dev < 32; dev++)
+	{
+		found = false;
+		
+		for (func = 0; func < 8 && !found; func++)
+		{
+			ads = 0x80000000;
+			ads |= FBus << 16;
+			ads |= dev << 11;
+			ads |= func << 8;
+			out_dword(FIo, ads);
+			val = in_dword(FIo + 4);
+			if (val != 0xFFFFFFFF)
+				found = true;
+		}
+		
+		if (found)
+		{
+			pdev = new TPciDevice(this, dev);
+			pdev->ScanForFunctions();
+			FDevArr[dev] = pdev;
+		}
+	}
 }
 
 /*##########################################################################
@@ -266,6 +337,8 @@ void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 
 	ServUacpiEnableIo(FIo, 4);	
 	ServUacpiEnableIo(FIo + 4, 4);	
+	
+	ScanForDevices();
 }
 
 /*##########################################################################

@@ -38,11 +38,10 @@ public:
 	TPciDevice(TPciBridge *parent, int device);
 	virtual ~TPciDevice();
 	
-	TPciFunction *Add(int function);
-
 	int GetSegment();
 	int GetBus();
 	int GetDevice();
+	void ScanForFunctions();
 	TPciFunction *GetFunction(int function);
 
 	char ReadConfigByte(int func, char reg);
@@ -53,6 +52,7 @@ public:
 	void WriteConfigDword(int func, char reg, int val);
 	
 protected:
+	
 	TPciFunction *FFuncArr[8];
 	TPciBridge *FParent;
 	int FDevice;
