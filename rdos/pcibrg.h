@@ -20,23 +20,31 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# proc.cpp
-# ACPI processor
+# pcibrg.cpp
+# PCI bridge
 #
 ########################################################################*/
 
-#ifndef _PROC_H
-#define _PROC_H
+#ifndef _PCI_BRIDGE_H
+#define _PCI_BRIDGE_H
 
-#include "obj.h"
+#include "pcidev.h"
 
-class TAcpiProcessor : public TAcpiObject
+class TPciBridge : public TPciDevice
 {
 public:
-	TAcpiProcessor(TAcpiObject *parent);
-	~TAcpiProcessor();
+	TPciBridge(TAcpiObject *parent, int bus, int device, int function);
+	virtual ~TPciBridge();
 	
-	virtual bool IsProcessor();
+	virtual bool IsPciBridge();
+	virtual void Update();
+
+	int GetBridgeBus();
+	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+	
+protected:
+	int FBus;
+	int FIo;
 };
 
 #endif

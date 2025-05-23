@@ -33,6 +33,8 @@
 #include <uacpi/resources.h>
 #include "rdos.h"
 #include "dev.h"
+#include "pcidev.h"
+#include "pcibrg.h"
 #include "proc.h"
 
 extern "C" 
@@ -60,6 +62,48 @@ static TAcpiProcessor **ProcessorArr;
 
 /*##########################################################################
 #
+#   Name       : IsPciRoot
+#
+#   Purpose....: Check if device is PCI root
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool IsPciRoot(uacpi_id_string *hid)
+{
+	if (hid->size)
+	{
+		if (!strcmp(hid->value, "PNP0A03"))
+			return true;
+
+		if (!strcmp(hid->value, "PNP0A08"))
+			return true;
+	}
+	return false;		
+}
+
+/*##########################################################################
+#
+#   Name       : AddPciRoot
+#
+#   Purpose....: Add pci root
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiDevice *AddPciRoot(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+{
+	TPciBridge *bridge = new TPciBridge(parent, 0, 0, 0);
+	bridge->Setup(node, info);
+	return bridge;
+}
+
+/*##########################################################################
+#
 #   Name       : AddDevice
 #
 #   Purpose....: Add device
@@ -69,9 +113,9 @@ static TAcpiProcessor **ProcessorArr;
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiDevice *AddDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+TAcpiDevice *AddDevice(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	TAcpiDevice *dev = new TAcpiDevice(node, info);
+	TAcpiDevice *dev = new TAcpiDevice(parent);
 	TAcpiDevice **arr;
 	int size;
 	int i;
@@ -80,6 +124,8 @@ TAcpiDevice *AddDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 	uacpi_resource *resource;
 	unsigned int start;
 	unsigned int end;
+	
+	dev->Setup(node, info);
 	
 	ret = uacpi_get_current_resources(node, &resources);
 	if (ret == UACPI_STATUS_OK)
@@ -255,12 +301,14 @@ TAcpiDevice *AddDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiProcessor *AddProcessor(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+TAcpiProcessor *AddProcessor(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	TAcpiProcessor *proc = new TAcpiProcessor(node, info);
+	TAcpiProcessor *proc = new TAcpiProcessor(parent);
 	TAcpiProcessor **arr;
 	int size;
 	int i;
+	
+	proc->Setup(node, info);
 	
 	if (ProcessorSize == ProcessorCount)
 	{
@@ -320,26 +368,51 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
 	switch (info->type)
 	{
 		case UACPI_OBJECT_DEVICE:
-			dev = AddDevice(node, info);
-//			if (ObjArr[node_depth - 1])
-//				ObjArr[node_depth]->AddDevice(dev);
+			if (IsPciRoot(&info->hid))
+				dev = AddPciRoot(ObjArr[node_depth - 1], node, info);
+			else
+				dev = AddDevice(ObjArr[node_depth - 1], node, info);
 			ObjArr[node_depth] = dev;
 			break;
 			
 		case UACPI_OBJECT_PROCESSOR:
-			proc = AddProcessor(node, info);
+			proc = AddProcessor(ObjArr[node_depth - 1], node, info);
 			ObjArr[node_depth] = proc;
 			break;
 			
 		default:
 			if (ObjArr[node_depth - 1])
 			{
-				obj = new TAcpiObject(node, info);
+				obj = new TAcpiObject(ObjArr[node_depth - 1]);
+				obj->Setup(node, info);
 				ObjArr[node_depth - 1]->AddObject(obj);
 			}
 			ObjArr[node_depth] = 0;
 			break;
 	}
+    return UACPI_ITERATION_DECISION_CONTINUE;
+}
+
+/*##########################################################################
+#
+#   Name       : UpdateObj
+#
+#   Purpose....: Update obj
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
+{
+	TAcpiObject *obj = ObjArr[node_depth];
+	
+	if (obj)
+		obj->Update();
+	
+	ObjArr[node_depth] = 0;
+	
     return UACPI_ITERATION_DECISION_CONTINUE;
 }
 
@@ -393,7 +466,7 @@ bool InitAcpi()
 		return false;
 	}
 	
-	uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, NULL, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
+	uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 	
 	return true;
 }

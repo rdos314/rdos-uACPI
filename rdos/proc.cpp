@@ -38,8 +38,8 @@
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiProcessor::TAcpiProcessor(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
- : TAcpiObject(node, info)
+TAcpiProcessor::TAcpiProcessor(TAcpiObject *parent)
+  : TAcpiObject(parent)
 {
 }
 

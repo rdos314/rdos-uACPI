@@ -20,23 +20,35 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# proc.cpp
-# ACPI processor
+# pcidev.cpp
+# PCI device
 #
 ########################################################################*/
 
-#ifndef _PROC_H
-#define _PROC_H
+#ifndef _PCI_DEV_H
+#define _PCI_DEV_H
 
-#include "obj.h"
+#include "dev.h"
 
-class TAcpiProcessor : public TAcpiObject
+class TPciBridge;
+
+class TPciDevice : public TAcpiDevice
 {
 public:
-	TAcpiProcessor(TAcpiObject *parent);
-	~TAcpiProcessor();
+	TPciDevice(TAcpiObject *parent, int device, int function);
+	virtual ~TPciDevice();
 	
-	virtual bool IsProcessor();
+	virtual bool IsPciDevice();
+
+	int GetBus();
+	int GetDevice();
+	int GetFunction();
+	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+	
+protected:
+	TPciBridge *FParent;
+	int FDevice;
+	int FFunction;
 };
 
 #endif

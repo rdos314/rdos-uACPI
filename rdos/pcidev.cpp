@@ -20,77 +20,134 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# dev.cpp
-# ACPI device
+# pcidev.cpp
+# PCI device
 #
 ########################################################################*/
 
-#include "dev.h"
+#include "pcidev.h"
+#include "pcibrg.h"
 
 /*##########################################################################
 #
-#   Name       : TAcpiDevice::TAcpiDevice
+#   Name       : TPciDevice::TPciDevice
 #
-#   Purpose....: Constructor for TAcpiDevice
+#   Purpose....: Constructor for TPciDevice
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiDevice::TAcpiDevice(TAcpiObject *parent)
-  : TAcpiObject(parent)
+TPciDevice::TPciDevice(TAcpiObject *parent, int device, int function)
+ : TAcpiDevice(parent)
+{
+	if (parent && parent->IsPciBridge())
+		FParent = (TPciBridge *)parent;
+	else
+		FParent = 0;
+	
+	FDevice = device;
+	FFunction = function;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::~TPciDevice
+#
+#   Purpose....: Destructor for TPciDevice
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciDevice::~TPciDevice()
 {
 }
 
 /*##########################################################################
 #
-#   Name       : TAcpiDevice::~TAcpiDevice
+#   Name       : TPciDevice::IsPciDevice
 #
-#   Purpose....: Destructor for TAcpiDevice
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-TAcpiDevice::~TAcpiDevice()
-{
-}
-
-/*##########################################################################
-#
-#   Name       : TAcpiDevice::IsDevice
-#
-#   Purpose....: Is device?
+#   Purpose....: Is PCI device?
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-bool TAcpiDevice::IsDevice()
+bool TPciDevice::IsPciDevice()
 {
 	return true;
 }
 
 /*##########################################################################
 #
-#   Name       : TAcpiDevice::IsDevice
+#   Name       : TPciDevice::GetBus
 #
-#   Purpose....: Is device?
+#   Purpose....: Get PCI bus
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-int TAcpiDevice::EvalObjectInt(const char *name, int def)
+int TPciDevice::GetBus()
 {
-	TAcpiObject *obj = Find(name);
+	return FParent->GetBridgeBus();
+}
 
-	if (obj)
-		return obj->EvalInt(def);
+/*##########################################################################
+#
+#   Name       : TPciDevice::GetDevice
+#
+#   Purpose....: Get PCI device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciDevice::GetDevice()
+{
+	return FDevice;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::GetFunction
+#
+#   Purpose....: Get PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciDevice::GetFunction()
+{
+	return FFunction;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::Check
+#
+#   Purpose....: Check if this device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciDevice::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+{
+	int device = (info->adr >> 16) & 0xFFFF;
+	int function = info->adr & 0xFFFF;
+	
+	if (device == FDevice && function == FFunction)
+		return true;
 	else
-		return def;
+		return false;
 }

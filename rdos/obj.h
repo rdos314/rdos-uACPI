@@ -35,19 +35,27 @@
 class TAcpiObject
 {
 public:
-	TAcpiObject(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+	TAcpiObject(TAcpiObject *parent);
 	virtual ~TAcpiObject();
 	
 	virtual bool IsDevice();
+	virtual bool IsPciDevice();
+	virtual bool IsPciBridge();
 	virtual bool IsProcessor();
+	virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+	virtual void Update();
 	
 	void AddObject(TAcpiObject *obj);
-	
-	char Name[5];
+	int EvalInt(int def);
+	const char *GetName();
+	TAcpiObject *Find(const char *name);
 	
 protected:
+	TAcpiObject *FParent;
 	uacpi_namespace_node *FNode;
 	uacpi_namespace_node_info *FInfo;
+	
+	char FName[5];
 	
 	int FSize;
 	int FCount;

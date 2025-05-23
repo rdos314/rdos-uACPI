@@ -33,10 +33,12 @@
 class TAcpiDevice : public TAcpiObject
 {
 public:
-	TAcpiDevice(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
-	~TAcpiDevice();
-	
+	TAcpiDevice(TAcpiObject *parent);
+	virtual ~TAcpiDevice();
+
 	virtual bool IsDevice();
+	
+	int EvalObjectInt(const char *name, int def);
 };
 
 #endif

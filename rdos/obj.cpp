@@ -39,16 +39,16 @@
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiObject::TAcpiObject(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+TAcpiObject::TAcpiObject(TAcpiObject *parent)
 {
-	FNode = node;
-	FInfo = info;
+	FParent = parent;
+	FNode = 0;
+	FInfo = 0;
 	FArr = 0;
 	FCount = 0;
 	FSize = 0;
 	
-	memcpy(Name, info->name.text, 4);
-	Name[4] = 0;
+	FName[0] = 0;
 }
 
 /*##########################################################################
@@ -95,6 +95,38 @@ bool TAcpiObject::IsDevice()
 
 /*##########################################################################
 #
+#   Name       : TAcpiObject::IsPciDevice
+#
+#   Purpose....: Is PCI device?
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TAcpiObject::IsPciDevice()
+{
+	return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::IsPciBridge
+#
+#   Purpose....: Is PCI bridge?
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TAcpiObject::IsPciBridge()
+{
+	return false;
+}
+
+/*##########################################################################
+#
 #   Name       : TAcpiObject::IsProcessor
 #
 #   Purpose....: Is processor?
@@ -107,6 +139,26 @@ bool TAcpiObject::IsDevice()
 bool TAcpiObject::IsProcessor()
 {
 	return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::Setup
+#
+#   Purpose....: Setup from uACPI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiObject::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+{
+	FNode = node;
+	FInfo = info;
+	
+	memcpy(FName, info->name.text, 4);
+	FName[4] = 0;
 }
 
 /*##########################################################################
@@ -148,4 +200,85 @@ void TAcpiObject::AddObject(TAcpiObject *obj)
 	}
 	FArr[FCount] = obj;
 	FCount++;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::Update
+#
+#   Purpose....: Update after all owned objects have been added
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiObject::Update()
+{
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::GetName
+#
+#   Purpose....: Get object name
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+const char *TAcpiObject::GetName()
+{
+	return FName;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::Find
+#
+#   Purpose....: Find child obj
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiObject *TAcpiObject::Find(const char *name)
+{
+	int i;
+	TAcpiObject *obj;
+
+	for (i = 0; i < FCount; i++)
+	{
+		obj = FArr[i];
+		if (!strcmp(name, obj->FName))
+			return obj;
+	}
+	return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::EvalInt
+#
+#   Purpose....: Eval object int
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiObject::EvalInt(int def)
+{
+	uacpi_status ret;
+	unsigned long long val;
+
+	if (FParent)
+	{
+		ret = uacpi_eval_simple_integer(FParent->FNode, FName, &val);
+		if (ret == UACPI_STATUS_OK)
+			return (int)val;
+	}
+	return def;
 }
