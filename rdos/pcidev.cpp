@@ -95,16 +95,22 @@ void TPciDevice::AddBridge(TPciBridge *bridge)
 ##########################################################################*/
 TPciFunction *TPciDevice::AddFunction(int function, int vendor_device)
 {
-    TPciFunction *func = new TPciFunction(this, 0, vendor_device);
+    TPciFunction *func;
     TPciBridge *bridge;
     int bus;
-    
-    if (func->GetClass() == 6 && func->GetSubClass() == 4)
+    unsigned char class_code = (unsigned char)ReadConfigByte(function, PCI_classcode);
+    unsigned char sub_class = (unsigned char)ReadConfigByte(function, PCI_subclass);
+        
+    if (class_code == 6 && sub_class == 4)
     {
         bus = (unsigned char)ReadConfigByte(function, 26);
-        bridge = new TPciBridge(func, bus, this, function, vendor_device);
+        bridge = new TPciBridge(FParent, bus, this, function, vendor_device, class_code, sub_class);
+        bridge->ScanForDevices();
         AddBridge(bridge);
+        func = bridge;
     }
+    else
+        func = new TPciFunction(this, function, vendor_device, class_code, sub_class);
     
     return func;
 }

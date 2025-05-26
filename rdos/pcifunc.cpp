@@ -62,11 +62,11 @@ TPciFunction::TPciFunction()
 #   Returns....: *
 #
 ##########################################################################*/
-TPciFunction::TPciFunction(TPciDevice *device, int function, int vendor_device)
+TPciFunction::TPciFunction(TPciDevice *device, int function, int vendor_device, unsigned char class_code, unsigned char sub_class)
 {
     FPciDevice = device;
     FPciFunction = function;
-    Init(vendor_device);
+    Init(vendor_device, class_code, sub_class);
 }
 
 /*##########################################################################
@@ -95,12 +95,12 @@ TPciFunction::~TPciFunction()
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciFunction::Init(int vendor_device)
+void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned char sub_class)
 {
     FVendor = (unsigned short)(vendor_device & 0xFFFF);
     FDevice = (unsigned short)((vendor_device >> 16) & 0xFFFF);
-    FClass = (unsigned char)ReadConfigByte(PCI_classcode);
-    FSubClass = (unsigned char)ReadConfigByte(PCI_subclass);
+    FClass = class_code;
+    FSubClass = sub_class;
     FProtocol = (unsigned char)ReadConfigByte(PCI_progIF);
 }
 
@@ -117,11 +117,12 @@ void TPciFunction::Init(int vendor_device)
 ##########################################################################*/
 void TPciFunction::SetDevice(TPciDevice *device)
 {
-    int vendor_device;
+    int vendor_device = ReadConfigDword(PCI_vendorID);
+    unsigned char class_code = (unsigned char)ReadConfigByte(PCI_classcode);;
+    unsigned char sub_class = (unsigned char)ReadConfigByte(PCI_subclass);;
     
     FPciDevice = device;
-    vendor_device = ReadConfigDword(PCI_vendorID);
-    Init(vendor_device);
+    Init(vendor_device, class_code, sub_class);
 }
 
 /*##########################################################################

@@ -36,7 +36,7 @@ class TPciFunction : public TAcpiDevice
 {
 public:
     TPciFunction();
-    TPciFunction(TPciDevice *dev, int function, int vendor_device);
+    TPciFunction(TPciDevice *dev, int function, int vendor_device, unsigned char class_code, unsigned char sub_class);
     virtual ~TPciFunction();
 	
     virtual bool IsPciFunction();
@@ -62,7 +62,7 @@ public:
     void WriteConfigDword(char reg, int val);
 	
 protected:
-    void Init(int vendor_device);
+    void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
     
     TPciDevice *FPciDevice;
     int FPciFunction;

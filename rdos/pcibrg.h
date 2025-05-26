@@ -34,10 +34,11 @@ class TPciBridge : public TPciFunction
 {
 public:
     TPciBridge(TPciFunction *parent, int bus);
-    TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function, int vendor_device);
+    TPciBridge(TPciBridge *bridge, int bus, TPciDevice *device, int function, int vendor_device, unsigned char class_code, unsigned char sub_class);
     virtual ~TPciBridge();
     
     void AddBridge(TPciBridge *bridge);
+    void ScanForDevices();
 	
     virtual bool IsPciBridge();
     virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
@@ -55,7 +56,6 @@ public:
     void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
 
 protected:
-    void ScanForDevices();
 
     TPciBridge *FBridgeArr[256];	
     TPciDevice *FDevArr[32];

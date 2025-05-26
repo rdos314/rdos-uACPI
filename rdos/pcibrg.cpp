@@ -78,9 +78,9 @@ void out_dword(int port, int val);
 TPciBridge::TPciBridge(TPciFunction *parent, int bus)
 {
     SetAcpiParent(parent);
+    Init();
 	
     FBus = bus;
-    Init();
 }
 	
 /*##########################################################################
@@ -94,13 +94,14 @@ TPciBridge::TPciBridge(TPciFunction *parent, int bus)
 #   Returns....: *
 #
 ##########################################################################*/
-TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function, int vendor_device)
- : TPciFunction(device, function, vendor_device)
+TPciBridge::TPciBridge(TPciBridge *bridge, int bus, TPciDevice *device, int function, int vendor_device, unsigned char class_code, unsigned char sub_class)
+ : TPciFunction(device, function, vendor_device, class_code, sub_class)
 {
-    SetAcpiParent(parent);
-	
-    FBus = bus;
     Init();
+	
+    FSeg = bridge->FSeg;
+    FBus = bus;
+    FIo = bridge->FIo;
 }
 
 /*##########################################################################
