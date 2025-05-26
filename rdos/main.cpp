@@ -100,7 +100,7 @@ bool IsPciRoot(uacpi_id_string *hid)
 TAcpiDevice *AddPciRoot(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
 	int seg;
-	TPciBridge *bridge = new TPciBridge(0, 0, 0, 0);
+	TPciBridge *bridge = new TPciBridge(0, 0);
 
 	bridge->Setup(node, info);
 	seg = bridge->GetBridgeSegment();

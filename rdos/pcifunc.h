@@ -35,29 +35,43 @@ class TPciDevice;
 class TPciFunction : public TAcpiDevice
 {
 public:
-	TPciFunction();
-	TPciFunction(TPciDevice *dev, int function);
-	virtual ~TPciFunction();
+    TPciFunction();
+    TPciFunction(TPciDevice *dev, int function, int vendor_device);
+    virtual ~TPciFunction();
 	
-	virtual bool IsPciFunction();
+    virtual bool IsPciFunction();
 
-	void SetDevice(TPciDevice *dev);
-	int GetSegment();
-	int GetBus();
-	int GetDevice();
-	int GetFunction();
-	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+    void SetDevice(TPciDevice *dev);
+    int GetSegment();
+    int GetBus();
+    int GetPciDevice();
+    int GetPciFunction();
+    unsigned short GetVendor();
+    unsigned short GetDevice();
+    unsigned char GetClass();
+    unsigned char GetSubClass();
+    unsigned char GetProtocol();
 
-	char ReadConfigByte(char reg);
-	short ReadConfigWord(char reg);
-	int ReadConfigDword(char reg);
-	void WriteConfigByte(char reg, char val);
-	void WriteConfigWord(char reg, short val);
-	void WriteConfigDword(char reg, int val);
+    bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+
+    char ReadConfigByte(char reg);
+    short ReadConfigWord(char reg);
+    int ReadConfigDword(char reg);
+    void WriteConfigByte(char reg, char val);
+    void WriteConfigWord(char reg, short val);
+    void WriteConfigDword(char reg, int val);
 	
 protected:
-	TPciDevice *FDevice;
-	int FFunction;
+    void Init(int vendor_device);
+    
+    TPciDevice *FPciDevice;
+    int FPciFunction;
+    
+    unsigned short FVendor;
+    unsigned short FDevice;
+    unsigned char FClass;
+    unsigned char FSubClass;
+    unsigned char FProtocol;
 };
 
 #endif

@@ -25,6 +25,7 @@
 #
 ########################################################################*/
 
+#include "pci.h"
 #include "pcifunc.h"
 #include "pcidev.h"
 
@@ -41,8 +42,13 @@
 ##########################################################################*/
 TPciFunction::TPciFunction()
 {
-	FDevice = 0;
-	FFunction = 0;
+    FPciDevice = 0;
+    FPciFunction = 0;
+    FVendor = 0;
+    FDevice = 0;
+    FClass = 0;
+    FSubClass = 0;
+    FProtocol = 0;
 }
 
 /*##########################################################################
@@ -56,10 +62,11 @@ TPciFunction::TPciFunction()
 #   Returns....: *
 #
 ##########################################################################*/
-TPciFunction::TPciFunction(TPciDevice *device, int function)
+TPciFunction::TPciFunction(TPciDevice *device, int function, int vendor_device)
 {
-	FDevice = device;
-	FFunction = function;
+    FPciDevice = device;
+    FPciFunction = function;
+    Init(vendor_device);
 }
 
 /*##########################################################################
@@ -79,6 +86,26 @@ TPciFunction::~TPciFunction()
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::Init
+#
+#   Purpose....: Init device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::Init(int vendor_device)
+{
+    FVendor = (unsigned short)(vendor_device & 0xFFFF);
+    FDevice = (unsigned short)((vendor_device >> 16) & 0xFFFF);
+    FClass = (unsigned char)ReadConfigByte(PCI_classcode);
+    FSubClass = (unsigned char)ReadConfigByte(PCI_subclass);
+    FProtocol = (unsigned char)ReadConfigByte(PCI_progIF);
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::SetDevice
 #
 #   Purpose....: Set device
@@ -90,7 +117,11 @@ TPciFunction::~TPciFunction()
 ##########################################################################*/
 void TPciFunction::SetDevice(TPciDevice *device)
 {
-	FDevice = device;
+    int vendor_device;
+    
+    FPciDevice = device;
+    vendor_device = ReadConfigDword(PCI_vendorID);
+    Init(vendor_device);
 }
 
 /*##########################################################################
@@ -106,7 +137,7 @@ void TPciFunction::SetDevice(TPciDevice *device)
 ##########################################################################*/
 bool TPciFunction::IsPciFunction()
 {
-	return true;
+    return true;
 }
 
 /*##########################################################################
@@ -122,10 +153,10 @@ bool TPciFunction::IsPciFunction()
 ##########################################################################*/
 int TPciFunction::GetSegment()
 {
-	if (FDevice)
-		return FDevice->GetSegment();
-	else
-		return 0;
+    if (FPciDevice)
+        return FPciDevice->GetSegment();
+    else
+        return 0;
 }
 
 /*##########################################################################
@@ -141,10 +172,61 @@ int TPciFunction::GetSegment()
 ##########################################################################*/
 int TPciFunction::GetBus()
 {
-	if (FDevice)
-		return FDevice->GetBus();
-	else
-		return 0;
+    if (FPciDevice)
+        return FPciDevice->GetBus();
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetPciDevice
+#
+#   Purpose....: Get PCI device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::GetPciDevice()
+{
+    if (FPciDevice)
+        return FPciDevice->GetDevice();
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetPciFunction
+#
+#   Purpose....: Get PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::GetPciFunction()
+{
+    return FPciFunction;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetVendor
+#
+#   Purpose....: Get PCI vendor
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned short TPciFunction::GetVendor()
+{
+    return FVendor;
 }
 
 /*##########################################################################
@@ -158,28 +240,57 @@ int TPciFunction::GetBus()
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::GetDevice()
+unsigned short TPciFunction::GetDevice()
 {
-	if (FDevice)
-		return FDevice->GetDevice();
-	else
-		return 0;
+    return FDevice;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::GetFunction
+#   Name       : TPciFunction::GetClass
 #
-#   Purpose....: Get PCI function
+#   Purpose....: Get PCI class
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::GetFunction()
+unsigned char TPciFunction::GetClass()
 {
-	return FFunction;
+    return FClass;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetSubClass
+#
+#   Purpose....: Get PCI subclass
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char TPciFunction::GetSubClass()
+{
+    return FSubClass;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetProtocol
+#
+#   Purpose....: Get PCI protocol
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char TPciFunction::GetProtocol()
+{
+    return FProtocol;
 }
 
 /*##########################################################################
@@ -195,13 +306,13 @@ int TPciFunction::GetFunction()
 ##########################################################################*/
 bool TPciFunction::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	int device = (info->adr >> 16) & 0xFFFF;
-	int function = info->adr & 0xFFFF;
+    int device = (info->adr >> 16) & 0xFFFF;
+    int function = info->adr & 0xFFFF;
 	
-	if (FDevice)
-		if (device == FDevice->GetDevice() && function == FFunction)
-			return true;
-	return false;
+    if (FPciDevice)
+        if (device == FPciDevice->GetDevice() && function == FPciFunction)
+            return true;
+    return false;
 }
 
 /*##########################################################################
@@ -217,10 +328,10 @@ bool TPciFunction::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *
 ##########################################################################*/
 char TPciFunction::ReadConfigByte(char reg)
 {
-	if (FDevice)
-		return FDevice->ReadConfigByte(FFunction, reg);
-	else
-		return -1;
+    if (FPciDevice)
+        return FPciDevice->ReadConfigByte(FPciFunction, reg);
+    else
+        return -1;
 }
 
 /*##########################################################################
@@ -236,10 +347,10 @@ char TPciFunction::ReadConfigByte(char reg)
 ##########################################################################*/
 short TPciFunction::ReadConfigWord(char reg)
 {
-	if (FDevice)
-		return FDevice->ReadConfigWord(FFunction, reg);
-	else
-		return -1;
+    if (FPciDevice)
+        return FPciDevice->ReadConfigWord(FPciFunction, reg);
+    else
+        return -1;
 }
 
 /*##########################################################################
@@ -255,10 +366,10 @@ short TPciFunction::ReadConfigWord(char reg)
 ##########################################################################*/
 int TPciFunction::ReadConfigDword(char reg)
 {
-	if (FDevice)
-		return FDevice->ReadConfigDword(FFunction, reg);
-	else
-		return -1;
+    if (FPciDevice)
+        return FPciDevice->ReadConfigDword(FPciFunction, reg);
+    else
+        return -1;
 }
 
 /*##########################################################################
@@ -274,8 +385,8 @@ int TPciFunction::ReadConfigDword(char reg)
 ##########################################################################*/
 void TPciFunction::WriteConfigByte(char reg, char val)
 {
-	if (FDevice)
-		FDevice->WriteConfigByte(FFunction, reg, val);
+    if (FPciDevice)
+        FPciDevice->WriteConfigByte(FPciFunction, reg, val);
 }
 
 /*##########################################################################
@@ -291,8 +402,8 @@ void TPciFunction::WriteConfigByte(char reg, char val)
 ##########################################################################*/
 void TPciFunction::WriteConfigWord(char reg, short val)
 {
-	if (FDevice)
-		FDevice->WriteConfigWord(FFunction, reg, val);
+    if (FPciDevice)
+        FPciDevice->WriteConfigWord(FPciFunction, reg, val);
 }
 
 /*##########################################################################
@@ -308,6 +419,6 @@ void TPciFunction::WriteConfigWord(char reg, short val)
 ##########################################################################*/
 void TPciFunction::WriteConfigDword(char reg, int val)
 {
-	if (FDevice)
-		FDevice->WriteConfigDword(FFunction, reg, val);
+    if (FPciDevice)
+        FPciDevice->WriteConfigDword(FPciFunction, reg, val);
 }

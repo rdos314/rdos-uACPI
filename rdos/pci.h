@@ -20,45 +20,27 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# pcidev.cpp
-# PCI device
+# pci.h
+# PCI header
 #
 ########################################################################*/
 
-#ifndef _PCI_DEV_H
-#define _PCI_DEV_H
+#ifndef _PCI_H
+#define _PCI_H
 
-#include "dev.h"
-#include "pcibrg.h"
-
-class TPciFunction;
-
-class TPciDevice
-{
-public:
-    TPciDevice(TPciBridge *parent, int device);
-    virtual ~TPciDevice();
-	
-    int GetSegment();
-    int GetBus();
-    int GetDevice();
-    void ScanForFunctions();
-    void AddBridge(TPciBridge *bridge);
-    TPciFunction *GetFunction(int function);
-
-    char ReadConfigByte(int func, char reg);
-    short ReadConfigWord(int func, char reg);
-    int ReadConfigDword(int func, char reg);
-    void WriteConfigByte(int func, char reg, char val);
-    void WriteConfigWord(int func, char reg, short val);
-    void WriteConfigDword(int func, char reg, int val);
-	
-protected:
-    TPciFunction *AddFunction(int function, int vendor_device);
-
-    TPciFunction *FFuncArr[8];
-    TPciBridge *FParent;
-    int FDevice;
-};
+#define PCI_vendorID        0
+#define PCI_deviceID        2
+#define PCI_command_reg     4
+#define PCI_status_reg      6
+#define PCI_revisionID      8
+#define PCI_progIF          9
+#define PCI_subclass        10
+#define PCI_classcode       11
+#define PCI_cacheline_size  12
+#define PCI_latency         13
+#define PCI_header_type     14
+#define PCI_BIST            15
+#define PCI_interrupt_line  60
+#define PCI_interrupt_pin   61
 
 #endif

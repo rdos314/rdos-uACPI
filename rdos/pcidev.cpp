@@ -25,6 +25,7 @@
 #
 ########################################################################*/
 
+#include "pci.h"
 #include "pcidev.h"
 #include "pcibrg.h"
 
@@ -41,13 +42,13 @@
 ##########################################################################*/
 TPciDevice::TPciDevice(TPciBridge *parent, int device)
 {
-	int i;
+    int i;
 	
-	FParent = parent;
-	FDevice = device;
+    FParent = parent;
+    FDevice = device;
 	
-	for (i = 0; i < 8; i++)
-		FFuncArr[i] = 0;
+    for (i = 0; i < 8; i++)
+        FFuncArr[i] = 0;
 }
 
 /*##########################################################################
@@ -67,6 +68,49 @@ TPciDevice::~TPciDevice()
 
 /*##########################################################################
 #
+#   Name       : TPciDevice::AddBridge
+#
+#   Purpose....: Add bridge
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciDevice::AddBridge(TPciBridge *bridge)
+{
+    FParent->AddBridge(bridge);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::AddFunction
+#
+#   Purpose....: Add function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciFunction *TPciDevice::AddFunction(int function, int vendor_device)
+{
+    TPciFunction *func = new TPciFunction(this, 0, vendor_device);
+    TPciBridge *bridge;
+    int bus;
+    
+    if (func->GetClass() == 6 && func->GetSubClass() == 4)
+    {
+        bus = (unsigned char)ReadConfigByte(function, 26);
+        bridge = new TPciBridge(func, bus, this, function, vendor_device);
+        AddBridge(bridge);
+    }
+    
+    return func;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciDevice::ScanForFunctions
 #
 #   Purpose....: Scan for functions
@@ -78,19 +122,35 @@ TPciDevice::~TPciDevice()
 ##########################################################################*/
 void TPciDevice::ScanForFunctions()
 {
-	int i;
-	int val;
-	TPciFunction *func;
-	
-	for (i = 0; i < 8; i++)
-	{
-		val = ReadConfigDword(i, 0);
-		if (val != 0xFFFFFFFF)
-		{
-			func = new TPciFunction(this, i);
-			FFuncArr[i] = func;
-		}
-	}
+    int i;
+    int val;
+    char typ;
+
+    val = ReadConfigDword(0, PCI_vendorID);
+    if (val == 0xFFFFFFFF)
+    {
+        for (i = 1; i < 8; i++)
+        {
+            val = ReadConfigDword(i, PCI_vendorID);
+            if (val != 0xFFFFFFFF)
+                FFuncArr[i] = AddFunction(i, val);
+        }
+    }
+    else
+    {
+        FFuncArr[0] = AddFunction(0, val);
+
+        typ = ReadConfigByte(0, PCI_header_type);
+        if (typ & 0x80)
+        {
+            for (i = 1; i < 8; i++)
+            {
+                val = ReadConfigDword(i, PCI_vendorID);
+                if (val != 0xFFFFFFFF)
+                    FFuncArr[i] = AddFunction(i, val);
+            }
+        }
+    }
 }
 
 /*##########################################################################
@@ -106,7 +166,7 @@ void TPciDevice::ScanForFunctions()
 ##########################################################################*/
 int TPciDevice::GetSegment()
 {
-	return FParent->GetBridgeSegment();
+    return FParent->GetBridgeSegment();
 }
 
 /*##########################################################################
@@ -122,7 +182,7 @@ int TPciDevice::GetSegment()
 ##########################################################################*/
 int TPciDevice::GetBus()
 {
-	return FParent->GetBridgeBus();
+    return FParent->GetBridgeBus();
 }
 
 /*##########################################################################
@@ -138,7 +198,7 @@ int TPciDevice::GetBus()
 ##########################################################################*/
 int TPciDevice::GetDevice()
 {
-	return FDevice;
+    return FDevice;
 }
 
 /*##########################################################################
@@ -154,10 +214,10 @@ int TPciDevice::GetDevice()
 ##########################################################################*/
 TPciFunction *TPciDevice::GetFunction(int function)
 {
-	if (function >= 0 && function < 8)
-		return FFuncArr[function];
-	else
-		return 0;
+    if (function >= 0 && function < 8)
+        return FFuncArr[function];
+    else
+        return 0;
 }
 
 /*##########################################################################
@@ -173,7 +233,7 @@ TPciFunction *TPciDevice::GetFunction(int function)
 ##########################################################################*/
 char TPciDevice::ReadConfigByte(int func, char reg)
 {
-	return FParent->ReadConfigByte(this, func, reg);
+    return FParent->ReadConfigByte(this, func, reg);
 }
 
 /*##########################################################################
@@ -189,7 +249,7 @@ char TPciDevice::ReadConfigByte(int func, char reg)
 ##########################################################################*/
 short TPciDevice::ReadConfigWord(int func, char reg)
 {
-	return FParent->ReadConfigWord(this, func, reg);
+    return FParent->ReadConfigWord(this, func, reg);
 }
 
 /*##########################################################################
@@ -205,7 +265,7 @@ short TPciDevice::ReadConfigWord(int func, char reg)
 ##########################################################################*/
 int TPciDevice::ReadConfigDword(int func, char reg)
 {
-	return FParent->ReadConfigDword(this, func, reg);
+    return FParent->ReadConfigDword(this, func, reg);
 }
 
 /*##########################################################################
@@ -221,7 +281,7 @@ int TPciDevice::ReadConfigDword(int func, char reg)
 ##########################################################################*/
 void TPciDevice::WriteConfigByte(int func, char reg, char val)
 {
-	FParent->WriteConfigByte(this, func, reg, val);
+    FParent->WriteConfigByte(this, func, reg, val);
 }
 
 /*##########################################################################
@@ -237,7 +297,7 @@ void TPciDevice::WriteConfigByte(int func, char reg, char val)
 ##########################################################################*/
 void TPciDevice::WriteConfigWord(int func, char reg, short val)
 {
-	FParent->WriteConfigWord(this, func, reg, val);
+    FParent->WriteConfigWord(this, func, reg, val);
 }
 
 /*##########################################################################
@@ -253,5 +313,5 @@ void TPciDevice::WriteConfigWord(int func, char reg, short val)
 ##########################################################################*/
 void TPciDevice::WriteConfigDword(int func, char reg, int val)
 {
-	FParent->WriteConfigDword(this, func, reg, val);
+    FParent->WriteConfigDword(this, func, reg, val);
 }

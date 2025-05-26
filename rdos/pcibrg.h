@@ -33,34 +33,38 @@
 class TPciBridge : public TPciFunction
 {
 public:
-	TPciBridge(TPciFunction *parent, int bus);
-	TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function);
-	virtual ~TPciBridge();
+    TPciBridge(TPciFunction *parent, int bus);
+    TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function, int vendor_device);
+    virtual ~TPciBridge();
+    
+    void AddBridge(TPciBridge *bridge);
 	
-	virtual bool IsPciBridge();
-	virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+    virtual bool IsPciBridge();
+    virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 
-	int GetBridgeSegment();
-	int GetBridgeBus();
-	bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+    int GetBridgeSegment();
+    int GetBridgeBus();
+    TPciBridge *GetBridge(int bus);
+    bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 
-	char ReadConfigByte(TPciDevice *dev, int func, char reg);
-	short ReadConfigWord(TPciDevice *dev, int func, char reg);
-	int ReadConfigDword(TPciDevice *dev, int func, char reg);
-	void WriteConfigByte(TPciDevice *dev, int func, char reg, char val);
-	void WriteConfigWord(TPciDevice *dev, int func, char reg, short val);
-	void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
-	
+    char ReadConfigByte(TPciDevice *dev, int func, char reg);
+    short ReadConfigWord(TPciDevice *dev, int func, char reg);
+    int ReadConfigDword(TPciDevice *dev, int func, char reg);
+    void WriteConfigByte(TPciDevice *dev, int func, char reg, char val);
+    void WriteConfigWord(TPciDevice *dev, int func, char reg, short val);
+    void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
+
 protected:
-	void ScanForDevices();
+    void ScanForDevices();
 
-	TPciDevice *FDevArr[32];
-	int FSeg;
-	int FBus;
-	int FIo;
+    TPciBridge *FBridgeArr[256];	
+    TPciDevice *FDevArr[32];
+    int FSeg;
+    int FBus;
+    int FIo;
 
 private:
-	void Init();
+    void Init();
 
 };
 

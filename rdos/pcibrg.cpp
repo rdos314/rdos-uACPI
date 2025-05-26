@@ -25,6 +25,7 @@
 #
 ########################################################################*/
 
+#include <stdio.h>
 #include <uacpi/resources.h>
 #include "acpi.h"
 #include "pcibrg.h"
@@ -32,37 +33,37 @@
 
 char in_byte(int port);
 #pragma aux in_byte = \
-	"in al,dx" \
+    "in al,dx" \
     parm [ edx ] \
-	value [ al ]
+    value [ al ]
 
 short in_word(int port);
 #pragma aux in_word = \
-	"in ax,dx" \
+    "in ax,dx" \
     parm [ edx ] \
-	value [ ax ]
+    value [ ax ]
 
 int in_dword(int port);
 #pragma aux in_dword = \
-	"in eax,dx" \
+    "in eax,dx" \
     parm [ edx ] \
-	value [ eax ]
+    value [ eax ]
 
 void out_byte(int port, char val);
 #pragma aux out_byte = \
-	"out dx,al" \
+    "out dx,al" \
     parm [ edx ] [ al ]
 
 void out_word(int port, short val);
 #pragma aux out_word = \
-	"out dx,ax" \
+    "out dx,ax" \
     parm [ edx ] [ ax ]
 
 void out_dword(int port, int val);
 #pragma aux out_dword = \
-	"out dx,eax" \
+    "out dx,eax" \
     parm [ edx ] [ eax ]
-	
+
 /*##########################################################################
 #
 #   Name       : TPciBridge::TPciBridge
@@ -76,10 +77,10 @@ void out_dword(int port, int val);
 ##########################################################################*/
 TPciBridge::TPciBridge(TPciFunction *parent, int bus)
 {
-	SetAcpiParent(parent);
+    SetAcpiParent(parent);
 	
-	FBus = bus;
-	Init();
+    FBus = bus;
+    Init();
 }
 	
 /*##########################################################################
@@ -93,13 +94,13 @@ TPciBridge::TPciBridge(TPciFunction *parent, int bus)
 #   Returns....: *
 #
 ##########################################################################*/
-TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function)
- : TPciFunction(device, function)
+TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int function, int vendor_device)
+ : TPciFunction(device, function, vendor_device)
 {
-	SetAcpiParent(parent);
+    SetAcpiParent(parent);
 	
-	FBus = bus;
-	Init();
+    FBus = bus;
+    Init();
 }
 
 /*##########################################################################
@@ -115,11 +116,15 @@ TPciBridge::TPciBridge(TPciFunction *parent, int bus, TPciDevice *device, int fu
 ##########################################################################*/
 TPciBridge::~TPciBridge()
 {
-	int i;
+    int i;
 	
-	for (i = 0; i < 32; i++)
-		if (FDevArr[i])
-			delete FDevArr[i];
+    for (i = 0; i < 32; i++)
+        if (FDevArr[i])
+            delete FDevArr[i];
+
+    for (i = 0; i < 256; i++)
+        if (FBridgeArr[i])
+            delete FBridgeArr[i];
 }
 
 /*##########################################################################
@@ -135,14 +140,17 @@ TPciBridge::~TPciBridge()
 ##########################################################################*/
 void TPciBridge::Init()
 {
-	int i;
+    int i;
 
-	FSeg = 0;
-	FBus = 0;
-	FIo = 0xCF8;
+    FSeg = 0;
+    FBus = 0;
+    FIo = 0xCF8;
+
+    for (i = 0; i < 256; i++)
+        FBridgeArr[i] = 0;
 	
-	for (i = 0; i < 32; i++)
-		FDevArr[i] = 0;
+    for (i = 0; i < 32; i++)
+        FDevArr[i] = 0;
 }
 
 /*##########################################################################
@@ -158,7 +166,7 @@ void TPciBridge::Init()
 ##########################################################################*/
 bool TPciBridge::IsPciBridge()
 {
-	return true;
+    return true;
 }
 
 /*##########################################################################
@@ -174,7 +182,7 @@ bool TPciBridge::IsPciBridge()
 ##########################################################################*/
 int TPciBridge::GetBridgeBus()
 {
-	return FBus;
+    return FBus;
 }
 
 /*##########################################################################
@@ -190,7 +198,50 @@ int TPciBridge::GetBridgeBus()
 ##########################################################################*/
 int TPciBridge::GetBridgeSegment()
 {
-	return FSeg;
+    return FSeg;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::GetBridge
+#
+#   Purpose....: Get bridge child
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciBridge *TPciBridge::GetBridge(int bus)
+{
+    if (bus >= 0 && bus < 256)
+        return FBridgeArr[bus];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::AddBridge
+#
+#   Purpose....: Add bridge
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciBridge::AddBridge(TPciBridge *bridge)
+{
+    int bus = bridge->GetBridgeBus();
+    
+    if (FBridgeArr[bus])
+        printf("Duplicate PCI bus %d\r\n", bus); 
+    else
+        FBridgeArr[bus] = bridge;
+    
+    if (FPciDevice)
+        FPciDevice->AddBridge(bridge);
 }
 
 /*##########################################################################
@@ -206,36 +257,36 @@ int TPciBridge::GetBridgeSegment()
 ##########################################################################*/
 void TPciBridge::ScanForDevices()
 {
-	int dev;
-	int func;
-	int ads;
-	int val;
-	bool found;
-	TPciDevice *pdev;
+    int dev;
+    int func;
+    int ads;
+    int val;
+    bool found;
+    TPciDevice *pdev;
 	
-	for (dev = 0; dev < 32; dev++)
-	{
-		found = false;
+    for (dev = 0; dev < 32; dev++)
+    {
+        found = false;
 		
-		for (func = 0; func < 8 && !found; func++)
-		{
-			ads = 0x80000000;
-			ads |= FBus << 16;
-			ads |= dev << 11;
-			ads |= func << 8;
-			out_dword(FIo, ads);
-			val = in_dword(FIo + 4);
-			if (val != 0xFFFFFFFF)
-				found = true;
-		}
+        for (func = 0; func < 8 && !found; func++)
+        {
+            ads = 0x80000000;
+            ads |= FBus << 16;
+            ads |= dev << 11;
+            ads |= func << 8;
+            out_dword(FIo, ads);
+            val = in_dword(FIo + 4);
+            if (val != 0xFFFFFFFF)
+                found = true;
+        }
 		
-		if (found)
-		{
-			pdev = new TPciDevice(this, dev);
-			pdev->ScanForFunctions();
-			FDevArr[dev] = pdev;
-		}
-	}
+        if (found)
+        {
+            pdev = new TPciDevice(this, dev);
+            pdev->ScanForFunctions();
+            FDevArr[dev] = pdev;
+        }
+    }
 }
 
 /*##########################################################################
@@ -251,40 +302,40 @@ void TPciBridge::ScanForDevices()
 ##########################################################################*/
 bool TPciBridge::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	uacpi_status ret;
-	uacpi_resources *resources;
-	uacpi_resource *resource;
-	bool done = false;
+    uacpi_status ret;
+    uacpi_resources *resources;
+    uacpi_resource *resource;
+    bool done = false;
 
-	ret = uacpi_get_current_resources(node, &resources);
-	if (ret == UACPI_STATUS_OK)
-	{
-		resource = resources->entries;
-		while (!done && resource->type != UACPI_RESOURCE_TYPE_END_TAG)
-		{
-			switch (resource->type)
-			{					
-				case UACPI_RESOURCE_TYPE_ADDRESS16:
-					if (resource->address16.common.type == UACPI_RANGE_BUS)
-						if (resource->address16.minimum == FBus)
-							done = true;
-					break;
+    ret = uacpi_get_current_resources(node, &resources);
+    if (ret == UACPI_STATUS_OK)
+    {
+        resource = resources->entries;
+        while (!done && resource->type != UACPI_RESOURCE_TYPE_END_TAG)
+        {
+            switch (resource->type)
+            {					
+                case UACPI_RESOURCE_TYPE_ADDRESS16:
+                    if (resource->address16.common.type == UACPI_RANGE_BUS)
+                        if (resource->address16.minimum == FBus)
+                    done = true;
+                    break;
 					
-				case UACPI_RESOURCE_TYPE_ADDRESS32:
-					if (resource->address32.common.type == UACPI_RANGE_BUS)
-						if (resource->address32.minimum == FBus)
-							done = true;
-					break;
+                case UACPI_RESOURCE_TYPE_ADDRESS32:
+                    if (resource->address32.common.type == UACPI_RANGE_BUS)
+                        if (resource->address32.minimum == FBus)
+                            done = true;
+                    break;
 				
-				default:
-					break;
-			}
-			resource = UACPI_NEXT_RESOURCE(resource);
-		}
-	}	
+                default:
+                    break;
+            }
+            resource = UACPI_NEXT_RESOURCE(resource);
+        }
+    }	
 
-	uacpi_free_resources(resources);
-	return done;
+    uacpi_free_resources(resources);
+    return done;
 }
 
 /*##########################################################################
@@ -300,45 +351,45 @@ bool TPciBridge::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 ##########################################################################*/
 void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-	uacpi_status ret;
-	uacpi_resources *resources;
-	uacpi_resource *resource;
-	unsigned long long val;
+    uacpi_status ret;
+    uacpi_resources *resources;
+    uacpi_resource *resource;
+    unsigned long long val;
 
     TAcpiObject::Setup(node, info);
 
-	ret = uacpi_eval_simple_integer(node, "_BBN", &val);
-	if (ret == UACPI_STATUS_OK)
-		FBus = (int)val;
+    ret = uacpi_eval_simple_integer(node, "_BBN", &val);
+    if (ret == UACPI_STATUS_OK)
+        FBus = (int)val;
 
-	ret = uacpi_eval_simple_integer(node, "_SEG", &val);
-	if (ret == UACPI_STATUS_OK)
-		FSeg = (int)val;
+    ret = uacpi_eval_simple_integer(node, "_SEG", &val);
+    if (ret == UACPI_STATUS_OK)
+        FSeg = (int)val;
 	
-	ret = uacpi_get_current_resources(FNode, &resources);
-	if (ret == UACPI_STATUS_OK)
-	{
-		resource = resources->entries;
-		while (resource->type != UACPI_RESOURCE_TYPE_END_TAG)
-		{
-			switch (resource->type)
-			{				
-				case UACPI_RESOURCE_TYPE_IO:
-					FIo = resource->io.minimum;
-					break;
+    ret = uacpi_get_current_resources(FNode, &resources);
+    if (ret == UACPI_STATUS_OK)
+    {
+        resource = resources->entries;
+        while (resource->type != UACPI_RESOURCE_TYPE_END_TAG)
+        {
+            switch (resource->type)
+            {				
+                case UACPI_RESOURCE_TYPE_IO:
+                    FIo = resource->io.minimum;
+                    break;
 			
-				default:
-					break;
-			}
-			resource = UACPI_NEXT_RESOURCE(resource);
-		}
-	}	
-	uacpi_free_resources(resources);
+                default:
+                    break;
+            }
+            resource = UACPI_NEXT_RESOURCE(resource);
+        }
+    }	
+    uacpi_free_resources(resources);
 
-	ServUacpiEnableIo(FIo, 4);	
-	ServUacpiEnableIo(FIo + 4, 4);	
+    ServUacpiEnableIo(FIo, 4);	
+    ServUacpiEnableIo(FIo + 4, 4);	
 	
-	ScanForDevices();
+    ScanForDevices();
 }
 
 /*##########################################################################
@@ -354,15 +405,15 @@ void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 ##########################################################################*/
 char TPciBridge::ReadConfigByte(TPciDevice *dev, int func, char reg)
 {
-	int ads;
+    int ads;
 
-	ads = 0x80000000;
-	ads |= FBus << 16;
-	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (func & 0x7) << 8;
-	ads |= reg;
-	out_dword(FIo, ads & 0xFFFFFFFC);
-	return in_byte(FIo + 4 + (ads & 3));
+    ads = 0x80000000;
+    ads |= FBus << 16;
+    ads |= (dev->GetDevice() & 0x1F) << 11;
+    ads |= (func & 0x7) << 8;
+    ads |= reg;
+    out_dword(FIo, ads & 0xFFFFFFFC);
+    return in_byte(FIo + 4 + (ads & 3));
 }
 
 /*##########################################################################
@@ -378,15 +429,15 @@ char TPciBridge::ReadConfigByte(TPciDevice *dev, int func, char reg)
 ##########################################################################*/
 short TPciBridge::ReadConfigWord(TPciDevice *dev, int func, char reg)
 {
-	int ads;
+    int ads;
 
-	ads = 0x80000000;
-	ads |= FBus << 16;
-	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (func & 0x7) << 8;
-	ads |= reg;
-	out_dword(FIo, ads & 0xFFFFFFFC);
-	return in_word(FIo + 4 + (ads & 3));
+    ads = 0x80000000;
+    ads |= FBus << 16;
+    ads |= (dev->GetDevice() & 0x1F) << 11;
+    ads |= (func & 0x7) << 8;
+    ads |= reg;
+    out_dword(FIo, ads & 0xFFFFFFFC);
+    return in_word(FIo + 4 + (ads & 3));
 }
 
 /*##########################################################################
@@ -402,15 +453,15 @@ short TPciBridge::ReadConfigWord(TPciDevice *dev, int func, char reg)
 ##########################################################################*/
 int TPciBridge::ReadConfigDword(TPciDevice *dev, int func, char reg)
 {
-	int ads;
+    int ads;
 
-	ads = 0x80000000;
-	ads |= FBus << 16;
-	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (func & 0x7) << 8;
-	ads |= reg;
-	out_dword(FIo, ads & 0xFFFFFFFC);
-	return in_dword(FIo + 4 + (ads & 3));
+    ads = 0x80000000;
+    ads |= FBus << 16;
+    ads |= (dev->GetDevice() & 0x1F) << 11;
+    ads |= (func & 0x7) << 8;
+    ads |= reg;
+    out_dword(FIo, ads & 0xFFFFFFFC);
+    return in_dword(FIo + 4 + (ads & 3));
 }
 
 /*##########################################################################
@@ -426,15 +477,15 @@ int TPciBridge::ReadConfigDword(TPciDevice *dev, int func, char reg)
 ##########################################################################*/
 void TPciBridge::WriteConfigByte(TPciDevice *dev, int func, char reg, char val)
 {
-	int ads;
+    int ads;
 
-	ads = 0x80000000;
-	ads |= FBus << 16;
-	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (func & 0x7) << 8;
-	ads |= reg;
-	out_dword(FIo, ads & 0xFFFFFFFC);
-	out_byte(FIo + 4 + (ads & 3), val);
+    ads = 0x80000000;
+    ads |= FBus << 16;
+    ads |= (dev->GetDevice() & 0x1F) << 11;
+    ads |= (func & 0x7) << 8;
+    ads |= reg;
+    out_dword(FIo, ads & 0xFFFFFFFC);
+    out_byte(FIo + 4 + (ads & 3), val);
 }
 
 /*##########################################################################
@@ -450,15 +501,15 @@ void TPciBridge::WriteConfigByte(TPciDevice *dev, int func, char reg, char val)
 ##########################################################################*/
 void TPciBridge::WriteConfigWord(TPciDevice *dev, int func, char reg, short val)
 {
-	int ads;
+    int ads;
 
-	ads = 0x80000000;
-	ads |= FBus << 16;
-	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (func & 0x7) << 8;
-	ads |= reg;
-	out_dword(FIo, ads & 0xFFFFFFFC);
-	out_word(FIo + 4 + (ads & 3), val);
+    ads = 0x80000000;
+    ads |= FBus << 16;
+    ads |= (dev->GetDevice() & 0x1F) << 11;
+    ads |= (func & 0x7) << 8;
+    ads |= reg;
+    out_dword(FIo, ads & 0xFFFFFFFC);
+    out_word(FIo + 4 + (ads & 3), val);
 }
 
 /*##########################################################################
@@ -474,13 +525,13 @@ void TPciBridge::WriteConfigWord(TPciDevice *dev, int func, char reg, short val)
 ##########################################################################*/
 void TPciBridge::WriteConfigDword(TPciDevice *dev, int func, char reg, int val)
 {
-	int ads;
+    int ads;
 
-	ads = 0x80000000;
-	ads |= FBus << 16;
-	ads |= (dev->GetDevice() & 0x1F) << 11;
-	ads |= (func & 0x7) << 8;
-	ads |= reg;
-	out_dword(FIo, ads & 0xFFFFFFFC);
-	out_dword(FIo + 4 + (ads & 3), val);
+    ads = 0x80000000;
+    ads |= FBus << 16;
+    ads |= (dev->GetDevice() & 0x1F) << 11;
+    ads |= (func & 0x7) << 8;
+    ads |= reg;
+    out_dword(FIo, ads & 0xFFFFFFFC);
+    out_dword(FIo + 4 + (ads & 3), val);
 }
