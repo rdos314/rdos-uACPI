@@ -35,34 +35,35 @@
 class TAcpiObject
 {
 public:
-	TAcpiObject();
-	TAcpiObject(TAcpiObject *parent);
-	virtual ~TAcpiObject();
+    TAcpiObject();
+    TAcpiObject(TAcpiObject *parent);
+    virtual ~TAcpiObject();
 	
-	virtual bool IsDevice();
-	virtual bool IsPciFunction();
-	virtual bool IsPciBridge();
-	virtual bool IsProcessor();
-	virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
-	virtual void Update();
+    virtual bool IsDevice();
+    virtual bool IsPciFunction();
+    virtual bool IsPciBridge();
+    virtual bool IsProcessor();
+    virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+    virtual void Update();
     virtual TAcpiObject *FindPciFunction(int device, int function);
 	
-	void SetAcpiParent(TAcpiObject *parent);
-	void AddObject(TAcpiObject *obj);
-	int EvalInt(int def);
-	const char *GetName();
-	TAcpiObject *Find(const char *name);
+    TAcpiObject *GetAcpiParent();
+    void SetAcpiParent(TAcpiObject *parent);
+    void AddObject(TAcpiObject *obj);
+    int EvalInt(int def);
+    const char *GetName();
+    TAcpiObject *Find(const char *name);
 	
 protected:
-	TAcpiObject *FParent;
-	uacpi_namespace_node *FNode;
-	uacpi_namespace_node_info *FInfo;
+    TAcpiObject *FParent;
+    uacpi_namespace_node *FNode;
+    uacpi_namespace_node_info *FInfo;
 	
-	char FName[5];
+    char FName[5];
 	
-	int FSize;
-	int FCount;
-	TAcpiObject **FArr;
+    int FSize;
+    int FCount;
+    TAcpiObject **FArr;
 };
 
 #endif

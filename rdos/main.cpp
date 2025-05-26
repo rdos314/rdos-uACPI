@@ -336,9 +336,12 @@ TAcpiDevice *FindPciDevice(TAcpiObject *parent, uacpi_namespace_node *node, uacp
     obj = func->FindPciFunction(device, function);
     if (obj)
     {
-        obj->SetAcpiParent(parent);
-        if (obj->IsPciFunction())
-            return (TAcpiDevice *)obj;
+        if (!obj->GetAcpiParent())
+        {    
+            obj->SetAcpiParent(parent);
+            if (obj->IsPciFunction())
+                return (TAcpiDevice *)obj;
+        }
     }
     return 0;
 }
@@ -407,6 +410,7 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
     TAcpiObject *obj;
     TAcpiDevice *dev;
     TAcpiProcessor *proc;
+    char name[5];
     
     ret = uacpi_get_namespace_node_info(node, &info);
     if (uacpi_unlikely_error(ret)) 
@@ -430,15 +434,18 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
                     dev = FindPciDevice(obj, node, info);
                 else
                     dev = new TAcpiDevice(obj);
+
+                if (dev)
+                    dev->Setup(node, info);
             }
             else
                 dev = 0;
 
             if (dev)
-            {
                 AddDevice(dev);
-                dev->Setup(node, info);
-            }
+            else
+                uacpi_free_namespace_node_info(info);
+
             ObjArr[node_depth] = dev;
             break;
 			
@@ -446,7 +453,7 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
             proc = AddProcessor(ObjArr[node_depth - 1], node, info);
             ObjArr[node_depth] = proc;
             break;
-			
+
         default:
             if (ObjArr[node_depth - 1])
             {
@@ -454,6 +461,9 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
                 obj->Setup(node, info);
                 ObjArr[node_depth - 1]->AddObject(obj);
             }
+            else
+                uacpi_free_namespace_node_info(info);
+
             ObjArr[node_depth] = 0;
             break;
     }
