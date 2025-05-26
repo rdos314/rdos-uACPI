@@ -143,6 +143,25 @@ bool TPciFunction::IsPciFunction()
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::FindPciFunction
+#
+#   Purpose....: Find PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiObject *TPciFunction::FindPciFunction(int device, int function)
+{
+    if (FPciDevice)
+        return FPciDevice->Find(device, function);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::GetSegment
 #
 #   Purpose....: Get PCI segment
@@ -292,28 +311,6 @@ unsigned char TPciFunction::GetSubClass()
 unsigned char TPciFunction::GetProtocol()
 {
     return FProtocol;
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::Check
-#
-#   Purpose....: Check if this device
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-bool TPciFunction::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
-{
-    int device = (info->adr >> 16) & 0xFFFF;
-    int function = info->adr & 0xFFFF;
-	
-    if (FPciDevice)
-        if (device == FPciDevice->GetDevice() && function == FPciFunction)
-            return true;
-    return false;
 }
 
 /*##########################################################################

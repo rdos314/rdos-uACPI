@@ -68,6 +68,25 @@ TPciDevice::~TPciDevice()
 
 /*##########################################################################
 #
+#   Name       : TPciDevice::Find
+#
+#   Purpose....: Find PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiObject *TPciDevice::Find(int device, int function)
+{
+    if (FParent)
+        return FParent->FindPciFunction(device, function);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciDevice::AddBridge
 #
 #   Purpose....: Add bridge

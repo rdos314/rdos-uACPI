@@ -45,6 +45,7 @@ public:
     void ScanForFunctions();
     void AddBridge(TPciBridge *bridge);
     TPciFunction *GetFunction(int function);
+    TAcpiObject *Find(int device, int function);
 
     char ReadConfigByte(int func, char reg);
     short ReadConfigWord(int func, char reg);

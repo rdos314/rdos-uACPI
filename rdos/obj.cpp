@@ -166,6 +166,22 @@ bool TAcpiObject::IsProcessor()
 
 /*##########################################################################
 #
+#   Name       : TAcpiObject::FindPciFunction
+#
+#   Purpose....: Find PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiObject *TAcpiObject::FindPciFunction(int device, int function)
+{
+    return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TAcpiObject::SetAcpiParent
 #
 #   Purpose....: Set ACPI parent

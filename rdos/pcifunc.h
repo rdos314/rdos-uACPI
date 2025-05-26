@@ -40,6 +40,7 @@ public:
     virtual ~TPciFunction();
 	
     virtual bool IsPciFunction();
+    virtual TAcpiObject *FindPciFunction(int device, int function);
 
     void SetDevice(TPciDevice *dev);
     int GetSegment();
@@ -51,8 +52,6 @@ public:
     unsigned char GetClass();
     unsigned char GetSubClass();
     unsigned char GetProtocol();
-
-    bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 
     char ReadConfigByte(char reg);
     short ReadConfigWord(char reg);

@@ -42,6 +42,7 @@ public:
 	
     virtual bool IsPciBridge();
     virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
+    virtual TAcpiObject *FindPciFunction(int device, int function);
 
     int GetBridgeSegment();
     int GetBridgeBus();

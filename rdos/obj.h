@@ -45,6 +45,7 @@ public:
 	virtual bool IsProcessor();
 	virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 	virtual void Update();
+    virtual TAcpiObject *FindPciFunction(int device, int function);
 	
 	void SetAcpiParent(TAcpiObject *parent);
 	void AddObject(TAcpiObject *obj);

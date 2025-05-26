@@ -223,6 +223,30 @@ TPciBridge *TPciBridge::GetBridge(int bus)
 
 /*##########################################################################
 #
+#   Name       : TPciBridge::FindPciFunction
+#
+#   Purpose....: Find PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiObject *TPciBridge::FindPciFunction(int device, int function)
+{
+    TPciDevice *dev = 0;
+    
+    if (device >= 0 && device < 32)
+        dev = FDevArr[device];
+    
+    if (dev)
+        return dev->GetFunction(function);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciBridge::AddBridge
 #
 #   Purpose....: Add bridge
