@@ -28,6 +28,7 @@ int RDOSAPI ServUacpiReadPciDword(int dev);
 void RDOSAPI ServUacpiWritePciByte(int dev, char val);
 void RDOSAPI ServUacpiWritePciWord(int dev, short val);
 void RDOSAPI ServUacpiWritePciDword(int dev, int val);
+void RDOSAPI ServUacpiStartPci();
 
 #ifdef __cplusplus
 }

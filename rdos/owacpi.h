@@ -48,3 +48,6 @@
 #pragma aux ServUacpiWritePciDword = \
     ServGate_uacpi_write_pci_dword  \
     __parm [__ebx] [__eax]
+
+#pragma aux ServUacpiStartPci = \
+    ServGate_uacpi_start_pci

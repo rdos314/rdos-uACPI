@@ -31,6 +31,7 @@
 #include <uacpi/event.h>
 #include <uacpi/utilities.h>
 #include <uacpi/resources.h>
+#include "acpi.h"
 #include "rdos.h"
 #include "dev.h"
 #include "pcidev.h"
@@ -506,6 +507,7 @@ uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_
 ##########################################################################*/
 bool InitAcpi()
 {
+    bool start = false;
     uacpi_status ret;
 	
     ret = uacpi_initialize(0);
@@ -536,14 +538,19 @@ bool InitAcpi()
         return false;
     }
 
+    ServUacpiStartPci();
+	
+    while (!start)
+        RdosWaitMilli(50);
+    	
+    uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
+
     ret = uacpi_finalize_gpe_initialization();
     if (uacpi_unlikely_error(ret))
     {
         printf("uacpi_finalize_gpe_initialization error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
-	
-    uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 	
     return true;
 }
@@ -561,11 +568,6 @@ bool InitAcpi()
 ##########################################################################*/
 int main(int argc, char **argv)
 {
-    bool start = false;
-	
-    while (!start)
-        RdosWaitMilli(50);
-
     InitPci();
     InitAcpi();
 	
