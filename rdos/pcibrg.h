@@ -28,6 +28,7 @@
 #ifndef _PCI_BRIDGE_H
 #define _PCI_BRIDGE_H
 
+#include <uacpi/resources.h>
 #include "pcifunc.h"
 
 class TPciBridge : public TPciFunction
@@ -57,6 +58,8 @@ public:
     void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
 
 protected:
+    void ParseIrqRouting(uacpi_pci_routing_table_entry *entry);
+    void SetupIrqRouting(uacpi_namespace_node *node);
 
     TPciBridge *FBridgeArr[256];	
     TPciDevice *FDevArr[32];

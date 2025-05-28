@@ -149,7 +149,7 @@ void TPciBridge::Init()
 
     for (i = 0; i < 256; i++)
         FBridgeArr[i] = 0;
-	
+
     for (i = 0; i < 32; i++)
         FDevArr[i] = 0;
 }
@@ -365,6 +365,53 @@ bool TPciBridge::Check(uacpi_namespace_node *node, uacpi_namespace_node_info *in
 
 /*##########################################################################
 #
+#   Name       : TPciBridge::ParseIrqRouting
+#
+#   Purpose....: Parse IRQ routing table
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciBridge::ParseIrqRouting(uacpi_pci_routing_table_entry *entry)
+{
+    int dev = (entry->address >> 16) & 0xFFFF;
+
+    if (dev >= 0 && dev < 32)
+    {
+        if (FDevArr[dev])
+            FDevArr[dev]->AddIrq(entry);
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::SetupIrqRouting
+#
+#   Purpose....: Setup IRQ routing table
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciBridge::SetupIrqRouting(uacpi_namespace_node *node)
+{
+    int i;
+    uacpi_pci_routing_table *table;
+    uacpi_status ret = uacpi_get_pci_routing_table(node, &table);
+
+    if (ret == UACPI_STATUS_OK)
+    {
+        for (i = 0; i < table->num_entries; i++)
+            ParseIrqRouting(&table->entries[i]);
+        uacpi_free_pci_routing_table(table);
+    }
+}
+
+/*##########################################################################
+#
 #   Name       : TPciBridge::Setup
 #
 #   Purpose....: Setup
@@ -415,6 +462,7 @@ void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *in
     ServUacpiEnableIo(FIo + 4, 4);	
 	
     ScanForDevices();
+    SetupIrqRouting(node);
 }
 
 /*##########################################################################

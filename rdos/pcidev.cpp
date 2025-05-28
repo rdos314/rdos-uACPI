@@ -25,9 +25,127 @@
 #
 ########################################################################*/
 
+#include <stdio.h>
 #include "pci.h"
 #include "pcidev.h"
 #include "pcibrg.h"
+
+/*##########################################################################
+#
+#   Name       : TPciIrqRoute::TPciIrqRoute
+#
+#   Purpose....: Constructor for TPciIrqRoute
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciIrqRoute::TPciIrqRoute(uacpi_pci_routing_table_entry *entry)
+{
+    uacpi_status ret;
+    uacpi_resources *resources;
+    uacpi_resource *resource;
+
+    Irq = entry->index;    
+    Edge = false;
+    Level = 0;
+
+    if (entry->source)
+    {
+        ret = uacpi_get_current_resources(entry->source, &resources);
+        if (ret == UACPI_STATUS_OK)
+        {
+            resource = resources->entries;
+            switch (resource->type)
+            {   
+                case UACPI_RESOURCE_TYPE_IRQ:
+                    SetupIrq(&resource->irq);
+                    break;
+                
+                case UACPI_RESOURCE_TYPE_EXTENDED_IRQ:
+                    SetupExtIrq(&resource->extended_irq);
+                    break;
+                
+                default:
+                    printf("Unexpected IRQ resource\r\n");
+                    break;
+            }
+            uacpi_free_resources(resources);
+        }
+        else
+            printf("Couldn't get IRQ resources\r\n");
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciIrqRoute::~TPciIrqRoute
+#
+#   Purpose....: Destructor for TPciIrqRoute
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciIrqRoute::~TPciIrqRoute()
+{
+}
+
+/*##########################################################################
+#
+#   Name       : TPciIrqRoute::SetupIrq
+#
+#   Purpose....: Setup using standard IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciIrqRoute::SetupIrq(uacpi_resource_irq *irq)
+{    
+    if (irq->num_irqs < 1)
+        printf("No IRQs\r\n");
+    else
+    {
+        Irq = irq->irqs[0];
+        
+        if (irq->triggering == UACPI_TRIGGERING_EDGE)
+            Edge = true;
+        
+        if (irq->polarity == UACPI_POLARITY_ACTIVE_HIGH)
+            Level = 1;
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciIrqRoute::SetupExtIrq
+#
+#   Purpose....: Setup using extended IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciIrqRoute::SetupExtIrq(uacpi_resource_extended_irq *irq)
+{    
+    if (irq->num_irqs < 1)
+        printf("No IRQs\r\n");
+    else
+    {
+        Irq = irq->irqs[0];
+        
+        if (irq->triggering == UACPI_TRIGGERING_EDGE)
+            Edge = true;
+        
+        if (irq->polarity == UACPI_POLARITY_ACTIVE_HIGH)
+            Level = 1;
+    }
+}
 
 /*##########################################################################
 #
@@ -46,6 +164,9 @@ TPciDevice::TPciDevice(TPciBridge *parent, int device)
 	
     FParent = parent;
     FDevice = device;
+
+    for (i = 0; i < 4; i++)
+        FIrqArr[i] = 0;
 	
     for (i = 0; i < 8; i++)
         FFuncArr[i] = 0;
@@ -64,6 +185,15 @@ TPciDevice::TPciDevice(TPciBridge *parent, int device)
 ##########################################################################*/
 TPciDevice::~TPciDevice()
 {
+    int i;
+
+    for (i = 0; i < 4; i++)
+        if (FIrqArr[i])
+            delete FIrqArr[i];
+
+    for (i = 0; i < 8; i++)
+        if (FFuncArr[i])
+            delete FFuncArr[i];
 }
 
 /*##########################################################################
@@ -99,6 +229,26 @@ TAcpiObject *TPciDevice::Find(int device, int function)
 void TPciDevice::AddBridge(TPciBridge *bridge)
 {
     FParent->AddBridge(bridge);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::AddIrq
+#
+#   Purpose....: Add IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciDevice::AddIrq(uacpi_pci_routing_table_entry *entry)
+{
+    int pin = entry->pin;
+
+    if (pin >= 0 && pin < 4)
+        if (!FIrqArr[pin])
+            FIrqArr[pin] = new TPciIrqRoute(entry);
 }
 
 /*##########################################################################

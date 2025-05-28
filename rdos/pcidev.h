@@ -31,6 +31,21 @@
 #include "dev.h"
 #include "pcibrg.h"
 
+class TPciIrqRoute
+{
+public:
+    TPciIrqRoute(uacpi_pci_routing_table_entry *entry);
+    ~TPciIrqRoute();
+    
+    int Irq;
+    bool Edge;
+    int Level;
+    
+protected:
+    void SetupIrq(uacpi_resource_irq *irq);
+    void SetupExtIrq(uacpi_resource_extended_irq *irq);
+};
+
 class TPciFunction;
 
 class TPciDevice
@@ -44,6 +59,7 @@ public:
     int GetDevice();
     void ScanForFunctions();
     void AddBridge(TPciBridge *bridge);
+    void AddIrq(uacpi_pci_routing_table_entry *entry);
     TPciFunction *GetFunction(int function);
     TAcpiObject *Find(int device, int function);
 
@@ -57,6 +73,7 @@ public:
 protected:
     TPciFunction *AddFunction(int function, int vendor_device);
 
+    TPciIrqRoute *FIrqArr[4];
     TPciFunction *FFuncArr[8];
     TPciBridge *FParent;
     int FDevice;
