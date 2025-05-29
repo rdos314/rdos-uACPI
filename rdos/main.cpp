@@ -31,11 +31,13 @@
 #include <uacpi/event.h>
 #include <uacpi/utilities.h>
 #include <uacpi/resources.h>
+#include <uacpi/tables.h>
 #include "acpi.h"
 #include "rdos.h"
 #include "dev.h"
 #include "pcidev.h"
 #include "pcibrg.h"
+#include "pciseg.h"
 #include "cpu.h"
 
 extern "C"
@@ -46,7 +48,7 @@ void InitPci();
 };
 
 static TAcpiObject *ObjArr[256] = {0};
-static TPciBridge *PciRootArr[256] = {0};
+static TPciSegment *PciSegArr[256] = {0};
 
 /*##########################################################################
 #
@@ -74,6 +76,40 @@ bool IsPciRoot(uacpi_id_string *hid)
 
 /*##########################################################################
 #
+#   Name       : ProcessEcam
+#
+#   Purpose....: Process ecam
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void ProcessEcam()
+{
+    int i;
+    int mcfg_size;
+    uacpi_table mcfg_table;
+    uacpi_status status = uacpi_table_find_by_signature(ACPI_MCFG_SIGNATURE, &mcfg_table);
+    struct acpi_mcfg *mcfg = (struct acpi_mcfg *)mcfg_table.ptr;
+    TPciSegment *seg;
+    int index;
+
+    if (status == UACPI_STATUS_OK)
+    {
+        mcfg_size = (mcfg->hdr.length - offsetof(struct acpi_mcfg, entries)) / sizeof(struct acpi_mcfg_allocation);
+        for (i = 0; i < mcfg_size; i++)
+        {
+            seg = new TPciSegment(mcfg->entries + i);
+            index = seg->GetSegment();
+            if (index >= 0 && index < 256)
+                PciSegArr[index] = seg;
+        }
+    }
+}
+
+/*##########################################################################
+#
 #   Name       : AddPciRoot
 #
 #   Purpose....: Add pci root
@@ -85,179 +121,38 @@ bool IsPciRoot(uacpi_id_string *hid)
 ##########################################################################*/
 TAcpiDevice *AddPciRoot(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-    int seg;
-    TPciBridge *bridge = new TPciBridge(0, 0);
+    int index = 0;
+    int bus = 0;
+    unsigned long long val;
+    TPciSegment *seg;
+    TPciBridge *bridge = 0;
+    uacpi_status ret;
 
-    bridge->Setup(node, info);
-    seg = bridge->GetBridgeSegment();
-    if (PciRootArr[seg])
+    ret = uacpi_eval_simple_integer(node, "_SEG", &val);
+    if (ret == UACPI_STATUS_OK)
+        index = (int)val;
+
+    ret = uacpi_eval_simple_integer(node, "_BBN", &val);
+    if (ret == UACPI_STATUS_OK)
+        bus = (int)val;
+
+    seg = PciSegArr[index];
+
+    if (!seg && index == 0)
     {
-        printf("Multiple identical PCI segments %d\r\n", seg);
-        delete bridge;
-        bridge = 0;
+        seg = new TPciSegment(0);
+        PciSegArr[index] = seg;
+    }
+
+    if (seg)
+    {
+        bridge = new TPciBridge(seg, bus);
+        bridge->Setup(node, info);
     }
     else
-        PciRootArr[seg] = bridge;
+        printf("Segment not defined %d\r\n", seg);
 
     return bridge;
-}
-
-/*##########################################################################
-#
-#   Name       : PrintDeviceInfo
-#
-#   Purpose....: Print device info
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void PrintDeviceInfo(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
-{
-    uacpi_status ret;
-    uacpi_resources *resources;
-    uacpi_resource *resource;
-    unsigned int start;
-    unsigned int end;
-    int i;
-
-    ret = uacpi_get_current_resources(node, &resources);
-    if (ret == UACPI_STATUS_OK)
-    {
-        const char *path = uacpi_namespace_node_generate_absolute_path(node);
-        printf("Device: %s ", path);
-
-        resource = resources->entries;
-        while (resource->type != UACPI_RESOURCE_TYPE_END_TAG)
-        {
-            switch (resource->type)
-            {
-                case UACPI_RESOURCE_TYPE_IRQ:
-                    printf("IRQ [");
-                    for (i = 0; i < resource->irq.num_irqs; i++)
-                    {
-                        if (i)
-                            printf(" ");
-                        printf("%d", resource->irq.irqs[i]);
-                    }
-                    printf("] ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_EXTENDED_IRQ:
-                    printf("ExtIRQ ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_DMA:
-                    printf("DMA ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_FIXED_DMA:
-                    printf("ExtDMA ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_IO:
-                    printf("IO [%04hX] ", resource->io.minimum);
-                    break;
-
-                case UACPI_RESOURCE_TYPE_FIXED_IO:
-                    printf("FixedIO ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_ADDRESS16:
-                    printf("Ads16 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_ADDRESS32:
-                    printf("Ads32 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_ADDRESS64:
-                    printf("Ads64 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_ADDRESS64_EXTENDED:
-                    printf("ExtAds64 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_MEMORY24:
-                    printf("Mem24 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_MEMORY32:
-                    printf("Mem32 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_FIXED_MEMORY32:
-                    start = resource->fixed_memory32.address;
-                    end = start + resource->fixed_memory32.length - 1;
-                    printf("Mem [%08lX-%08lX] ", start, end);
-                    break;
-
-                case UACPI_RESOURCE_TYPE_START_DEPENDENT:
-                    printf("StartDep ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_END_DEPENDENT:
-                    printf("EndDep ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_VENDOR_SMALL:
-                    printf("VendSmall ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_VENDOR_LARGE:
-                    printf("VendLarge ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_GENERIC_REGISTER:
-                    printf("GenReg ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_SERIAL_I2C_CONNECTION:
-                    printf("I2C ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_SERIAL_SPI_CONNECTION:
-                    printf("SPI ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_SERIAL_UART_CONNECTION:
-                    printf("UART ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_SERIAL_CSI2_CONNECTION:
-                    printf("CSI2 ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_PIN_FUNCTION:
-                    printf("PinFunc ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_PIN_CONFIGURATION:
-                    printf("PinConfig ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_PIN_GROUP:
-                    printf("PinGroup ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION:
-                    printf("PinGroupFunc ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_PIN_GROUP_CONFIGURATION:
-                    printf("PinGroupConfig ");
-                    break;
-
-                case UACPI_RESOURCE_TYPE_CLOCK_INPUT:
-                    printf("ClkInput ");
-                    break;
-            }
-            resource = UACPI_NEXT_RESOURCE(resource);
-        }
-        printf("\n");
-    }
 }
 
 /*##########################################################################
@@ -452,6 +347,8 @@ bool InitAcpi()
         printf("uacpi_namespace_initialize error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
+
+    ProcessEcam();
 
     uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 

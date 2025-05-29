@@ -408,7 +408,7 @@ unsigned char TPciFunction::GetProtocol()
 #   Returns....: *
 #
 ##########################################################################*/
-char TPciFunction::ReadConfigByte(char reg)
+char TPciFunction::ReadConfigByte(int reg)
 {
     if (FPciDevice)
         return FPciDevice->ReadConfigByte(FPciFunction, reg);
@@ -427,7 +427,7 @@ char TPciFunction::ReadConfigByte(char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-short TPciFunction::ReadConfigWord(char reg)
+short TPciFunction::ReadConfigWord(int reg)
 {
     if (FPciDevice)
         return FPciDevice->ReadConfigWord(FPciFunction, reg);
@@ -446,7 +446,7 @@ short TPciFunction::ReadConfigWord(char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::ReadConfigDword(char reg)
+int TPciFunction::ReadConfigDword(int reg)
 {
     if (FPciDevice)
         return FPciDevice->ReadConfigDword(FPciFunction, reg);
@@ -465,7 +465,7 @@ int TPciFunction::ReadConfigDword(char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciFunction::WriteConfigByte(char reg, char val)
+void TPciFunction::WriteConfigByte(int reg, char val)
 {
     if (FPciDevice)
         FPciDevice->WriteConfigByte(FPciFunction, reg, val);
@@ -482,7 +482,7 @@ void TPciFunction::WriteConfigByte(char reg, char val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciFunction::WriteConfigWord(char reg, short val)
+void TPciFunction::WriteConfigWord(int reg, short val)
 {
     if (FPciDevice)
         FPciDevice->WriteConfigWord(FPciFunction, reg, val);
@@ -499,7 +499,7 @@ void TPciFunction::WriteConfigWord(char reg, short val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciFunction::WriteConfigDword(char reg, int val)
+void TPciFunction::WriteConfigDword(int reg, int val)
 {
     if (FPciDevice)
         FPciDevice->WriteConfigDword(FPciFunction, reg, val);

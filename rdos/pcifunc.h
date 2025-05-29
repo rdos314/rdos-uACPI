@@ -56,12 +56,12 @@ public:
     unsigned char GetSubClass();
     unsigned char GetProtocol();
 
-    char ReadConfigByte(char reg);
-    short ReadConfigWord(char reg);
-    int ReadConfigDword(char reg);
-    void WriteConfigByte(char reg, char val);
-    void WriteConfigWord(char reg, short val);
-    void WriteConfigDword(char reg, int val);
+    char ReadConfigByte(int reg);
+    short ReadConfigWord(int reg);
+    int ReadConfigDword(int reg);
+    void WriteConfigByte(int reg, char val);
+    void WriteConfigWord(int reg, short val);
+    void WriteConfigDword(int reg, int val);
 
 protected:
     void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);

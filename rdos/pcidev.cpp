@@ -47,7 +47,7 @@ TPciIrqRoute::TPciIrqRoute(uacpi_pci_routing_table_entry *entry)
     uacpi_resources *resources;
     uacpi_resource *resource;
 
-    Irq = entry->index;    
+    Irq = entry->index;
     Edge = false;
     Level = 0;
 
@@ -58,15 +58,15 @@ TPciIrqRoute::TPciIrqRoute(uacpi_pci_routing_table_entry *entry)
         {
             resource = resources->entries;
             switch (resource->type)
-            {   
+            {
                 case UACPI_RESOURCE_TYPE_IRQ:
                     SetupIrq(&resource->irq);
                     break;
-                
+
                 case UACPI_RESOURCE_TYPE_EXTENDED_IRQ:
                     SetupExtIrq(&resource->extended_irq);
                     break;
-                
+
                 default:
                     printf("Unexpected IRQ resource\r\n");
                     break;
@@ -105,16 +105,16 @@ TPciIrqRoute::~TPciIrqRoute()
 #
 ##########################################################################*/
 void TPciIrqRoute::SetupIrq(uacpi_resource_irq *irq)
-{    
+{
     if (irq->num_irqs < 1)
         printf("No IRQs\r\n");
     else
     {
         Irq = irq->irqs[0];
-        
+
         if (irq->triggering == UACPI_TRIGGERING_EDGE)
             Edge = true;
-        
+
         if (irq->polarity == UACPI_POLARITY_ACTIVE_HIGH)
             Level = 1;
     }
@@ -132,16 +132,16 @@ void TPciIrqRoute::SetupIrq(uacpi_resource_irq *irq)
 #
 ##########################################################################*/
 void TPciIrqRoute::SetupExtIrq(uacpi_resource_extended_irq *irq)
-{    
+{
     if (irq->num_irqs < 1)
         printf("No IRQs\r\n");
     else
     {
         Irq = irq->irqs[0];
-        
+
         if (irq->triggering == UACPI_TRIGGERING_EDGE)
             Edge = true;
-        
+
         if (irq->polarity == UACPI_POLARITY_ACTIVE_HIGH)
             Level = 1;
     }
@@ -161,13 +161,13 @@ void TPciIrqRoute::SetupExtIrq(uacpi_resource_extended_irq *irq)
 TPciDevice::TPciDevice(TPciBridge *parent, int device)
 {
     int i;
-	
+
     FParent = parent;
     FDevice = device;
 
     for (i = 0; i < 4; i++)
         FIrqArr[i] = 0;
-	
+
     for (i = 0; i < 8; i++)
         FFuncArr[i] = 0;
 }
@@ -269,7 +269,7 @@ TPciFunction *TPciDevice::AddFunction(int function, int vendor_device)
     int bus;
     unsigned char class_code = (unsigned char)ReadConfigByte(function, PCI_classcode);
     unsigned char sub_class = (unsigned char)ReadConfigByte(function, PCI_subclass);
-        
+
     if (class_code == 6 && sub_class == 4)
     {
         bus = (unsigned char)ReadConfigByte(function, 26);
@@ -280,7 +280,7 @@ TPciFunction *TPciDevice::AddFunction(int function, int vendor_device)
     }
     else
         func = new TPciFunction(this, function, vendor_device, class_code, sub_class);
-    
+
     return func;
 }
 
@@ -406,7 +406,7 @@ TPciFunction *TPciDevice::GetFunction(int function)
 #   Returns....: *
 #
 ##########################################################################*/
-char TPciDevice::ReadConfigByte(int func, char reg)
+char TPciDevice::ReadConfigByte(int func, int reg)
 {
     return FParent->ReadConfigByte(this, func, reg);
 }
@@ -422,7 +422,7 @@ char TPciDevice::ReadConfigByte(int func, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-short TPciDevice::ReadConfigWord(int func, char reg)
+short TPciDevice::ReadConfigWord(int func, int reg)
 {
     return FParent->ReadConfigWord(this, func, reg);
 }
@@ -438,7 +438,7 @@ short TPciDevice::ReadConfigWord(int func, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciDevice::ReadConfigDword(int func, char reg)
+int TPciDevice::ReadConfigDword(int func, int reg)
 {
     return FParent->ReadConfigDword(this, func, reg);
 }
@@ -454,7 +454,7 @@ int TPciDevice::ReadConfigDword(int func, char reg)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciDevice::WriteConfigByte(int func, char reg, char val)
+void TPciDevice::WriteConfigByte(int func, int reg, char val)
 {
     FParent->WriteConfigByte(this, func, reg, val);
 }
@@ -470,7 +470,7 @@ void TPciDevice::WriteConfigByte(int func, char reg, char val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciDevice::WriteConfigWord(int func, char reg, short val)
+void TPciDevice::WriteConfigWord(int func, int reg, short val)
 {
     FParent->WriteConfigWord(this, func, reg, val);
 }
@@ -486,7 +486,7 @@ void TPciDevice::WriteConfigWord(int func, char reg, short val)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciDevice::WriteConfigDword(int func, char reg, int val)
+void TPciDevice::WriteConfigDword(int func, int reg, int val)
 {
     FParent->WriteConfigDword(this, func, reg, val);
 }

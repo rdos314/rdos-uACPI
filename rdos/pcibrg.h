@@ -30,17 +30,18 @@
 
 #include <uacpi/resources.h>
 #include "pcifunc.h"
+#include "pciseg.h"
 
 class TPciBridge : public TPciFunction
 {
 public:
-    TPciBridge(TPciFunction *parent, int bus);
+    TPciBridge(TPciSegment *seg, int bus);
     TPciBridge(TPciBridge *bridge, int bus, TPciDevice *device, int function, int vendor_device, unsigned char class_code, unsigned char sub_class);
     virtual ~TPciBridge();
-    
+
     void AddBridge(TPciBridge *bridge);
     void ScanForDevices();
-	
+
     virtual bool IsPciBridge();
     virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
     virtual TAcpiObject *FindPciFunction(int device, int function);
@@ -48,24 +49,22 @@ public:
     int GetBridgeSegment();
     int GetBridgeBus();
     TPciBridge *GetBridge(int bus);
-    bool Check(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
 
-    char ReadConfigByte(TPciDevice *dev, int func, char reg);
-    short ReadConfigWord(TPciDevice *dev, int func, char reg);
-    int ReadConfigDword(TPciDevice *dev, int func, char reg);
-    void WriteConfigByte(TPciDevice *dev, int func, char reg, char val);
-    void WriteConfigWord(TPciDevice *dev, int func, char reg, short val);
-    void WriteConfigDword(TPciDevice *dev, int func, char reg, int val);
+    char ReadConfigByte(TPciDevice *dev, int func, int reg);
+    short ReadConfigWord(TPciDevice *dev, int func, int reg);
+    int ReadConfigDword(TPciDevice *dev, int func, int reg);
+    void WriteConfigByte(TPciDevice *dev, int func, int reg, char val);
+    void WriteConfigWord(TPciDevice *dev, int func, int reg, short val);
+    void WriteConfigDword(TPciDevice *dev, int func, int reg, int val);
 
 protected:
     void ParseIrqRouting(uacpi_pci_routing_table_entry *entry);
     void SetupIrqRouting(uacpi_namespace_node *node);
 
-    TPciBridge *FBridgeArr[256];	
+    TPciSegment *FSeg;
+    TPciBridge *FBridgeArr[256];
     TPciDevice *FDevArr[32];
-    int FSeg;
     int FBus;
-    int FIo;
 
 private:
     void Init();

@@ -20,63 +20,48 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# pcidev.cpp
-# PCI device
+# pciseg.cpp
+# PCI segment
 #
 ########################################################################*/
 
-#ifndef _PCI_DEV_H
-#define _PCI_DEV_H
+#ifndef _PCI_SEGMENT_H
+#define _PCI_SEGMENT_H
 
-#include "dev.h"
-#include "pcibrg.h"
+#include <uacpi/tables.h>
 
-class TPciIrqRoute
+class TPciBridge;
+
+class TPciSegment
 {
 public:
-    TPciIrqRoute(uacpi_pci_routing_table_entry *entry);
-    ~TPciIrqRoute();
-
-    int Irq;
-    bool Edge;
-    int Level;
-
-protected:
-    void SetupIrq(uacpi_resource_irq *irq);
-    void SetupExtIrq(uacpi_resource_extended_irq *irq);
-};
-
-class TPciFunction;
-
-class TPciDevice
-{
-public:
-    TPciDevice(TPciBridge *parent, int device);
-    virtual ~TPciDevice();
+    TPciSegment(int segment);
+    TPciSegment(struct acpi_mcfg_allocation *mfcg);
+    virtual ~TPciSegment();
 
     int GetSegment();
-    int GetBus();
-    int GetDevice();
-    void ScanForFunctions();
-    void AddBridge(TPciBridge *bridge);
-    void AddIrq(uacpi_pci_routing_table_entry *entry);
-    TPciFunction *GetFunction(int function);
-    TAcpiObject *Find(int device, int function);
+    void Add(TPciBridge *bridge, int bus);
+    TPciBridge *Get(int bus);
 
-    char ReadConfigByte(int func, int reg);
-    short ReadConfigWord(int func, int reg);
-    int ReadConfigDword(int func, int reg);
-    void WriteConfigByte(int func, int reg, char val);
-    void WriteConfigWord(int func, int reg, short val);
-    void WriteConfigDword(int func, int reg, int val);
+    int CalcOffs(int bus, int dev, int func, int reg);
+    bool HasDev(TPciBridge *bridge, int device);
+
+    char ReadConfigByte(int offs);
+    short ReadConfigWord(int offs);
+    int ReadConfigDword(int offs);
+    void WriteConfigByte(int offs, char val);
+    void WriteConfigWord(int offs, short val);
+    void WriteConfigDword(int offs, int val);
 
 protected:
-    TPciFunction *AddFunction(int function, int vendor_device);
+    void Init();
 
-    TPciIrqRoute *FIrqArr[4];
-    TPciFunction *FFuncArr[8];
-    TPciBridge *FParent;
-    int FDevice;
+    int FSegment;
+    int FStartBus;
+    int FBusCount;
+    char *FMem;
+    int FIo;
+    TPciBridge **FBusArr;
 };
 
 #endif
