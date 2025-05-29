@@ -20,12 +20,16 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# proc.cpp
+# cpu.cpp
 # ACPI processor
 #
 ########################################################################*/
 
-#include "proc.h"
+#include "cpu.h"
+
+int TAcpiProcessor::FProcessorCount = 0;
+int TAcpiProcessor::FProcessorSize = 0;
+TAcpiProcessor **TAcpiProcessor::FProcessorArr = 0;
 
 /*##########################################################################
 #
@@ -41,6 +45,7 @@
 TAcpiProcessor::TAcpiProcessor(TAcpiObject *parent)
   : TAcpiObject(parent)
 {
+    Add(this);
 }
 
 /*##########################################################################
@@ -71,5 +76,81 @@ TAcpiProcessor::~TAcpiProcessor()
 ##########################################################################*/
 bool TAcpiProcessor::IsProcessor()
 {
-	return true;
+    return true;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiProcessor::Count
+#
+#   Purpose....: Get processor count
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiProcessor::Count()
+{
+    return FProcessorCount;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiProcessor::Get
+#
+#   Purpose....: Get processor #
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiProcessor *TAcpiProcessor::Get(int index)
+{
+    if (index >= 0 && index < FProcessorCount)
+        return FProcessorArr[index];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiProcessor::Add
+#
+#   Purpose....: Add processor
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiProcessor::Add(TAcpiProcessor *proc)
+{
+    TAcpiProcessor **arr;
+    int size;
+    int i;
+
+    if (FProcessorSize == FProcessorCount)
+    {
+        if (FProcessorSize)
+        {
+            size = 2 * FProcessorSize;
+            arr = new TAcpiProcessor *[size];
+
+            for (i = 0; i < FProcessorSize; i++)
+                arr[i] = FProcessorArr[i];
+
+            delete FProcessorArr;
+            FProcessorArr = arr;
+            FProcessorSize = size;
+        }
+        else
+        {
+            FProcessorSize = 4;
+            FProcessorArr = new TAcpiProcessor *[FProcessorSize];
+        }
+    }
+    FProcessorArr[FProcessorCount] = proc;
+    FProcessorCount++;
 }

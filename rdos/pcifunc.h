@@ -38,9 +38,12 @@ public:
     TPciFunction();
     TPciFunction(TPciDevice *dev, int function, int vendor_device, unsigned char class_code, unsigned char sub_class);
     virtual ~TPciFunction();
-	
+
     virtual bool IsPciFunction();
     virtual TAcpiObject *FindPciFunction(int device, int function);
+
+    static int Count();
+    static TPciFunction *Get(int index);
 
     void SetDevice(TPciDevice *dev);
     int GetSegment();
@@ -59,13 +62,18 @@ public:
     void WriteConfigByte(char reg, char val);
     void WriteConfigWord(char reg, short val);
     void WriteConfigDword(char reg, int val);
-	
+
 protected:
     void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
-    
+    void Add(TPciFunction *func);
+
+    static int FFuncCount;
+    static int FFuncSize;
+    static TPciFunction **FFuncArr;
+
     TPciDevice *FPciDevice;
     int FPciFunction;
-    
+
     unsigned short FVendor;
     unsigned short FDevice;
     unsigned char FClass;

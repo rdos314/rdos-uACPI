@@ -38,7 +38,7 @@ public:
     TAcpiObject();
     TAcpiObject(TAcpiObject *parent);
     virtual ~TAcpiObject();
-	
+
     virtual bool IsDevice();
     virtual bool IsPciFunction();
     virtual bool IsPciBridge();
@@ -46,21 +46,30 @@ public:
     virtual void Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info);
     virtual void Update();
     virtual TAcpiObject *FindPciFunction(int device, int function);
-	
+
+    static int Count();
+    static TAcpiObject *Get(int index);
+
     TAcpiObject *GetAcpiParent();
     void SetAcpiParent(TAcpiObject *parent);
     void AddObject(TAcpiObject *obj);
     int EvalInt(int def);
     const char *GetName();
     TAcpiObject *Find(const char *name);
-	
+
 protected:
+    void Add(TAcpiObject *obj);
+
+    static int FObjCount;
+    static int FObjSize;
+    static TAcpiObject **FObjArr;
+
     TAcpiObject *FParent;
     uacpi_namespace_node *FNode;
     uacpi_namespace_node_info *FInfo;
-	
+
     char FName[5];
-	
+
     int FSize;
     int FCount;
     TAcpiObject **FArr;

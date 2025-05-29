@@ -27,6 +27,10 @@
 
 #include "dev.h"
 
+int TAcpiDevice::FDeviceCount = 0;
+int TAcpiDevice::FDeviceSize = 0;
+TAcpiDevice **TAcpiDevice::FDeviceArr = 0;
+
 /*##########################################################################
 #
 #   Name       : TAcpiDevice::TAcpiDevice
@@ -41,6 +45,7 @@
 TAcpiDevice::TAcpiDevice(TAcpiObject *parent)
   : TAcpiObject(parent)
 {
+    Add(this);
 }
 
 /*##########################################################################
@@ -56,6 +61,7 @@ TAcpiDevice::TAcpiDevice(TAcpiObject *parent)
 ##########################################################################*/
 TAcpiDevice::TAcpiDevice()
 {
+    Add(this);
 }
 
 /*##########################################################################
@@ -86,7 +92,83 @@ TAcpiDevice::~TAcpiDevice()
 ##########################################################################*/
 bool TAcpiDevice::IsDevice()
 {
-	return true;
+    return true;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiDevice::Count
+#
+#   Purpose....: Get device count
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiDevice::Count()
+{
+    return FDeviceCount;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiDevice::Get
+#
+#   Purpose....: Get device #
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiDevice *TAcpiDevice::Get(int index)
+{
+    if (index >= 0 && index < FDeviceCount)
+        return FDeviceArr[index];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiDevice::Add
+#
+#   Purpose....: Add device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiDevice::Add(TAcpiDevice *dev)
+{
+    TAcpiDevice **arr;
+    int size;
+    int i;
+
+    if (FDeviceSize == FDeviceCount)
+    {
+        if (FDeviceSize)
+        {
+            size = 2 * FDeviceSize;
+            arr = new TAcpiDevice *[size];
+
+            for (i = 0; i < FDeviceSize; i++)
+                arr[i] = FDeviceArr[i];
+
+            delete FDeviceArr;
+            FDeviceArr = arr;
+            FDeviceSize = size;
+        }
+        else
+        {
+            FDeviceSize = 4;
+            FDeviceArr = new TAcpiDevice *[FDeviceSize];
+        }
+    }
+    FDeviceArr[FDeviceCount] = dev;
+    FDeviceCount++;
 }
 
 /*##########################################################################
@@ -102,10 +184,10 @@ bool TAcpiDevice::IsDevice()
 ##########################################################################*/
 int TAcpiDevice::EvalObjectInt(const char *name, int def)
 {
-	TAcpiObject *obj = Find(name);
+    TAcpiObject *obj = Find(name);
 
-	if (obj)
-		return obj->EvalInt(def);
-	else
-		return def;
+    if (obj)
+        return obj->EvalInt(def);
+    else
+        return def;
 }

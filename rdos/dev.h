@@ -33,13 +33,23 @@
 class TAcpiDevice : public TAcpiObject
 {
 public:
-	TAcpiDevice();
-	TAcpiDevice(TAcpiObject *parent);
-	virtual ~TAcpiDevice();
+    TAcpiDevice();
+    TAcpiDevice(TAcpiObject *parent);
+    virtual ~TAcpiDevice();
 
-	virtual bool IsDevice();
+    virtual bool IsDevice();
 
-	int EvalObjectInt(const char *name, int def);
+    static int Count();
+    static TAcpiDevice *Get(int index);
+
+    int EvalObjectInt(const char *name, int def);
+
+protected:
+    void Add(TAcpiDevice *dev);
+
+    static int FDeviceCount;
+    static int FDeviceSize;
+    static TAcpiDevice **FDeviceArr;
 };
 
 #endif

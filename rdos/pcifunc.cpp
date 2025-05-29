@@ -29,6 +29,10 @@
 #include "pcifunc.h"
 #include "pcidev.h"
 
+int TPciFunction::FFuncCount = 0;
+int TPciFunction::FFuncSize = 0;
+TPciFunction **TPciFunction::FFuncArr = 0;
+
 /*##########################################################################
 #
 #   Name       : TPciFunction::TPciFunction
@@ -49,6 +53,8 @@ TPciFunction::TPciFunction()
     FClass = 0;
     FSubClass = 0;
     FProtocol = 0;
+
+    Add(this);
 }
 
 /*##########################################################################
@@ -102,6 +108,8 @@ void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned ch
     FClass = class_code;
     FSubClass = sub_class;
     FProtocol = (unsigned char)ReadConfigByte(PCI_progIF);
+
+    Add(this);
 }
 
 /*##########################################################################
@@ -120,7 +128,7 @@ void TPciFunction::SetDevice(TPciDevice *device)
     int vendor_device = ReadConfigDword(PCI_vendorID);
     unsigned char class_code = (unsigned char)ReadConfigByte(PCI_classcode);;
     unsigned char sub_class = (unsigned char)ReadConfigByte(PCI_subclass);;
-    
+
     FPciDevice = device;
     Init(vendor_device, class_code, sub_class);
 }
@@ -139,6 +147,82 @@ void TPciFunction::SetDevice(TPciDevice *device)
 bool TPciFunction::IsPciFunction()
 {
     return true;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::Count
+#
+#   Purpose....: Get function count
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::Count()
+{
+    return FFuncCount;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::Get
+#
+#   Purpose....: Get function #
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciFunction *TPciFunction::Get(int index)
+{
+    if (index >= 0 && index < FFuncCount)
+        return FFuncArr[index];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::Add
+#
+#   Purpose....: Add function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::Add(TPciFunction *func)
+{
+    TPciFunction **arr;
+    int size;
+    int i;
+
+    if (FFuncSize == FFuncCount)
+    {
+        if (FFuncSize)
+        {
+            size = 2 * FFuncSize;
+            arr = new TPciFunction *[size];
+
+            for (i = 0; i < FFuncSize; i++)
+                arr[i] = FFuncArr[i];
+
+            delete FFuncArr;
+            FFuncArr = arr;
+            FFuncSize = size;
+        }
+        else
+        {
+            FFuncSize = 4;
+            FFuncArr = new TPciFunction *[FFuncSize];
+        }
+    }
+    FFuncArr[FFuncCount] = func;
+    FFuncCount++;
 }
 
 /*##########################################################################

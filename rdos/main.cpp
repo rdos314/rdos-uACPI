@@ -36,32 +36,17 @@
 #include "dev.h"
 #include "pcidev.h"
 #include "pcibrg.h"
-#include "proc.h"
+#include "cpu.h"
 
-extern "C" 
+extern "C"
 {
 
 void InitPci();
-char ReadPciByte(unsigned char bus, char device, char function, char reg);
-short ReadPciWord(unsigned char bus, char device, char function, char reg);
-int ReadPciDword(unsigned char bus, char device, char function, char reg);
-void WritePciByte(unsigned char bus, char device, char function, char reg, char val);
-void WritePciWord(unsigned char bus, char device, char function, char reg, short val);
-void WritePciDword(unsigned char bus, char device, char function, char reg, int val);
 
 };
 
 static TAcpiObject *ObjArr[256] = {0};
-
 static TPciBridge *PciRootArr[256] = {0};
-
-static int DeviceCount = 0;
-static int DeviceSize = 0;
-static TAcpiDevice **DeviceArr;
-
-static int ProcessorCount = 0;
-static int ProcessorSize = 0;
-static TAcpiProcessor **ProcessorArr;
 
 /*##########################################################################
 #
@@ -84,7 +69,7 @@ bool IsPciRoot(uacpi_id_string *hid)
         if (!strcmp(hid->value, "PNP0A08"))
             return true;
     }
-    return false;		
+    return false;
 }
 
 /*##########################################################################
@@ -113,7 +98,7 @@ TAcpiDevice *AddPciRoot(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_n
     }
     else
         PciRootArr[seg] = bridge;
-	
+
     return bridge;
 }
 
@@ -136,7 +121,7 @@ void PrintDeviceInfo(uacpi_namespace_node *node, uacpi_namespace_node_info *info
     unsigned int start;
     unsigned int end;
     int i;
-    
+
     ret = uacpi_get_current_resources(node, &resources);
     if (ret == UACPI_STATUS_OK)
     {
@@ -158,113 +143,113 @@ void PrintDeviceInfo(uacpi_namespace_node *node, uacpi_namespace_node_info *info
                     }
                     printf("] ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_EXTENDED_IRQ:
                     printf("ExtIRQ ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_DMA:
                     printf("DMA ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_FIXED_DMA:
                     printf("ExtDMA ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_IO:
                     printf("IO [%04hX] ", resource->io.minimum);
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_FIXED_IO:
                     printf("FixedIO ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_ADDRESS16:
                     printf("Ads16 ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_ADDRESS32:
                     printf("Ads32 ");
                     break;
-				
+
                 case UACPI_RESOURCE_TYPE_ADDRESS64:
                     printf("Ads64 ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_ADDRESS64_EXTENDED:
                     printf("ExtAds64 ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_MEMORY24:
                     printf("Mem24 ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_MEMORY32:
                     printf("Mem32 ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_FIXED_MEMORY32:
                     start = resource->fixed_memory32.address;
                     end = start + resource->fixed_memory32.length - 1;
                     printf("Mem [%08lX-%08lX] ", start, end);
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_START_DEPENDENT:
                     printf("StartDep ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_END_DEPENDENT:
                     printf("EndDep ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_VENDOR_SMALL:
                     printf("VendSmall ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_VENDOR_LARGE:
                     printf("VendLarge ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_GENERIC_REGISTER:
                     printf("GenReg ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_SERIAL_I2C_CONNECTION:
                     printf("I2C ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_SERIAL_SPI_CONNECTION:
                     printf("SPI ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_SERIAL_UART_CONNECTION:
                     printf("UART ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_SERIAL_CSI2_CONNECTION:
                     printf("CSI2 ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_PIN_FUNCTION:
                     printf("PinFunc ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_PIN_CONFIGURATION:
                     printf("PinConfig ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_PIN_GROUP:
                     printf("PinGroup ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION:
                     printf("PinGroupFunc ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_PIN_GROUP_CONFIGURATION:
                     printf("PinGroupConfig ");
                     break;
-					
+
                 case UACPI_RESOURCE_TYPE_CLOCK_INPUT:
                     printf("ClkInput ");
                     break;
@@ -273,47 +258,6 @@ void PrintDeviceInfo(uacpi_namespace_node *node, uacpi_namespace_node_info *info
         }
         printf("\n");
     }
-}
-
-/*##########################################################################
-#
-#   Name       : AddDevice
-#
-#   Purpose....: Add device
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void AddDevice(TAcpiDevice *dev)
-{
-    TAcpiDevice **arr;
-    int size;
-    int i;
-	
-    if (DeviceSize == DeviceCount)
-    {
-        if (DeviceSize)
-        {
-            size = 2 * DeviceSize;
-            arr = new TAcpiDevice *[size];
-			
-            for (i = 0; i < DeviceSize; i++)
-                arr[i] = DeviceArr[i];
-			
-            delete DeviceArr;
-            DeviceArr = arr;
-            DeviceSize = size;
-        }
-        else
-        {
-            DeviceSize = 4;
-            DeviceArr = new TAcpiDevice *[DeviceSize];
-        }
-    }
-    DeviceArr[DeviceCount] = dev;
-    DeviceCount++;
 }
 
 /*##########################################################################
@@ -333,12 +277,12 @@ TAcpiDevice *FindPciDevice(TAcpiObject *parent, uacpi_namespace_node *node, uacp
     TPciFunction *func = (TPciFunction *)parent;
     int device = (info->adr >> 16) & 0xFFFF;
     int function = info->adr & 0xFFFF;
-    
+
     obj = func->FindPciFunction(device, function);
     if (obj)
     {
         if (!obj->GetAcpiParent())
-        {    
+        {
             obj->SetAcpiParent(parent);
             if (obj->IsPciFunction())
                 return (TAcpiDevice *)obj;
@@ -346,7 +290,7 @@ TAcpiDevice *FindPciDevice(TAcpiObject *parent, uacpi_namespace_node *node, uacp
     }
     return 0;
 }
-	
+
 /*##########################################################################
 #
 #   Name       : AddProcessor
@@ -361,35 +305,8 @@ TAcpiDevice *FindPciDevice(TAcpiObject *parent, uacpi_namespace_node *node, uacp
 TAcpiProcessor *AddProcessor(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
     TAcpiProcessor *proc = new TAcpiProcessor(parent);
-    TAcpiProcessor **arr;
-    int size;
-    int i;
-	
-    proc->Setup(node, info);
-	
-    if (ProcessorSize == ProcessorCount)
-    {
-        if (ProcessorSize)
-        {
-            size = 2 * ProcessorSize;
-            arr = new TAcpiProcessor *[size];
-			
-            for (i = 0; i < ProcessorSize; i++)
-                arr[i] = ProcessorArr[i];
-			
-            delete ProcessorArr;
-            ProcessorArr = arr;
-            ProcessorSize = size;
-        }
-        else
-        {
-            ProcessorSize = 4;
-            ProcessorArr = new TAcpiProcessor *[ProcessorSize];
-        }
-    }
-    ProcessorArr[ProcessorCount] = proc;
-    ProcessorCount++;
 
+    proc->Setup(node, info);
     return proc;
 }
 
@@ -412,9 +329,9 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
     TAcpiDevice *dev;
     TAcpiProcessor *proc;
     char name[5];
-    
+
     ret = uacpi_get_namespace_node_info(node, &info);
-    if (uacpi_unlikely_error(ret)) 
+    if (uacpi_unlikely_error(ret))
     {
         const char *path = uacpi_namespace_node_generate_absolute_path(node);
         printf("unable to retrieve node %s information: %s",
@@ -442,16 +359,15 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
             else
                 dev = 0;
 
-            if (dev)
-                AddDevice(dev);
-            else
+            if (!dev)
                 uacpi_free_namespace_node_info(info);
 
             ObjArr[node_depth] = dev;
             break;
-			
+
         case UACPI_OBJECT_PROCESSOR:
-            proc = AddProcessor(ObjArr[node_depth - 1], node, info);
+            proc = new TAcpiProcessor(ObjArr[node_depth - 1]);
+            proc->Setup(node, info);
             ObjArr[node_depth] = proc;
             break;
 
@@ -485,12 +401,12 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
 uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_u32 node_depth)
 {
     TAcpiObject *obj = ObjArr[node_depth];
-	
+
     if (obj)
         obj->Update();
-	
+
     ObjArr[node_depth] = 0;
-	
+
     return UACPI_ITERATION_DECISION_CONTINUE;
 }
 
@@ -508,14 +424,14 @@ uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_
 bool InitAcpi()
 {
     uacpi_status ret;
-	
+
     ret = uacpi_initialize(0);
     if (uacpi_unlikely_error(ret))
     {
         printf("uacpi_initialize error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
-	
+
     ret = uacpi_namespace_load();
     if (uacpi_unlikely_error(ret))
     {
@@ -540,14 +456,14 @@ bool InitAcpi()
     uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 
     ServUacpiStartPci();
-    	
+
     ret = uacpi_finalize_gpe_initialization();
     if (uacpi_unlikely_error(ret))
     {
         printf("uacpi_finalize_gpe_initialization error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
-	
+
     return true;
 }
 
@@ -568,13 +484,15 @@ int main(int argc, char **argv)
 
     InitPci();
     InitAcpi();
-	
-    printf("%d processor cores\r\n", ProcessorCount);
-    printf("%d devices\r\n", DeviceCount);
+
+    printf("%d processor cores\r\n", TAcpiProcessor::Count());
+    printf("%d devices\r\n", TAcpiDevice::Count());
+    printf("%d objects\r\n", TAcpiObject::Count());
+    printf("%d PCI functions\r\n", TPciFunction::Count());
 
     while (!start)
         RdosWaitMilli(50);
-	
+
     for (;;)
         RdosWaitMilli(250);
 }

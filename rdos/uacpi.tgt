@@ -506,7 +506,7 @@ WVList
 115
 MItem
 7
-dev.cpp
+cpu.cpp
 116
 WString
 6
@@ -523,8 +523,8 @@ WVList
 0
 119
 MItem
-8
-main.cpp
+7
+dev.cpp
 120
 WString
 6
@@ -541,8 +541,8 @@ WVList
 0
 123
 MItem
-7
-obj.cpp
+8
+main.cpp
 124
 WString
 6
@@ -559,8 +559,8 @@ WVList
 0
 127
 MItem
-10
-pcibrg.cpp
+7
+obj.cpp
 128
 WString
 6
@@ -578,7 +578,7 @@ WVList
 131
 MItem
 10
-pcidev.cpp
+pcibrg.cpp
 132
 WString
 6
@@ -595,8 +595,8 @@ WVList
 0
 135
 MItem
-11
-pcifunc.cpp
+10
+pcidev.cpp
 136
 WString
 6
@@ -613,8 +613,8 @@ WVList
 0
 139
 MItem
-8
-proc.cpp
+11
+pcifunc.cpp
 140
 WString
 6

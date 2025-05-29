@@ -20,23 +20,34 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# proc.cpp
+# cpu.cpp
 # ACPI processor
 #
 ########################################################################*/
 
-#ifndef _PROC_H
-#define _PROC_H
+#ifndef _CPU_H
+#define _CPU_H
 
 #include "obj.h"
 
 class TAcpiProcessor : public TAcpiObject
 {
 public:
-	TAcpiProcessor(TAcpiObject *parent);
-	~TAcpiProcessor();
-	
-	virtual bool IsProcessor();
+    TAcpiProcessor(TAcpiObject *parent);
+    ~TAcpiProcessor();
+
+    virtual bool IsProcessor();
+
+    static int Count();
+    static TAcpiProcessor *Get(int index);
+
+protected:
+    static void Add(TAcpiProcessor *proc);
+
+    static int FProcessorCount;
+    static int FProcessorSize;
+    static TAcpiProcessor **FProcessorArr;
+
 };
 
 #endif

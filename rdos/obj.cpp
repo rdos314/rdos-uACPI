@@ -28,6 +28,10 @@
 #include <memory.h>
 #include "obj.h"
 
+int TAcpiObject::FObjCount = 0;
+int TAcpiObject::FObjSize = 0;
+TAcpiObject **TAcpiObject::FObjArr = 0;
+
 /*##########################################################################
 #
 #   Name       : TAcpiObject::TAcpiObject
@@ -47,8 +51,10 @@ TAcpiObject::TAcpiObject()
     FArr = 0;
     FCount = 0;
     FSize = 0;
-	
+
     FName[0] = 0;
+
+    Add(this);
 }
 
 /*##########################################################################
@@ -70,8 +76,10 @@ TAcpiObject::TAcpiObject(TAcpiObject *parent)
     FArr = 0;
     FCount = 0;
     FSize = 0;
-	
+
     FName[0] = 0;
+
+    Add(this);
 }
 
 /*##########################################################################
@@ -96,7 +104,7 @@ TAcpiObject::~TAcpiObject()
 
         delete FArr;
     }
-	
+
     uacpi_free_namespace_node_info(FInfo);
 }
 
@@ -166,6 +174,82 @@ bool TAcpiObject::IsProcessor()
 
 /*##########################################################################
 #
+#   Name       : TAcpiObject::Count
+#
+#   Purpose....: Get object count
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiObject::Count()
+{
+    return FObjCount;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::Get
+#
+#   Purpose....: Get object #
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TAcpiObject *TAcpiObject::Get(int index)
+{
+    if (index >= 0 && index < FObjCount)
+        return FObjArr[index];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::Add
+#
+#   Purpose....: Add object
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TAcpiObject::Add(TAcpiObject *obj)
+{
+    TAcpiObject **arr;
+    int size;
+    int i;
+
+    if (FObjSize == FObjCount)
+    {
+        if (FObjSize)
+        {
+            size = 2 * FObjSize;
+            arr = new TAcpiObject *[size];
+
+            for (i = 0; i < FObjSize; i++)
+                arr[i] = FObjArr[i];
+
+            delete FObjArr;
+            FObjArr = arr;
+            FObjSize = size;
+        }
+        else
+        {
+            FObjSize = 4;
+            FObjArr = new TAcpiObject *[FObjSize];
+        }
+    }
+    FObjArr[FObjCount] = obj;
+    FObjCount++;
+}
+
+/*##########################################################################
+#
 #   Name       : TAcpiObject::FindPciFunction
 #
 #   Purpose....: Find PCI function
@@ -227,7 +311,7 @@ void TAcpiObject::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *i
 {
     FNode = node;
     FInfo = info;
-	
+
     memcpy(FName, info->name.text, 4);
     FName[4] = 0;
 }
@@ -248,17 +332,17 @@ void TAcpiObject::AddObject(TAcpiObject *obj)
     TAcpiObject **arr;
     int size;
     int i;
-	
+
     if (FSize == FCount)
     {
         if (FSize)
         {
             size = 2 * FSize;
             arr = new TAcpiObject *[size];
-			
+
             for (i = 0; i < FSize; i++)
                 arr[i] = FArr[i];
-			
+
             delete FArr;
             FArr = arr;
             FSize = size;
