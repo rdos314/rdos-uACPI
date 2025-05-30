@@ -43,8 +43,10 @@ public:
     void Add(TPciBridge *bridge, int bus);
     TPciBridge *Get(int bus);
 
-    int CalcOffs(int bus, int dev, int func, int reg);
     bool HasDev(TPciBridge *bridge, int device);
+
+    int CalcOffs(int bus, int dev, int func, int reg);
+    int GetHandle(int bus, int dev, int func);
 
     char ReadConfigByte(int offs);
     short ReadConfigWord(int offs);
@@ -52,6 +54,13 @@ public:
     void WriteConfigByte(int offs, char val);
     void WriteConfigWord(int offs, short val);
     void WriteConfigDword(int offs, int val);
+
+    char ReadConfigByte(int handle, int reg);
+    short ReadConfigWord(int handle, int reg);
+    int ReadConfigDword(int handle, int reg);
+    void WriteConfigByte(int handle, int reg, char val);
+    void WriteConfigWord(int handle, int reg, short val);
+    void WriteConfigDword(int handle, int reg, int val);
 
 protected:
     void Init();

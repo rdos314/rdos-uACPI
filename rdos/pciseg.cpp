@@ -80,6 +80,7 @@ TPciSegment::TPciSegment(int segment)
     FSegment = segment;
     FStartBus = 0;
     FBusCount = 256;
+    FMem = 0;
 
     Init();
 }
@@ -101,10 +102,12 @@ TPciSegment::TPciSegment(struct acpi_mcfg_allocation *mfcg)
     FStartBus = mfcg->start_bus;
     FBusCount = mfcg->end_bus - FStartBus + 1;
 
-    Init();
-
     if (mfcg->address)
         FMem = (char *)ServUacpiMap(mfcg->address, FBusCount << 20);
+    else
+        FMem = 0;
+
+    Init();
 }
 
 /*##########################################################################
@@ -151,9 +154,15 @@ void TPciSegment::Init()
 
     for (i = 0; i < FBusCount; i++)
         FBusArr[i] = 0;
-
-    FMem = 0;
-    FIo = 0xCF8;
+    
+    if (FMem)
+        FIo = 0;
+    else
+    {
+        FIo = 0xCF8;
+        ServUacpiEnableIo(0xCF8, 4);
+        ServUacpiEnableIo(0xCFC, 4);
+    }
 }
 
 /*##########################################################################
@@ -245,6 +254,46 @@ int TPciSegment::CalcOffs(int bus, int dev, int func, int reg)
             offs |= (dev & 0x1F) << 11;
             offs |= (func & 0x7) << 8;
             offs |= reg & 0xFF;
+        }
+    }
+    return offs;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::GetHandle
+#
+#   Purpose....: Calc handle
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciSegment::GetHandle(int bus, int dev, int func)
+{
+    int offs = -1;
+    int rel = bus - FStartBus;
+    
+    if (dev < 0 || dev >= 32)
+        return -1;
+    
+    if (func < 0 || func >= 8)
+        return -1;
+
+    if (rel >= 0 && rel < FBusCount)
+    {
+        if (FMem)
+        {
+            offs = rel << 20;
+            offs |= (dev & 0x1F) << 15;
+            offs |= (func & 0x7) << 12;
+        }
+        else
+        {
+            offs = rel << 16;
+            offs |= (dev & 0x1F) << 11;
+            offs |= (func & 0x7) << 8;
         }
     }
     return offs;
@@ -438,6 +487,238 @@ void TPciSegment::WriteConfigDword(int offs, int val)
             offs |= 0x80000000;
             out_dword(FIo, offs & 0xFFFFFFFC);
             out_dword(FIo + 4 + (offs & 3), val);
+        }
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::ReadConfigByte
+#
+#   Purpose....: Read config byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+char TPciSegment::ReadConfigByte(int handle, int reg)
+{
+    char *ptr;
+
+    if (handle >= 0)
+    {
+        if (FMem)
+        {
+            if (reg <= 0xFFF)
+            {
+                ptr = FMem + handle + reg;
+                return *ptr;
+            }
+        }
+        else
+        {
+            if (reg <= 0xFF)
+            {
+                handle += reg;
+                handle |= 0x80000000;
+                out_dword(FIo, handle & 0xFFFFFFFC);
+                return in_byte(FIo + 4 + (handle & 3));
+            }
+        }
+    }
+    return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::ReadConfigWord
+#
+#   Purpose....: Read config word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short TPciSegment::ReadConfigWord(int handle, int reg)
+{
+    short *ptr;
+
+    if (handle >= 0)
+    {
+        if (FMem)
+        {
+            if (reg <= 0xFFF)
+            {
+                ptr = (short *)(FMem + handle + reg);
+                return *ptr;
+            }
+        }
+        else
+        {
+            if (reg <= 0xFF)
+            {
+                handle += reg;
+                handle |= 0x80000000;
+                out_dword(FIo, handle & 0xFFFFFFFC);
+                return in_word(FIo + 4 + (handle & 3));
+            }
+        }
+    }
+    return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::ReadConfigDword
+#
+#   Purpose....: Read config dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciSegment::ReadConfigDword(int handle, int reg)
+{
+    int *ptr;
+
+    if (handle >= 0)
+    {
+        if (FMem)
+        {
+            if (reg <= 0xFFF)
+            {
+                ptr = (int *)(FMem + handle + reg);
+                return *ptr;
+            }
+        }
+        else
+        {
+            if (reg <= 0xFF)
+            {
+                handle += reg;
+                handle |= 0x80000000;
+                out_dword(FIo, handle & 0xFFFFFFFC);
+                return in_dword(FIo + 4 + (handle & 3));
+
+            }
+        }
+    }
+    return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::WriteConfigByte
+#
+#   Purpose....: Write config byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciSegment::WriteConfigByte(int handle, int reg, char val)
+{
+    char *ptr;
+
+    if (handle >= 0)
+    {
+        if (FMem)
+        {
+            if (reg <= 0xFFF)
+            {
+                ptr = FMem + handle + reg;
+                *ptr = val;
+            }
+        }
+        else
+        {
+            if (reg <= 0xFF)
+            {
+                handle += reg;
+                handle |= 0x80000000;
+                out_dword(FIo, handle & 0xFFFFFFFC);
+                out_byte(FIo + 4 + (handle & 3), val);
+            }
+        }
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::WriteConfigWord
+#
+#   Purpose....: Write config word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciSegment::WriteConfigWord(int handle, int reg, short val)
+{
+    short *ptr;
+
+    if (handle >= 0)
+    {
+        if (FMem)
+        {
+            if (reg <= 0xFFF)
+            {
+                ptr = (short *)(FMem + handle + reg);
+                *ptr = val;
+            }
+        }
+        else
+        {
+            if (reg <= 0xFF)
+            {
+                handle += reg;
+                handle |= 0x80000000;
+                out_dword(FIo, handle & 0xFFFFFFFC);
+                out_word(FIo + 4 + (handle & 3), val);
+            }
+        }
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciBridge::WriteConfigDword
+#
+#   Purpose....: Write config dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciSegment::WriteConfigDword(int handle, int reg, int val)
+{
+    int *ptr;
+
+    if (handle >= 0)
+    {
+        if (FMem)
+        {
+            if (reg <= 0xFFF)
+            {
+                ptr = (int *)(FMem + handle + reg);
+                *ptr = val;
+            }
+        }
+        else
+        {
+            if (reg <= 0xFF)
+            {
+                handle += reg;
+                handle |= 0x80000000;
+                out_dword(FIo, handle & 0xFFFFFFFC);
+                out_dword(FIo + 4 + (handle & 3), val);
+            }
         }
     }
 }

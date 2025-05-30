@@ -44,11 +44,170 @@ extern "C"
 {
 
 void InitPci();
+int OpenPci(int seg, int bus, int dev, int func);
+char ReadPci8(int segment, int handle, int reg);
+short ReadPci16(int segment, int handle, int reg);
+int ReadPci32(int segment, int handle, int reg);
+void WritePci8(int segment, int handle, int reg, char val);
+void WritePci16(int segment, int handle, int reg, short val);
+void WritePci32(int segment, int handle, int reg, int val);
 
 };
 
 static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
+
+/*##########################################################################
+#
+#   Name       : OpenPsi
+#
+#   Purpose....: OpenPci
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int OpenPci(int index, int bus, int dev, int func)
+{
+    TPciSegment *seg;
+    
+    if (index < 0 || index > 255)
+        return -1;
+    
+    seg = PciSegArr[index];
+
+    if (!seg && index == 0)
+    {
+        seg = new TPciSegment(0);
+        PciSegArr[index] = seg;
+    }
+    
+    if (seg)
+        return seg->GetHandle(bus, dev, func);
+    else
+        return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPci8
+#
+#   Purpose....: Read pci byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+char ReadPci8(int index, int handle, int reg)
+{
+    TPciSegment *seg = PciSegArr[index];
+    
+    if (seg)
+        return seg->ReadConfigByte(handle, reg);
+    else
+        return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPci16
+#
+#   Purpose....: Read pci word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short ReadPci16(int index, int handle, int reg)
+{
+    TPciSegment *seg = PciSegArr[index];
+    
+    if (seg)
+        return seg->ReadConfigWord(handle, reg);
+    else
+        return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPci32
+#
+#   Purpose....: Read pci dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int ReadPci32(int index, int handle, int reg)
+{
+    TPciSegment *seg = PciSegArr[index];
+    
+    if (seg)
+        return seg->ReadConfigDword(handle, reg);
+    else
+        return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : WritePci8
+#
+#   Purpose....: Write pci byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePci8(int index, int handle, int reg, char val)
+{
+    TPciSegment *seg = PciSegArr[index];
+    
+    if (seg)
+        seg->WriteConfigByte(handle, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePci16
+#
+#   Purpose....: Write pci word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePci16(int index, int handle, int reg, short val)
+{
+    TPciSegment *seg = PciSegArr[index];
+    
+    if (seg)
+        seg->WriteConfigWord(handle, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePci32
+#
+#   Purpose....: Write pci dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePci32(int index, int handle, int reg, int val)
+{
+    TPciSegment *seg = PciSegArr[index];
+    
+    if (seg)
+        seg->WriteConfigDword(handle, reg, val);
+}
 
 /*##########################################################################
 #
@@ -327,6 +486,8 @@ bool InitAcpi()
         return false;
     }
 
+    ProcessEcam();
+
     ret = uacpi_namespace_load();
     if (uacpi_unlikely_error(ret))
     {
@@ -347,8 +508,6 @@ bool InitAcpi()
         printf("uacpi_namespace_initialize error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
-
-    ProcessEcam();
 
     uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 
@@ -377,7 +536,10 @@ bool InitAcpi()
 ##########################################################################*/
 int main(int argc, char **argv)
 {
-    bool start = false;
+//    bool start = false;
+
+//    while (!start)
+//        RdosWaitMilli(50);
 
     InitPci();
     InitAcpi();
@@ -386,9 +548,6 @@ int main(int argc, char **argv)
     printf("%d devices\r\n", TAcpiDevice::Count());
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());
-
-    while (!start)
-        RdosWaitMilli(50);
 
     for (;;)
         RdosWaitMilli(250);
