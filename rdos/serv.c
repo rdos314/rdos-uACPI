@@ -25,8 +25,8 @@
 #
 ########################################################################*/
 
-int FindClass(int start, int class, int sub_class);
-int FindClassInterface(int start, int class, int sub_class, int interface);
+int FindClass(int start, unsigned char class_code, unsigned char sub_class);
+int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
 
 /*##########################################################################
 #
@@ -42,8 +42,8 @@ int FindClassInterface(int start, int class, int sub_class, int interface);
 #pragma aux LowFindClass "*" parm routine [ebx] [eax] value [eax]
 int LowFindClass(int start, int class_subclass)
 {
-    int class = class_subclass & 0xFF;
-    int subclass = (class_subclass >> 8) & 0xFF;
+    unsigned char class = class_subclass & 0xFF;
+    unsigned subclass = (class_subclass >> 8) & 0xFF;
 
     return FindClass(start, class, subclass);
 }
@@ -59,11 +59,11 @@ int LowFindClass(int start, int class_subclass)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowFindClassInterface "*" parm routine [ebx] [eax] [edx] value [eax]
-int LowFindClassInterface(int start, int class_subclass, int interface)
+#pragma aux LowFindClassProtocol "*" parm routine [ebx] [eax] [edx] value [eax]
+int LowFindClassProtocol(int start, int class_subclass, int interface)
 {
-    int class = class_subclass & 0xFF;
-    int subclass = (class_subclass >> 8) & 0xFF;
+    unsigned char class = class_subclass & 0xFF;
+    unsigned subclass = (class_subclass >> 8) & 0xFF;
 
-    return FindClassInterface(start, class, subclass, interface);
+    return FindClassProtocol(start, class, subclass, (unsigned char)interface);
 }

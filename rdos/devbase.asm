@@ -94,27 +94,27 @@ LocalFindClass Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
-;       NAME:           LocalFindClassInterface
+;       NAME:           LocalFindClassProtocol
 ;
-;       DESCRIPTION:    Find class & interface
+;       DESCRIPTION:    Find class & protocol
 ;
 ;       PARAMETERS:     AH      Class
 ;                       AL      Subclass
-;                       DL      Interface
+;                       DL      Protocol
 ;                       BX      Start dev
 ;
 ;       RETURNS:        BX      Found dev or 0
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-    extern LowFindClassInterface:near
+    extern LowFindClassProtocol:near
 
-LocalFindClassInterface Proc near
+LocalFindClassProtocol Proc near
     push edi
     movzx ebx,word ptr [edi].fc_ebx
     movzx eax,word ptr [edi].fc_eax
     movzx edx,byte ptr [edi].fc_edx
-    call LowFindClassInterface
+    call LowFindClassProtocol
     pop edi
 ;
     or eax,eax
@@ -130,7 +130,7 @@ fciFail:
     mov ebx,[edi].fc_handle
     ReplyDevCmd
     ret
-LocalFindClassInterface Endp
+LocalFindClassProtocol Endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
@@ -152,7 +152,7 @@ Unused   Endp
 
 msgtab:
 m00 DD OFFSET LocalFindClass
-m01 DD OFFSET LocalFindClassInterface
+m01 DD OFFSET LocalFindClassProtocol
 
 WaitForMsg_    Proc near
     push ebx

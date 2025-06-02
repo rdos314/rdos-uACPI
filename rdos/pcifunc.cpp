@@ -186,6 +186,58 @@ TPciFunction *TPciFunction::Get(int index)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::FindClass
+#
+#   Purpose....: Get class
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::FindClass(int index, unsigned char class_code, unsigned char sub_class)
+{
+    int i;
+    TPciFunction *func;
+
+    for (i = index; i < FFuncCount; i++)
+    {
+        func = FFuncArr[i];
+        if (func->FClass == class_code && func->FSubClass == sub_class)
+            return i + 1;
+    }
+
+    return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::FindClassProtocol
+#
+#   Purpose....: Get class & protocol
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::FindClassProtocol(int index, unsigned char class_code, unsigned char sub_class, unsigned char protocol)
+{
+    int i;
+    TPciFunction *func;
+
+    for (i = index; i < FFuncCount; i++)
+    {
+        func = FFuncArr[i];
+        if (func->FClass == class_code && func->FSubClass == sub_class && func->FProtocol == protocol)
+            return i + 1;
+    }
+
+    return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::Add
 #
 #   Purpose....: Add function

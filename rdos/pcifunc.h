@@ -45,6 +45,9 @@ public:
     static int Count();
     static TPciFunction *Get(int index);
 
+    static int FindClass(int index, unsigned char class_code, unsigned char sub_class);
+    static int FindClassProtocol(int index, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
+
     void SetDevice(TPciDevice *dev);
     int GetSegment();
     int GetBus();

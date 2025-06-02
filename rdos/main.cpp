@@ -51,8 +51,8 @@ void WritePci8(int segment, int handle, int reg, char val);
 void WritePci16(int segment, int handle, int reg, short val);
 void WritePci32(int segment, int handle, int reg, int val);
 
-int FindClass(int start, int pci_class, int pci_sub_class);
-int FindClassInterface(int start, int pci_class, int pci_sub_class, int pci_interface);
+int FindClass(int start, unsigned char class_code, unsigned char sub_class);
+int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
 
 extern int WaitForMsg();
 #pragma aux WaitForMsg value [eax]
@@ -542,14 +542,14 @@ bool InitAcpi()
 #   Returns....: *
 #
 ##########################################################################*/
-int FindClass(int start, int pci_class, int pci_sub_class)
+int FindClass(int start, unsigned char class_code, unsigned char sub_class)
 {
-    return 0;
+    return TPciFunction::FindClass(start, class_code, sub_class);
 }
 
 /*##########################################################################
 #
-#   Name       : FindClassInterface
+#   Name       : FindClassProtocol
 #
 #   Purpose....:
 #
@@ -558,9 +558,9 @@ int FindClass(int start, int pci_class, int pci_sub_class)
 #   Returns....: *
 #
 ##########################################################################*/
-int FindClassInterface(int start, int pci_class, int pci_sub_class, int pci_interface)
+int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol)
 {
-    return 0;
+    return TPciFunction::FindClassProtocol(start, class_code, sub_class, protocol);
 }
 
 /*##########################################################################
