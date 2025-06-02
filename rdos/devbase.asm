@@ -71,8 +71,6 @@ _TEXT   segment use32 word public 'CODE'
 
 LocalFindClass Proc near
     push edi
-    movzx ebx,word ptr [edi].fc_ebx
-    movzx eax,word ptr [edi].fc_eax
     call LowFindClass
     pop edi
 ;
@@ -111,9 +109,6 @@ LocalFindClass Endp
 
 LocalFindClassProtocol Proc near
     push edi
-    movzx ebx,word ptr [edi].fc_ebx
-    movzx eax,word ptr [edi].fc_eax
-    movzx edx,byte ptr [edi].fc_edx
     call LowFindClassProtocol
     pop edi
 ;
