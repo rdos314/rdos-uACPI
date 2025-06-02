@@ -43,7 +43,6 @@
 extern "C"
 {
 
-void InitPci();
 int OpenPci(int seg, int bus, int dev, int func);
 char ReadPci8(int segment, int handle, int reg);
 short ReadPci16(int segment, int handle, int reg);
@@ -495,7 +494,10 @@ bool InitAcpi()
         return false;
     }
 
-    ret = uacpi_set_interrupt_model(UACPI_INTERRUPT_MODEL_IOAPIC);
+    if (ServUacpiHasApic())
+        ret = uacpi_set_interrupt_model(UACPI_INTERRUPT_MODEL_IOAPIC);
+    else
+        ret = uacpi_set_interrupt_model(UACPI_INTERRUPT_MODEL_PIC);
     if (uacpi_unlikely_error(ret))
     {
         printf("uacpi_set_interrupt_model: %s\n", uacpi_status_to_string(ret));
@@ -538,10 +540,11 @@ int main(int argc, char **argv)
 {
 //    bool start = false;
 
+//    ServUacpiStartPci();
+
 //    while (!start)
 //        RdosWaitMilli(50);
 
-    InitPci();
     InitAcpi();
 
     printf("%d processor cores\r\n", TAcpiProcessor::Count());

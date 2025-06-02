@@ -436,6 +436,8 @@ void uacpi_kernel_io_unmap(uacpi_handle handle)
 {
     struct io_map *map = (struct io_map *)handle;
 
+    ServUacpiDisableIo(map->base, map->size);
+
     free(map);
 }
 
@@ -989,21 +991,4 @@ uacpi_status uacpi_kernel_wait_for_work_completion(void)
 {
     printf("wait for work\n");
     return 0;
-}
-
-/*##########################################################################
-#
-#   Name       : InitPci
-#
-#   Purpose....:
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void InitPci()
-{
-    ServUacpiEnableIo(0xCF8, 4);
-    ServUacpiEnableIo(0xCFC, 4);
 }
