@@ -51,6 +51,12 @@ void WritePci8(int segment, int handle, int reg, char val);
 void WritePci16(int segment, int handle, int reg, short val);
 void WritePci32(int segment, int handle, int reg, int val);
 
+int FindClass(int start, int pci_class, int pci_sub_class);
+int FindClassInterface(int start, int pci_class, int pci_sub_class, int pci_interface);
+
+extern int WaitForMsg();
+#pragma aux WaitForMsg value [eax]
+
 };
 
 static TAcpiObject *ObjArr[256] = {0};
@@ -70,10 +76,10 @@ static TPciSegment *PciSegArr[256] = {0};
 int OpenPci(int index, int bus, int dev, int func)
 {
     TPciSegment *seg;
-    
+
     if (index < 0 || index > 255)
         return -1;
-    
+
     seg = PciSegArr[index];
 
     if (!seg && index == 0)
@@ -81,7 +87,7 @@ int OpenPci(int index, int bus, int dev, int func)
         seg = new TPciSegment(0);
         PciSegArr[index] = seg;
     }
-    
+
     if (seg)
         return seg->GetHandle(bus, dev, func);
     else
@@ -102,7 +108,7 @@ int OpenPci(int index, int bus, int dev, int func)
 char ReadPci8(int index, int handle, int reg)
 {
     TPciSegment *seg = PciSegArr[index];
-    
+
     if (seg)
         return seg->ReadConfigByte(handle, reg);
     else
@@ -123,7 +129,7 @@ char ReadPci8(int index, int handle, int reg)
 short ReadPci16(int index, int handle, int reg)
 {
     TPciSegment *seg = PciSegArr[index];
-    
+
     if (seg)
         return seg->ReadConfigWord(handle, reg);
     else
@@ -144,7 +150,7 @@ short ReadPci16(int index, int handle, int reg)
 int ReadPci32(int index, int handle, int reg)
 {
     TPciSegment *seg = PciSegArr[index];
-    
+
     if (seg)
         return seg->ReadConfigDword(handle, reg);
     else
@@ -165,7 +171,7 @@ int ReadPci32(int index, int handle, int reg)
 void WritePci8(int index, int handle, int reg, char val)
 {
     TPciSegment *seg = PciSegArr[index];
-    
+
     if (seg)
         seg->WriteConfigByte(handle, reg, val);
 }
@@ -184,7 +190,7 @@ void WritePci8(int index, int handle, int reg, char val)
 void WritePci16(int index, int handle, int reg, short val)
 {
     TPciSegment *seg = PciSegArr[index];
-    
+
     if (seg)
         seg->WriteConfigWord(handle, reg, val);
 }
@@ -203,7 +209,7 @@ void WritePci16(int index, int handle, int reg, short val)
 void WritePci32(int index, int handle, int reg, int val)
 {
     TPciSegment *seg = PciSegArr[index];
-    
+
     if (seg)
         seg->WriteConfigDword(handle, reg, val);
 }
@@ -527,6 +533,38 @@ bool InitAcpi()
 
 /*##########################################################################
 #
+#   Name       : FindClass
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int FindClass(int start, int pci_class, int pci_sub_class)
+{
+    return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : FindClassInterface
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int FindClassInterface(int start, int pci_class, int pci_sub_class, int pci_interface)
+{
+    return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : main
 #
 #   Purpose....:
@@ -553,5 +591,5 @@ int main(int argc, char **argv)
     printf("%d PCI functions\r\n", TPciFunction::Count());
 
     for (;;)
-        RdosWaitMilli(250);
+        WaitForMsg();
 }
