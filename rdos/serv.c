@@ -27,6 +27,10 @@
 
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
+int FindDevice(int start, short int device, short int vendor);
+int GetParam(int handle);
+unsigned char GetIrq(int handle);
+short int GetCap(int handle, unsigned char cap);
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
 int ReadPciConfigDword(int issuer, int handle, int reg);
@@ -72,6 +76,74 @@ int LowFindClassProtocol(int start, int class_subclass, int interface)
     unsigned char class = (class_subclass >> 8) & 0xFF;
 
     return FindClassProtocol(start, class, subclass, (unsigned char)interface);
+}
+
+/*##########################################################################
+#
+#   Name       : FindDevice
+#
+#   Purpose....: Find device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowFindDevice "*" parm routine [ebx] [cx] [dx] value [eax]
+int LowFindDevice(int start, short int device, short int vendor)
+{
+    return FindDevice(start, device, vendor);
+}
+
+/*##########################################################################
+#
+#   Name       : GetParam
+#
+#   Purpose....: Get param
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetParam "*" parm routine [ebx] value [eax]
+int LowGetParam(int start)
+{
+    return GetParam(start);
+}
+
+/*##########################################################################
+#
+#   Name       : GetIrq
+#
+#   Purpose....: Get IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetIrq "*" parm routine [ebx] value [al]
+unsigned char LowGetIrq(int start)
+{
+    return GetIrq(start);
+}
+
+/*##########################################################################
+#
+#   Name       : GetCap
+#
+#   Purpose....: Get capability
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetCap "*" parm routine [ebx] [al] value [ax]
+short int LowGetCap(int start, unsigned char cap)
+{
+    return GetCap(start, cap);
 }
 
 /*##########################################################################

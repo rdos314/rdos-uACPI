@@ -130,6 +130,131 @@ LocalFindClassProtocol Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalFindDevice
+;
+;       DESCRIPTION:    Find vendor & device
+;
+;       PARAMETERS:     CX      Device
+;                       DX      Vendor
+;                       BX      Start dev
+;
+;       RETURNS:        BX      Found dev or 0
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowFindDevice:near
+
+LocalFindDevice Proc near
+    push edi
+    call LowFindClassProtocol
+    pop edi
+;
+    or eax,eax
+    jz fcdFail
+;    
+    mov [edi].fc_ebx,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+fcdFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalFindDevice Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetParam
+;
+;       DESCRIPTION:    Get param
+;
+;       PARAMETERS:     BX      Handle
+;
+;       RETURNS:        DH      Segment
+;                       DL      Bus
+;                       AH      Device
+;                       AL      Function
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetParam:near
+
+LocalGetParam Proc near
+    push edi
+    call LowGetParam
+    pop edi
+;    
+    mov edx,eax
+    shr edx,16
+    mov [edi].fc_eax,eax
+    mov [edi].fc_edx,edx
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalGetParam Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetIrq
+;
+;       DESCRIPTION:    Get IRQ
+;
+;       PARAMETERS:     BX      Handle
+;
+;       RETURNS:        AL      IRQ
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetIrq:near
+
+LocalGetIrq Proc near
+    push edi
+    call LowGetIrq
+    pop edi
+;    
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalGetIrq Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetCap
+;
+;       DESCRIPTION:    Get capability
+;
+;       PARAMETERS:     BX      Handle
+;                       AL      Capability
+;
+;       RETURNS:        AX      Register
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetCap:near
+
+LocalGetCap Proc near
+    push edi
+    call LowGetCap
+    pop edi
+;    
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalGetCap Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           LocalReadPciByte
 ;
 ;       DESCRIPTION:    Read PCI config byte
@@ -319,12 +444,16 @@ Unused   Endp
 msgtab:
 m00 DD OFFSET LocalFindClass
 m01 DD OFFSET LocalFindClassProtocol
-m02 DD OFFSET LocalReadConfigByte
-m03 DD OFFSET LocalReadConfigWord
-m04 DD OFFSET LocalReadConfigDword
-m05 DD OFFSET LocalWriteConfigByte
-m06 DD OFFSET LocalWriteConfigWord
-m07 DD OFFSET LocalWriteConfigDword
+m02 DD OFFSET LocalFindDevice
+m03 DD OFFSET LocalGetParam
+m04 DD OFFSET LocalGetIrq
+m05 DD OFFSET LocalGetCap
+m06 DD OFFSET LocalReadConfigByte
+m07 DD OFFSET LocalReadConfigWord
+m08 DD OFFSET LocalReadConfigDword
+m09 DD OFFSET LocalWriteConfigByte
+m010 DD OFFSET LocalWriteConfigWord
+m011 DD OFFSET LocalWriteConfigDword
 
 WaitForMsg_    Proc near
     push ebx

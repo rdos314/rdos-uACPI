@@ -31,6 +31,7 @@
 #include "dev.h"
 
 class TPciDevice;
+class TPciIrqRoute;
 
 class TPciFunction : public TAcpiDevice
 {
@@ -47,6 +48,10 @@ public:
 
     static int FindClass(int index, unsigned char class_code, unsigned char sub_class);
     static int FindClassProtocol(int index, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
+    static int FindDevice(int start, unsigned short device, unsigned short vendor);
+    static int GetParam(int handle);
+    static unsigned char GetIrq(int handle);
+    static short int GetCap(int handle, unsigned char cap);
 
     static char ReadPciConfigByte(int issuer, int handle, int reg);
     static short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -65,6 +70,8 @@ public:
     unsigned char GetClass();
     unsigned char GetSubClass();
     unsigned char GetProtocol();
+    TPciIrqRoute *GetIrq();
+    short int GetCap(unsigned char cap);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);

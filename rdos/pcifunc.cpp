@@ -238,6 +238,122 @@ int TPciFunction::FindClassProtocol(int index, unsigned char class_code, unsigne
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::FindDevice
+#
+#   Purpose....: Find device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::FindDevice(int index, unsigned short device, unsigned short vendor)
+{
+    int i;
+    TPciFunction *func;
+
+    for (i = index; i < FFuncCount; i++)
+    {
+        func = FFuncArr[i];
+        if (func->FDevice == device && func->FVendor == vendor)
+            return i + 1;
+    }
+
+    return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetParam
+#
+#   Purpose....: Get param
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::GetParam(int handle)
+{
+    TPciFunction *func = 0;
+    int val;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+    {
+        val = func->GetSegment();
+        val = val << 8;
+
+        val |= func->GetBus();
+        val = val << 8;
+
+        val |= func->GetDevice();
+        val = val << 8;
+
+        val |= func->FPciFunction;
+
+        return val;
+    }
+    else
+        return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetIrq
+#
+#   Purpose....: Get IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char TPciFunction::GetIrq(int handle)
+{
+    TPciFunction *func = 0;
+    TPciIrqRoute *irq = 0;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        irq = func->GetIrq();
+
+    if (irq)
+        return (unsigned char)irq->Irq;
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetCap
+#
+#   Purpose....: Get capability
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int TPciFunction::GetCap(int handle, unsigned char cap)
+{
+    TPciFunction *func = 0;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        return func->GetCap(cap);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::ReadPciConfigByte
 #
 #   Purpose....: Read PCI config byte
@@ -585,6 +701,70 @@ unsigned char TPciFunction::GetSubClass()
 unsigned char TPciFunction::GetProtocol()
 {
     return FProtocol;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetIrq
+#
+#   Purpose....: Get IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciIrqRoute *TPciFunction::GetIrq()
+{
+    char pin = ReadConfigByte(61);
+
+    if (FPciDevice)
+        return FPciDevice->GetIrq(pin);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetCap
+#
+#   Purpose....: Get capability
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int TPciFunction::GetCap(unsigned char cap)
+{
+    int i;
+    int reg;
+    char ch;
+    unsigned char uch;
+
+    ch = ReadConfigByte(6);
+
+    if (ch & 0x10)
+    {
+        ch = ReadConfigByte(0x34);
+
+        for (i = 0; i < 48; i++)
+        {
+            reg = (unsigned char)(ch & 0xFC);
+
+            if (reg >= 0x40)
+            {
+                uch = (unsigned char)ReadConfigByte(reg);
+                if (uch == cap)
+                    return reg;
+                else
+                    ch = ReadConfigByte(reg + 1);
+            }
+            else
+                return -1;
+        }
+    }
+    return -1;
 }
 
 /*##########################################################################

@@ -53,6 +53,10 @@ void WritePci32(int segment, int handle, int reg, int val);
 
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
+int FindDevice(int start, short int device, short int vendor);
+int GetParam(int handle);
+unsigned char GetIrq(int handle);
+short int GetCap(int handle, unsigned char cap);
 
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -568,6 +572,70 @@ int FindClass(int start, unsigned char class_code, unsigned char sub_class)
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol)
 {
     return TPciFunction::FindClassProtocol(start, class_code, sub_class, protocol);
+}
+
+/*##########################################################################
+#
+#   Name       : FindDevice
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int FindDevice(int start, short int device, short int vendor)
+{
+    return TPciFunction::FindDevice(start, device, vendor);
+}
+
+/*##########################################################################
+#
+#   Name       : GetParam
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int GetParam(int handle)
+{
+    return TPciFunction::GetParam(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : GetIrq
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char GetIrq(int handle)
+{
+    return TPciFunction::GetIrq(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : GetCap
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int GetCap(int handle, unsigned char cap)
+{
+    return TPciFunction::GetCap(handle, cap);
 }
 
 /*##########################################################################

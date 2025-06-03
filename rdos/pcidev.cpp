@@ -106,9 +106,7 @@ TPciIrqRoute::~TPciIrqRoute()
 ##########################################################################*/
 void TPciIrqRoute::SetupIrq(uacpi_resource_irq *irq)
 {
-    if (irq->num_irqs < 1)
-        printf("No IRQs\r\n");
-    else
+    if (irq->num_irqs >= 1)
     {
         Irq = irq->irqs[0];
 
@@ -391,6 +389,25 @@ TPciFunction *TPciDevice::GetFunction(int function)
 {
     if (function >= 0 && function < 8)
         return FFuncArr[function];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::GetIrq
+#
+#   Purpose....: Get IRQ for pin
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciIrqRoute *TPciDevice::GetIrq(int pin)
+{
+    if (pin >= 0 && pin < 4)
+        return FIrqArr[pin];
     else
         return 0;
 }

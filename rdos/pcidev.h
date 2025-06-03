@@ -57,6 +57,7 @@ public:
     int GetSegment();
     int GetBus();
     int GetDevice();
+    TPciIrqRoute *GetIrq(int pin);
     void ScanForFunctions();
     void AddBridge(TPciBridge *bridge);
     void AddIrq(uacpi_pci_routing_table_entry *entry);
