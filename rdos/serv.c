@@ -27,6 +27,12 @@
 
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
+char ReadPciConfigByte(int issuer, int handle, int reg);
+short int ReadPciConfigWord(int issuer, int handle, int reg);
+int ReadPciConfigDword(int issuer, int handle, int reg);
+void WritePciConfigByte(int issuer, int handle, int reg, char val);
+void WritePciConfigWord(int issuer, int handle, int reg, short int val);
+void WritePciConfigDword(int issuer, int handle, int reg, int val);
 
 /*##########################################################################
 #
@@ -66,4 +72,106 @@ int LowFindClassProtocol(int start, int class_subclass, int interface)
     unsigned char class = (class_subclass >> 8) & 0xFF;
 
     return FindClassProtocol(start, class, subclass, (unsigned char)interface);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciConfigByte
+#
+#   Purpose....: Read PCI config byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowReadConfigByte "*" parm routine [edx] [ebx] [ecx] value [al]
+char LowReadConfigByte(int issuer, int handle, int reg)
+{
+    return ReadPciConfigByte(issuer, handle, reg);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciConfigWord
+#
+#   Purpose....: Read PCI config word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowReadConfigWord "*" parm routine [edx] [ebx] [ecx] value [ax]
+short int LowReadConfigWord(int issuer, int handle, int reg)
+{
+    return ReadPciConfigWord(issuer, handle, reg);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciConfigDword
+#
+#   Purpose....: Read PCI config dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowReadConfigDword "*" parm routine [edx] [ebx] [ecx] value [eax]
+int LowReadConfigDword(int issuer, int handle, int reg)
+{
+    return ReadPciConfigDword(issuer, handle, reg);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciConfigByte
+#
+#   Purpose....: Write PCI config byte
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowWriteConfigByte "*" parm routine [edx] [ebx] [ecx] [edi]
+void LowWriteConfigByte(int issuer, int handle, int reg, int val)
+{
+    WritePciConfigByte(issuer, handle, reg, (char)val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciConfigWord
+#
+#   Purpose....: Write PCI config word
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowWriteConfigWord "*" parm routine [edx] [ebx] [ecx] [edi]
+void LowWriteConfigWord(int issuer, int handle, int reg, int val)
+{
+    WritePciConfigWord(issuer, handle, reg, (short int)val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciConfigDword
+#
+#   Purpose....: Write PCI config dword
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowWriteConfigDword "*" parm routine [edx] [ebx] [ecx] [edi]
+void LowWriteConfigDword(int issuer, int handle, int reg, int val)
+{
+    WritePciConfigDword(issuer, handle, reg, val);
 }

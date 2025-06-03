@@ -130,6 +130,177 @@ LocalFindClassProtocol Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalReadPciByte
+;
+;       DESCRIPTION:    Read PCI config byte
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       CX      Register
+;
+;       RETURNS:        AL      Value
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowReadConfigByte:near
+
+LocalReadConfigByte Proc near
+    push edi
+    call LowReadConfigByte
+    pop edi
+;
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalReadConfigByte Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalReadPciWord
+;
+;       DESCRIPTION:    Read PCI config word
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       CX      Register
+;
+;       RETURNS:        AX      Value
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowReadConfigWord:near
+
+LocalReadConfigWord Proc near
+    push edi
+    call LowReadConfigWord
+    pop edi
+;
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalReadConfigWord Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalReadPciDword
+;
+;       DESCRIPTION:    Read PCI config dword
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       CX      Register
+;
+;       RETURNS:        EAX      Value
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowReadConfigDword:near
+
+LocalReadConfigDword Proc near
+    push edi
+    call LowReadConfigDword
+    pop edi
+;
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalReadConfigDword Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalWritePciByte
+;
+;       DESCRIPTION:    Write PCI config byte
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       CX      Register
+;                       AL      Value
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowWriteConfigByte:near
+
+LocalWriteConfigByte Proc near
+    push edi
+    mov edi,[edi].fc_eax
+    call LowWriteConfigByte
+    pop edi
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalWriteConfigByte Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalWritePciWord
+;
+;       DESCRIPTION:    Write PCI config word
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       CX      Register
+;                       AX      Value
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowWriteConfigWord:near
+
+LocalWriteConfigWord Proc near
+    push edi
+    mov edi,[edi].fc_eax
+    call LowWriteConfigWord
+    pop edi
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalWriteConfigWord Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalWritePciDword
+;
+;       DESCRIPTION:    Write PCI config dword
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       CX      Register
+;                       EAX     Value
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowWriteConfigDword:near
+
+LocalWriteConfigDword Proc near
+    push edi
+    mov edi,[edi].fc_eax
+    call LowWriteConfigDword
+    pop edi
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalWriteConfigDword Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -148,6 +319,12 @@ Unused   Endp
 msgtab:
 m00 DD OFFSET LocalFindClass
 m01 DD OFFSET LocalFindClassProtocol
+m02 DD OFFSET LocalReadConfigByte
+m03 DD OFFSET LocalReadConfigWord
+m04 DD OFFSET LocalReadConfigDword
+m05 DD OFFSET LocalWriteConfigByte
+m06 DD OFFSET LocalWriteConfigWord
+m07 DD OFFSET LocalWriteConfigDword
 
 WaitForMsg_    Proc near
     push ebx

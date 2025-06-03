@@ -54,6 +54,13 @@ void WritePci32(int segment, int handle, int reg, int val);
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
 
+char ReadPciConfigByte(int issuer, int handle, int reg);
+short int ReadPciConfigWord(int issuer, int handle, int reg);
+int ReadPciConfigDword(int issuer, int handle, int reg);
+void WritePciConfigByte(int issuer, int handle, int reg, char val);
+void WritePciConfigWord(int issuer, int handle, int reg, short int val);
+void WritePciConfigDword(int issuer, int handle, int reg, int val);
+
 extern int WaitForMsg();
 #pragma aux WaitForMsg value [eax]
 
@@ -561,6 +568,102 @@ int FindClass(int start, unsigned char class_code, unsigned char sub_class)
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol)
 {
     return TPciFunction::FindClassProtocol(start, class_code, sub_class, protocol);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciConfigByte
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+char ReadPciConfigByte(int issuer, int handle, int reg)
+{
+    return TPciFunction::ReadPciConfigByte(issuer, handle, reg);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciConfigWord
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int ReadPciConfigWord(int issuer, int handle, int reg)
+{
+    return TPciFunction::ReadPciConfigWord(issuer, handle, reg);
+}
+
+/*##########################################################################
+#
+#   Name       : ReadPciConfigDword
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int ReadPciConfigDword(int issuer, int handle, int reg)
+{
+    return TPciFunction::ReadPciConfigDword(issuer, handle, reg);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciConfigByte
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePciConfigByte(int issuer, int handle, int reg, char val)
+{
+    TPciFunction::WritePciConfigByte(issuer, handle, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciConfigWord
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePciConfigWord(int issuer, int handle, int reg, short int val)
+{
+    TPciFunction::WritePciConfigWord(issuer, handle, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : WritePciConfigDword
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void WritePciConfigDword(int issuer, int handle, int reg, int val)
+{
+    TPciFunction::WritePciConfigDword(issuer, handle, reg, val);
 }
 
 /*##########################################################################

@@ -48,6 +48,13 @@ public:
     static int FindClass(int index, unsigned char class_code, unsigned char sub_class);
     static int FindClassProtocol(int index, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
 
+    static char ReadPciConfigByte(int issuer, int handle, int reg);
+    static short int ReadPciConfigWord(int issuer, int handle, int reg);
+    static int ReadPciConfigDword(int issuer, int handle, int reg);
+    static void WritePciConfigByte(int issuer, int handle, int reg, char val);
+    static void WritePciConfigWord(int issuer, int handle, int reg, short int val);
+    static void WritePciConfigDword(int issuer, int handle, int reg, int val);
+
     void SetDevice(TPciDevice *dev);
     int GetSegment();
     int GetBus();
