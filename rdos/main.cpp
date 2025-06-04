@@ -54,6 +54,7 @@ void WritePci32(int segment, int handle, int reg, int val);
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
 int FindDevice(int start, short int vendor, short int device);
+int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
 int GetParam(int handle);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
@@ -590,6 +591,23 @@ int FindDevice(int start, short int vendor, short int device)
 {
     return TPciFunction::FindDevice(start, vendor, device);
 }
+
+/*##########################################################################
+#
+#   Name       : GetHandle
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function)
+{
+    return TPciFunction::GetHandle(segment, bus, device, function);
+}
+
 
 /*##########################################################################
 #

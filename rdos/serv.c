@@ -28,6 +28,7 @@
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
 int FindDevice(int start, short int vendor, short int device);
+int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
 int GetParam(int handle);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
@@ -93,6 +94,28 @@ int LowFindClassProtocol(int start, int class_subclass, int interface)
 int LowFindDevice(int start, int vendor, int device)
 {
     return FindDevice(start, (short int)vendor, (short int)device);
+}
+
+/*##########################################################################
+#
+#   Name       : GetHandle
+#
+#   Purpose....: Get handle
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetHandle "*" parm routine [edx] [ecx] value [eax]
+int LowGetHandle(int seg_bus, int dev_func)
+{
+    unsigned char bus = seg_bus & 0xFF;
+    unsigned char seg = (seg_bus >> 8) & 0xFF;
+    unsigned char func = dev_func & 0xFF;
+    unsigned char dev = (dev_func >> 8) & 0xFF;
+
+    return GetHandle(seg, bus, dev, func);
 }
 
 /*##########################################################################

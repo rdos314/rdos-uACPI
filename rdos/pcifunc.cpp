@@ -265,6 +265,32 @@ int TPciFunction::FindDevice(int index, unsigned short vendor, unsigned short de
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::FindDevice
+#
+#   Purpose....: Find device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function)
+{
+    int i;
+    TPciFunction *func;
+
+    for (i = 0; i < FFuncCount; i++)
+    {
+        func = FFuncArr[i];
+        if (func->GetSegment() == segment && func->GetBus() == bus && func->GetPciDevice() == device && func->GetPciFunction() == function)
+            return i + 1;
+    }
+
+    return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::GetParam
 #
 #   Purpose....: Get param
