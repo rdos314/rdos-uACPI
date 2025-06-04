@@ -25,6 +25,7 @@
 #
 ########################################################################*/
 
+#include <stdio.h>
 #include "pci.h"
 #include "pcifunc.h"
 #include "pcidev.h"

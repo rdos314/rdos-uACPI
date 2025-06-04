@@ -48,7 +48,6 @@ TPciBridge::TPciBridge(TPciSegment *seg, int bus)
     FBus = bus;
 
     Init();
-    FSeg->Add(this, bus);
 }
 
 /*##########################################################################
@@ -324,8 +323,6 @@ void TPciBridge::SetupIrqRouting(uacpi_namespace_node *node)
 void TPciBridge::Setup(uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
     TAcpiObject::Setup(node, info);
-
-    ScanForDevices();
     SetupIrqRouting(node);
 }
 

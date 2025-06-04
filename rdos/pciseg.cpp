@@ -204,6 +204,34 @@ void TPciSegment::Add(TPciBridge *bridge, int bus)
 
 /*##########################################################################
 #
+#   Name       : TPciSegment::Add
+#
+#   Purpose....: Add bridge
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciBridge *TPciSegment::Add(int bus)
+{
+    int index = bus - FStartBus;
+
+    if (index >= 0 && index < FBusCount)
+    {
+        if (!FBusArr[index])
+        {
+            printf("New bus: %d\r\n", bus);
+            FBusArr[index] = new TPciBridge(this, bus);
+        }
+        
+        return FBusArr[index];
+    }
+    return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciSegment::Get
 #
 #   Purpose....: Get bridge

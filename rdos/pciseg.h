@@ -41,6 +41,7 @@ public:
 
     int GetSegment();
     void Add(TPciBridge *bridge, int bus);
+    TPciBridge *Add(int bus);
     TPciBridge *Get(int bus);
 
     bool HasDev(TPciBridge *bridge, int device);
