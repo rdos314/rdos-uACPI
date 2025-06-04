@@ -354,7 +354,11 @@ unsigned char TPciFunction::GetIrq(int handle)
         nr = (unsigned char)irq->Irq;
 
     if (!nr)
+    {
         nr = func->ReadConfigByte(60);
+        if (nr == 0xFF)
+            nr = 0;
+    }
 
     return nr;
 }
