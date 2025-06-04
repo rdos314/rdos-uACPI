@@ -30,6 +30,7 @@ int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_cla
 int FindDevice(int start, short int vendor, short int device);
 int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
 int GetParam(int handle);
+int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
 char ReadPciConfigByte(int issuer, int handle, int reg);
@@ -133,6 +134,26 @@ int LowGetHandle(int seg_bus, int dev_func)
 int LowGetParam(int start)
 {
     return GetParam(start);
+}
+
+/*##########################################################################
+#
+#   Name       : GetBus
+#
+#   Purpose....: Get bus
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetBus "*" parm routine [edx] value [eax]
+int LowGetBus(int seg_bus)
+{
+    unsigned char bus = seg_bus & 0xFF;
+    unsigned char seg = (seg_bus >> 8) & 0xFF;
+
+    return GetBus(seg, bus);
 }
 
 /*##########################################################################

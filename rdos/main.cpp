@@ -56,6 +56,7 @@ int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_cla
 int FindDevice(int start, short int vendor, short int device);
 int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
 int GetParam(int handle);
+int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
 
@@ -608,7 +609,6 @@ int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigne
     return TPciFunction::GetHandle(segment, bus, device, function);
 }
 
-
 /*##########################################################################
 #
 #   Name       : GetParam
@@ -623,6 +623,45 @@ int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigne
 int GetParam(int handle)
 {
     return TPciFunction::GetParam(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : GetBus
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int GetBus(unsigned char segment, unsigned char bus)
+{
+    TPciSegment *seg = PciSegArr[segment];
+    TPciBridge *func = 0; 
+    int val;
+
+    if (seg)
+        func = seg->Get(bus);
+
+    if (func)
+    {
+        val = func->GetSegment();
+        val = val << 8;
+
+        val |= func->GetBus();
+        val = val << 8;
+
+        val |= func->GetPciDevice();
+        val = val << 8;
+
+        val |= func->GetPciFunction();
+
+        return val;
+    }
+    else
+        return -1;
 }
 
 /*##########################################################################

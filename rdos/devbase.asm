@@ -242,6 +242,48 @@ LocalGetParam Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalGetBus
+;
+;       DESCRIPTION:    Get bus
+;
+;       PARAMETERS:     DH      Segment
+;                       DL      Bus
+;
+;       RETURNS:        DH      Segment
+;                       DL      Bus
+;                       AH      Device
+;                       AL      Function
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetBus:near
+
+LocalGetBus Proc near
+    push edi
+    call LowGetBus
+    pop edi
+;    
+    cmp eax,-1
+    je gbFail
+;    
+    mov edx,eax
+    shr edx,16
+    mov [edi].fc_eax,eax
+    mov [edi].fc_edx,edx
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+gbFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalGetBus Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           LocalGetIrq
 ;
 ;       DESCRIPTION:    Get IRQ
@@ -490,14 +532,15 @@ m01 DD OFFSET LocalFindClassProtocol
 m02 DD OFFSET LocalFindDevice
 m03 DD OFFSET LocalGetHandle
 m04 DD OFFSET LocalGetParam
-m05 DD OFFSET LocalGetIrq
-m06 DD OFFSET LocalGetCap
-m07 DD OFFSET LocalReadConfigByte
-m08 DD OFFSET LocalReadConfigWord
-m09 DD OFFSET LocalReadConfigDword
-m010 DD OFFSET LocalWriteConfigByte
-m011 DD OFFSET LocalWriteConfigWord
-m012 DD OFFSET LocalWriteConfigDword
+m05 DD OFFSET LocalGetBus
+m06 DD OFFSET LocalGetIrq
+m07 DD OFFSET LocalGetCap
+m08 DD OFFSET LocalReadConfigByte
+m09 DD OFFSET LocalReadConfigWord
+m010 DD OFFSET LocalReadConfigDword
+m011 DD OFFSET LocalWriteConfigByte
+m012 DD OFFSET LocalWriteConfigWord
+m013 DD OFFSET LocalWriteConfigDword
 
 WaitForMsg_    Proc near
     push ebx
