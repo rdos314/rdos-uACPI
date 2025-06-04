@@ -33,6 +33,7 @@ int GetParam(int handle);
 int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
+int GetPciName(int handle, char *buf, int maxsize);
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
 int ReadPciConfigDword(int issuer, int handle, int reg);
@@ -185,9 +186,26 @@ unsigned char LowGetIrq(int start)
 #
 ##########################################################################*/
 #pragma aux LowGetCap "*" parm routine [ebx] [edi] value [ax]
-short int LowGetCap(int start, int cap)
+short int LowGetCap(int handle, int cap)
 {
-    return GetCap(start, (unsigned char)cap);
+    return GetCap(handle, (unsigned char)cap);
+}
+
+/*##########################################################################
+#
+#   Name       : GetPciName
+#
+#   Purpose....: Get PCI funtion ACPI name
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetPciName "*" parm routine [ebx] [edi] [ecx] value [eax]
+int LowGetPciName(int handle, char *buf, int maxsize)
+{
+    return GetPciName(handle, buf, maxsize);
 }
 
 /*##########################################################################

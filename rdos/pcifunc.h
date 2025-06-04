@@ -53,6 +53,7 @@ public:
     static int GetParam(int handle);
     static unsigned char GetIrq(int handle);
     static short int GetCap(int handle, unsigned char cap);
+    static int GetPciName(int handle, char *buf, int maxsize);
 
     static char ReadPciConfigByte(int issuer, int handle, int reg);
     static short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -73,6 +74,7 @@ public:
     unsigned char GetProtocol();
     TPciIrqRoute *GetIrq();
     short int GetCap(unsigned char cap);
+    int GetPciName(char *buf, int maxsize);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);

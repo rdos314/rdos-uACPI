@@ -26,6 +26,7 @@
 ########################################################################*/
 
 #include <stdio.h>
+#include <string.h>
 #include "pci.h"
 #include "pcifunc.h"
 #include "pcidev.h"
@@ -389,6 +390,30 @@ short int TPciFunction::GetCap(int handle, unsigned char cap)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::GetPciName
+#
+#   Purpose....: Get PCI name
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::GetPciName(int handle, char *buf, int maxsize)
+{
+    TPciFunction *func = 0;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        return func->GetPciName(buf, maxsize);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::ReadPciConfigByte
 #
 #   Purpose....: Read PCI config byte
@@ -541,6 +566,9 @@ void TPciFunction::Add(TPciFunction *func)
     TPciFunction **arr;
     int size;
     int i;
+
+    if (!func->FPciDevice)
+        return;
 
     if (FFuncSize == FFuncCount)
     {
@@ -752,7 +780,7 @@ unsigned char TPciFunction::GetProtocol()
 TPciIrqRoute *TPciFunction::GetIrq()
 {
     char pin = ReadConfigByte(61);
-    
+
     if (FPciDevice)
         return FPciDevice->GetIrq(pin);
     else
@@ -800,6 +828,37 @@ short int TPciFunction::GetCap(unsigned char cap)
         }
     }
     return -1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetPciName
+#
+#   Purpose....: Get PCI name
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::GetPciName(char *buf, int maxsize)
+{
+    const uacpi_char *path;
+    int size;
+
+    if (FNode)
+    {
+        path = uacpi_namespace_node_generate_absolute_path(FNode);
+        size = strlen(path);
+        strncpy(buf, path, maxsize);
+        uacpi_free_absolute_path(path);
+        return size + 1;
+    }
+    else
+    {
+        buf[0] = 0;
+        return 1;
+    }
 }
 
 /*##########################################################################

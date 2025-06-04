@@ -71,6 +71,7 @@ _TEXT   segment use32 word public 'CODE'
 
 LocalFindClass Proc near
     push edi
+    movzx ebx,bx
     call LowFindClass
     pop edi
 ;
@@ -109,6 +110,7 @@ LocalFindClass Endp
 
 LocalFindClassProtocol Proc near
     push edi
+    movzx ebx,bx
     call LowFindClassProtocol
     pop edi
 ;
@@ -146,6 +148,7 @@ LocalFindClassProtocol Endp
 
 LocalFindDevice Proc near
     push edi
+    movzx ebx,bx
     movzx ecx,cx
     movzx edx,dx
     call LowFindDevice
@@ -226,6 +229,7 @@ LocalGetHandle Endp
 
 LocalGetParam Proc near
     push edi
+    movzx ebx,bx
     call LowGetParam
     pop edi
 ;    
@@ -298,6 +302,7 @@ LocalGetBus Endp
 
 LocalGetIrq Proc near
     push edi
+    movzx ebx,bx
     call LowGetIrq
     pop edi
 ;    
@@ -326,6 +331,7 @@ LocalGetIrq Endp
 
 LocalGetCap Proc near
     push edi
+    movzx ebx,bx
     mov edi,[edi].fc_eax
     call LowGetCap
     pop edi
@@ -336,6 +342,50 @@ LocalGetCap Proc near
     ReplyDevCmd
     ret
 LocalGetCap Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetPciName
+;
+;       DESCRIPTION:    Get PCI device name
+;
+;       PARAMETERS:     BX      Handle
+;                       EDI     Buffer
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetPciName:near
+
+LocalGetPciName Proc near
+    push esi
+    push edi
+    movzx ebx,bx
+    add edi,SIZE dev_cmd_struc
+    add edi,4
+    mov ecx,1000h - SIZE dev_cmd_struc - 5
+    call LowGetPciName
+    pop edi
+    pop esi
+;
+    or eax,eax
+    jz gpnFail
+;
+    push edi
+    add edi,SIZE dev_cmd_struc
+    stosd
+    pop edi
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevDataCmd
+    ret
+
+gpnFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalGetPciName Endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
@@ -356,6 +406,8 @@ LocalGetCap Endp
 
 LocalReadConfigByte Proc near
     push edi
+    movzx ebx,bx
+    movzx ecx,cx
     call LowReadConfigByte
     pop edi
 ;
@@ -385,6 +437,8 @@ LocalReadConfigByte Endp
 
 LocalReadConfigWord Proc near
     push edi
+    movzx ebx,bx
+    movzx ecx,cx
     call LowReadConfigWord
     pop edi
 ;
@@ -414,6 +468,8 @@ LocalReadConfigWord Endp
 
 LocalReadConfigDword Proc near
     push edi
+    movzx ebx,bx
+    movzx ecx,cx
     call LowReadConfigDword
     pop edi
 ;
@@ -442,6 +498,8 @@ LocalReadConfigDword Endp
 
 LocalWriteConfigByte Proc near
     push edi
+    movzx ebx,bx
+    movzx ecx,cx
     mov edi,[edi].fc_eax
     call LowWriteConfigByte
     pop edi
@@ -470,6 +528,8 @@ LocalWriteConfigByte Endp
 
 LocalWriteConfigWord Proc near
     push edi
+    movzx ebx,bx
+    movzx ecx,cx
     mov edi,[edi].fc_eax
     call LowWriteConfigWord
     pop edi
@@ -498,6 +558,8 @@ LocalWriteConfigWord Endp
 
 LocalWriteConfigDword Proc near
     push edi
+    movzx ebx,bx
+    movzx ecx,cx
     mov edi,[edi].fc_eax
     call LowWriteConfigDword
     pop edi
@@ -535,12 +597,13 @@ m04 DD OFFSET LocalGetParam
 m05 DD OFFSET LocalGetBus
 m06 DD OFFSET LocalGetIrq
 m07 DD OFFSET LocalGetCap
-m08 DD OFFSET LocalReadConfigByte
-m09 DD OFFSET LocalReadConfigWord
-m010 DD OFFSET LocalReadConfigDword
-m011 DD OFFSET LocalWriteConfigByte
-m012 DD OFFSET LocalWriteConfigWord
-m013 DD OFFSET LocalWriteConfigDword
+m08 DD OFFSET LocalGetPciName
+m09 DD OFFSET LocalReadConfigByte
+m010 DD OFFSET LocalReadConfigWord
+m011 DD OFFSET LocalReadConfigDword
+m012 DD OFFSET LocalWriteConfigByte
+m013 DD OFFSET LocalWriteConfigWord
+m014 DD OFFSET LocalWriteConfigDword
 
 WaitForMsg_    Proc near
     push ebx

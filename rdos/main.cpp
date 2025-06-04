@@ -59,6 +59,7 @@ int GetParam(int handle);
 int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
+int GetPciName(int handle, char *buf, int maxsize);
 
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -639,7 +640,7 @@ int GetParam(int handle)
 int GetBus(unsigned char segment, unsigned char bus)
 {
     TPciSegment *seg = PciSegArr[segment];
-    TPciBridge *func = 0; 
+    TPciBridge *func = 0;
     int val;
 
     if (seg)
@@ -694,6 +695,22 @@ unsigned char GetIrq(int handle)
 short int GetCap(int handle, unsigned char cap)
 {
     return TPciFunction::GetCap(handle, cap);
+}
+
+/*##########################################################################
+#
+#   Name       : GetCap
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int GetPciName(int handle, char *buf, int maxsize)
+{
+    return TPciFunction::GetPciName(handle, buf, maxsize);
 }
 
 /*##########################################################################
