@@ -146,7 +146,9 @@ LocalFindClassProtocol Endp
 
 LocalFindDevice Proc near
     push edi
-    call LowFindClassProtocol
+    movzx ecx,cx
+    movzx edx,dx
+    call LowFindDevice
     pop edi
 ;
     or eax,eax
@@ -242,6 +244,7 @@ LocalGetIrq Endp
 
 LocalGetCap Proc near
     push edi
+    mov edi,[edi].fc_eax
     call LowGetCap
     pop edi
 ;    

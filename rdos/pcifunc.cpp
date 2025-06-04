@@ -248,7 +248,7 @@ int TPciFunction::FindClassProtocol(int index, unsigned char class_code, unsigne
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::FindDevice(int index, unsigned short device, unsigned short vendor)
+int TPciFunction::FindDevice(int index, unsigned short vendor, unsigned short device)
 {
     int i;
     TPciFunction *func;
@@ -290,7 +290,7 @@ int TPciFunction::GetParam(int handle)
         val |= func->GetBus();
         val = val << 8;
 
-        val |= func->GetDevice();
+        val |= func->GetPciDevice();
         val = val << 8;
 
         val |= func->FPciFunction;
@@ -316,6 +316,7 @@ unsigned char TPciFunction::GetIrq(int handle)
 {
     TPciFunction *func = 0;
     TPciIrqRoute *irq = 0;
+    unsigned char nr = 0;
 
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
@@ -324,9 +325,12 @@ unsigned char TPciFunction::GetIrq(int handle)
         irq = func->GetIrq();
 
     if (irq)
-        return (unsigned char)irq->Irq;
-    else
-        return 0;
+        nr = (unsigned char)irq->Irq;
+
+    if (!nr)
+        nr = func->ReadConfigByte(60);
+
+    return nr;
 }
 
 /*##########################################################################
@@ -718,7 +722,7 @@ unsigned char TPciFunction::GetProtocol()
 TPciIrqRoute *TPciFunction::GetIrq()
 {
     char pin = ReadConfigByte(61);
-
+    
     if (FPciDevice)
         return FPciDevice->GetIrq(pin);
     else

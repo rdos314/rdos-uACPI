@@ -406,8 +406,8 @@ TPciFunction *TPciDevice::GetFunction(int function)
 ##########################################################################*/
 TPciIrqRoute *TPciDevice::GetIrq(int pin)
 {
-    if (pin >= 0 && pin < 4)
-        return FIrqArr[pin];
+    if (pin > 0 && pin <= 4)
+        return FIrqArr[pin - 1];
     else
         return 0;
 }

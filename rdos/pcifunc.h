@@ -48,7 +48,7 @@ public:
 
     static int FindClass(int index, unsigned char class_code, unsigned char sub_class);
     static int FindClassProtocol(int index, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
-    static int FindDevice(int start, unsigned short device, unsigned short vendor);
+    static int FindDevice(int start, unsigned short vendor, unsigned short device);
     static int GetParam(int handle);
     static unsigned char GetIrq(int handle);
     static short int GetCap(int handle, unsigned char cap);

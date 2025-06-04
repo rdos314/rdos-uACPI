@@ -27,7 +27,7 @@
 
 int FindClass(int start, unsigned char class_code, unsigned char sub_class);
 int FindClassProtocol(int start, unsigned char class_code, unsigned char sub_class, unsigned char protocol);
-int FindDevice(int start, short int device, short int vendor);
+int FindDevice(int start, short int vendor, short int device);
 int GetParam(int handle);
 unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
@@ -89,10 +89,10 @@ int LowFindClassProtocol(int start, int class_subclass, int interface)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowFindDevice "*" parm routine [ebx] [cx] [dx] value [eax]
-int LowFindDevice(int start, short int device, short int vendor)
+#pragma aux LowFindDevice "*" parm routine [ebx] [edx] [ecx] value [eax]
+int LowFindDevice(int start, int vendor, int device)
 {
-    return FindDevice(start, device, vendor);
+    return FindDevice(start, (short int)vendor, (short int)device);
 }
 
 /*##########################################################################
@@ -140,10 +140,10 @@ unsigned char LowGetIrq(int start)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowGetCap "*" parm routine [ebx] [al] value [ax]
-short int LowGetCap(int start, unsigned char cap)
+#pragma aux LowGetCap "*" parm routine [ebx] [edi] value [ax]
+short int LowGetCap(int start, int cap)
 {
-    return GetCap(start, cap);
+    return GetCap(start, (unsigned char)cap);
 }
 
 /*##########################################################################
