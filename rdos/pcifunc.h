@@ -77,8 +77,6 @@ public:
     TPciIrqRoute *GetIrq();
     short int GetCap(unsigned char cap);
     int GetPciName(char *buf, int maxsize);
-    bool LockPci(int issuer, const char *name);
-    bool UnlockPci(int issuer);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);
@@ -90,6 +88,10 @@ public:
 protected:
     void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
     void Add(TPciFunction *func);
+    bool IsAllowed(int issuer);
+
+    void LockPci(int issuer, const char *name);
+    void UnlockPci();
 
     static int FFuncCount;
     static int FFuncSize;
@@ -97,6 +99,9 @@ protected:
 
     TPciDevice *FPciDevice;
     int FPciFunction;
+
+    int FIssuer;
+    char *FOwnerName;
 
     unsigned short FVendor;
     unsigned short FDevice;

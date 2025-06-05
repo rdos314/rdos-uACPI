@@ -56,6 +56,9 @@ TPciFunction::TPciFunction()
     FSubClass = 0;
     FProtocol = 0;
 
+    FIssuer = 0;
+    FOwnerName = 0;
+
     Add(this);
 }
 
@@ -90,6 +93,8 @@ TPciFunction::TPciFunction(TPciDevice *device, int function, int vendor_device, 
 ##########################################################################*/
 TPciFunction::~TPciFunction()
 {
+    if (FOwnerName)
+        delete FOwnerName;
 }
 
 /*##########################################################################
@@ -105,6 +110,9 @@ TPciFunction::~TPciFunction()
 ##########################################################################*/
 void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned char sub_class)
 {
+    FIssuer = 0;
+    FOwnerName = 0;
+
     FVendor = (unsigned short)(vendor_device & 0xFFFF);
     FDevice = (unsigned short)((vendor_device >> 16) & 0xFFFF);
     FClass = class_code;
@@ -205,7 +213,7 @@ int TPciFunction::FindClass(int index, unsigned char class_code, unsigned char s
     for (i = index; i < FFuncCount; i++)
     {
         func = FFuncArr[i];
-        if (func->FClass == class_code && func->FSubClass == sub_class)
+        if (func->FClass == class_code && func->FSubClass == sub_class && !func->FIssuer)
             return i + 1;
     }
 
@@ -231,7 +239,7 @@ int TPciFunction::FindClassProtocol(int index, unsigned char class_code, unsigne
     for (i = index; i < FFuncCount; i++)
     {
         func = FFuncArr[i];
-        if (func->FClass == class_code && func->FSubClass == sub_class && func->FProtocol == protocol)
+        if (func->FClass == class_code && func->FSubClass == sub_class && func->FProtocol == protocol && !func->FIssuer)
             return i + 1;
     }
 
@@ -257,7 +265,7 @@ int TPciFunction::FindDevice(int index, unsigned short vendor, unsigned short de
     for (i = index; i < FFuncCount; i++)
     {
         func = FFuncArr[i];
-        if (func->FDevice == device && func->FVendor == vendor)
+        if (func->FDevice == device && func->FVendor == vendor && !func->FIssuer)
             return i + 1;
     }
 
@@ -430,8 +438,11 @@ bool TPciFunction::LockPci(int issuer, int handle, const char *name)
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
 
-    if (func)
-        return func->LockPci(issuer, name);
+    if (func && func->IsAllowed(issuer))
+    {
+        func->LockPci(issuer, name);
+        return true;
+    }
     else
         return false;
 }
@@ -454,8 +465,11 @@ bool TPciFunction::UnlockPci(int issuer, int handle)
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
 
-    if (func)
-        return func->UnlockPci(issuer);
+    if (func && func->IsAllowed(issuer))
+    {
+        func->UnlockPci();
+        return true;
+    }
     else
         return false;
 }
@@ -550,7 +564,7 @@ void TPciFunction::WritePciConfigByte(int issuer, int handle, int reg, char val)
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
 
-    if (func)
+    if (func && func->IsAllowed(issuer))
         func->WriteConfigByte(reg, val);
 }
 
@@ -572,7 +586,7 @@ void TPciFunction::WritePciConfigWord(int issuer, int handle, int reg, short int
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
 
-    if (func)
+    if (func && func->IsAllowed(issuer))
         func->WriteConfigWord(reg, val);
 }
 
@@ -594,7 +608,7 @@ void TPciFunction::WritePciConfigDword(int issuer, int handle, int reg, int val)
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
 
-    if (func)
+    if (func && func->IsAllowed(issuer))
         func->WriteConfigDword(reg, val);
 }
 
@@ -894,6 +908,13 @@ int TPciFunction::GetPciName(char *buf, int maxsize)
     const uacpi_char *path;
     int size;
 
+    if (FOwnerName)
+    {
+        size = strlen(FOwnerName);
+        strncpy(buf, FOwnerName, maxsize);
+        return size + 1;
+    }
+
     if (FNode)
     {
         path = uacpi_namespace_node_generate_absolute_path(FNode);
@@ -902,11 +923,33 @@ int TPciFunction::GetPciName(char *buf, int maxsize)
         uacpi_free_absolute_path(path);
         return size + 1;
     }
-    else
+
+    buf[0] = 0;
+    return 1;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::IsAllowed
+#
+#   Purpose....: Check if issuer is allowed to access function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::IsAllowed(int issuer)
+{
+    if (FIssuer)
     {
-        buf[0] = 0;
-        return 1;
+        if (FIssuer == issuer)
+            return true;
+        else
+            return false;
     }
+    else
+        return true;
 }
 
 /*##########################################################################
@@ -920,9 +963,18 @@ int TPciFunction::GetPciName(char *buf, int maxsize)
 #   Returns....: *
 #
 ##########################################################################*/
-bool TPciFunction::LockPci(int issuer, const char *name)
+void TPciFunction::LockPci(int issuer, const char *name)
 {
-    return false;
+    int size;
+
+    FIssuer = issuer;
+
+    if (FOwnerName)
+        delete FOwnerName;
+
+    size = strlen(name);
+    FOwnerName = new char[size + 1];
+    strcpy(FOwnerName, name);
 }
 
 /*##########################################################################
@@ -936,9 +988,14 @@ bool TPciFunction::LockPci(int issuer, const char *name)
 #   Returns....: *
 #
 ##########################################################################*/
-bool TPciFunction::UnlockPci(int issuer)
+void TPciFunction::UnlockPci()
 {
-    return false;
+    FIssuer = 0;
+
+    if (FOwnerName)
+        delete FOwnerName;
+
+    FOwnerName = 0;
 }
 
 /*##########################################################################
