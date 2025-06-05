@@ -414,6 +414,54 @@ int TPciFunction::GetPciName(int handle, char *buf, int maxsize)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::LockPci
+#
+#   Purpose....: Lock PCI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::LockPci(int issuer, int handle, const char *name)
+{
+    TPciFunction *func = 0;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        return func->LockPci(issuer, name);
+    else
+        return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::UnlockPci
+#
+#   Purpose....: Unlock PCI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::UnlockPci(int issuer, int handle)
+{
+    TPciFunction *func = 0;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        return func->UnlockPci(issuer);
+    else
+        return false;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::ReadPciConfigByte
 #
 #   Purpose....: Read PCI config byte
@@ -859,6 +907,38 @@ int TPciFunction::GetPciName(char *buf, int maxsize)
         buf[0] = 0;
         return 1;
     }
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::LockPci
+#
+#   Purpose....: Lock
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::LockPci(int issuer, const char *name)
+{
+    return false;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::UnlockPci
+#
+#   Purpose....: Unlock
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::UnlockPci(int issuer)
+{
+    return false;
 }
 
 /*##########################################################################

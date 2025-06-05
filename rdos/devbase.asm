@@ -573,6 +573,76 @@ LocalWriteConfigDword Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalLockPci
+;
+;       DESCRIPTION:    Local lock pci
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;                       Data    Name
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowLockPci:near
+
+LocalLockPci Proc near
+    push edi
+    movzx ebx,bx
+    add edi,SIZE dev_cmd_struc
+    call LowLockPci
+    pop edi
+;    
+    or eax,eax
+    jz llFail
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+llFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalLockPci Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalUnlockPci
+;
+;       DESCRIPTION:    Local unlock PCI
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowUnlockPci:near
+
+LocalUnlockPci Proc near
+    push edi
+    movzx ebx,bx
+    call LowUnlockPci
+    pop edi
+;    
+    or eax,eax
+    jz luFail
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+luFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalUnlockPci Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -604,6 +674,8 @@ m011 DD OFFSET LocalReadConfigDword
 m012 DD OFFSET LocalWriteConfigByte
 m013 DD OFFSET LocalWriteConfigWord
 m014 DD OFFSET LocalWriteConfigDword
+m015 DD OFFSET LocalLockPci
+m016 DD OFFSET LocalUnlockPci
 
 WaitForMsg_    Proc near
     push ebx

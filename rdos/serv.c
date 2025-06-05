@@ -40,6 +40,8 @@ int ReadPciConfigDword(int issuer, int handle, int reg);
 void WritePciConfigByte(int issuer, int handle, int reg, char val);
 void WritePciConfigWord(int issuer, int handle, int reg, short int val);
 void WritePciConfigDword(int issuer, int handle, int reg, int val);
+int LockPci(int issuer, int handle, char *name);
+int UnlockPci(int issuer, int handle);
 
 /*##########################################################################
 #
@@ -308,4 +310,38 @@ void LowWriteConfigWord(int issuer, int handle, int reg, int val)
 void LowWriteConfigDword(int issuer, int handle, int reg, int val)
 {
     WritePciConfigDword(issuer, handle, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : LockPci
+#
+#   Purpose....: Lock PCI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowLockPci "*" parm routine [edx] [ebx] [edi] value [eax]
+int LowLockPci(int issuer, int handle, const char *name)
+{
+    return LockPci(issuer, handle, name);
+}
+
+/*##########################################################################
+#
+#   Name       : UnlockPci
+#
+#   Purpose....: Unlock PCI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowUnlockPci "*" parm routine [edx] [ebx] value [eax]
+int LowUnlockPci(int issuer, int handle)
+{
+    return UnlockPci(issuer, handle);
 }

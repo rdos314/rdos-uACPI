@@ -54,6 +54,8 @@ public:
     static unsigned char GetIrq(int handle);
     static short int GetCap(int handle, unsigned char cap);
     static int GetPciName(int handle, char *buf, int maxsize);
+    static bool LockPci(int issuer, int handle, const char *name);
+    static bool UnlockPci(int issuer, int handle);
 
     static char ReadPciConfigByte(int issuer, int handle, int reg);
     static short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -75,6 +77,8 @@ public:
     TPciIrqRoute *GetIrq();
     short int GetCap(unsigned char cap);
     int GetPciName(char *buf, int maxsize);
+    bool LockPci(int issuer, const char *name);
+    bool UnlockPci(int issuer);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);

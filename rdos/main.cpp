@@ -61,6 +61,9 @@ unsigned char GetIrq(int handle);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 
+int LockPci(int issuer, int handle, const char *name);
+int UnlockPci(int issuer, int handle);
+
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
 int ReadPciConfigDword(int issuer, int handle, int reg);
@@ -807,6 +810,38 @@ void WritePciConfigWord(int issuer, int handle, int reg, short int val)
 void WritePciConfigDword(int issuer, int handle, int reg, int val)
 {
     TPciFunction::WritePciConfigDword(issuer, handle, reg, val);
+}
+
+/*##########################################################################
+#
+#   Name       : LockPci
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int LockPci(int issuer, int handle, const char *name)
+{
+    return TPciFunction::LockPci(issuer, handle, name);
+}
+
+/*##########################################################################
+#
+#   Name       : UnlockPci
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int UnlockPci(int issuer, int handle)
+{
+    return TPciFunction::UnlockPci(issuer, handle);
 }
 
 /*##########################################################################
