@@ -325,8 +325,8 @@ TAcpiDevice *AddPciRoot(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_n
     if (seg)
     {
         bridge = seg->Add(bus);
-        bridge->Setup(node, info);
         bridge->ScanForDevices();
+        bridge->Setup(node, info);
     }
     else
         printf("Segment not defined %d\r\n", seg);
