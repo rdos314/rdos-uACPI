@@ -293,6 +293,7 @@ LocalGetBus Endp
 ;       DESCRIPTION:    Get IRQ
 ;
 ;       PARAMETERS:     BX      Handle
+;                       AX      Index
 ;
 ;       RETURNS:        AL      IRQ
 ;
@@ -303,6 +304,7 @@ LocalGetBus Endp
 LocalGetIrq Proc near
     push edi
     movzx ebx,bx
+    movzx edi,ax
     call LowGetIrq
     pop edi
 ;    
@@ -312,6 +314,62 @@ LocalGetIrq Proc near
     ReplyDevCmd
     ret
 LocalGetIrq Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetMsi
+;
+;       DESCRIPTION:    Get MSI
+;
+;       PARAMETERS:     BX      Handle
+;
+;       RETURNS:        AL      Vectors
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetMsi:near
+
+LocalGetMsi Proc near
+    push edi
+    movzx ebx,bx
+    call LowGetMsi
+    pop edi
+;    
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalGetMsi Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetMsiX
+;
+;       DESCRIPTION:    Get MSI-X
+;
+;       PARAMETERS:     BX      Handle
+;
+;       RETURNS:        AL      Vectors
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetMsiX:near
+
+LocalGetMsiX Proc near
+    push edi
+    movzx ebx,bx
+    call LowGetMsiX
+    pop edi
+;    
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalGetMsiX Endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
@@ -676,6 +734,8 @@ m013 DD OFFSET LocalWriteConfigWord
 m014 DD OFFSET LocalWriteConfigDword
 m015 DD OFFSET LocalLockPci
 m016 DD OFFSET LocalUnlockPci
+m017 DD OFFSET LocalGetMsi
+m018 DD OFFSET LocalGetMsiX
 
 WaitForMsg_    Proc near
     push ebx

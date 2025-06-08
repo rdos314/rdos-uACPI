@@ -71,6 +71,8 @@ public:
     void WriteConfigWord(int func, int reg, short val);
     void WriteConfigDword(int func, int reg, int val);
 
+    void PowerOn();
+
 protected:
     TPciFunction *AddFunction(int function, int vendor_device);
 

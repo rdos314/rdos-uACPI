@@ -57,7 +57,9 @@ int FindDevice(int start, short int vendor, short int device);
 int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
 int GetParam(int handle);
 int GetBus(unsigned char segment, unsigned char bus);
-unsigned char GetIrq(int handle);
+unsigned char GetIrq(int handle, int index);
+unsigned char GetMsi(int handle);
+unsigned char GetMsiX(int handle);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 
@@ -679,9 +681,56 @@ int GetBus(unsigned char segment, unsigned char bus)
 #   Returns....: *
 #
 ##########################################################################*/
-unsigned char GetIrq(int handle)
+unsigned char GetIrq(int handle, int index)
 {
-    return TPciFunction::GetIrq(handle);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetIrq(index);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : GetMsi
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char GetMsi(int handle)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetMsi();
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : GetMsiX
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char GetMsiX(int handle)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetMsiX();
+    else
+        return 0;
 }
 
 /*##########################################################################
@@ -697,12 +746,17 @@ unsigned char GetIrq(int handle)
 ##########################################################################*/
 short int GetCap(int handle, unsigned char cap)
 {
-    return TPciFunction::GetCap(handle, cap);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetCap(cap);
+    else
+        return 0;
 }
 
 /*##########################################################################
 #
-#   Name       : GetCap
+#   Name       : GetPciName
 #
 #   Purpose....:
 #
@@ -713,7 +767,12 @@ short int GetCap(int handle, unsigned char cap)
 ##########################################################################*/
 int GetPciName(int handle, char *buf, int maxsize)
 {
-    return TPciFunction::GetPciName(handle, buf, maxsize);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetPciName(buf, maxsize);
+    else
+        return 0;
 }
 
 /*##########################################################################

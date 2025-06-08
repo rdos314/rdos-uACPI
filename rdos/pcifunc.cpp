@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "rdos.h"
 #include "pci.h"
 #include "pcifunc.h"
 #include "pcidev.h"
@@ -58,6 +59,12 @@ TPciFunction::TPciFunction()
 
     FIssuer = 0;
     FOwnerName = 0;
+
+    FMsiBase = 0;
+    FMsiVectors = 0;
+
+    FMsiXBase = 0;
+    FMsiXVectors = 0;
 
     Add(this);
 }
@@ -110,6 +117,10 @@ TPciFunction::~TPciFunction()
 ##########################################################################*/
 void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned char sub_class)
 {
+    int i;
+    int reg;
+    char ch;
+
     FIssuer = 0;
     FOwnerName = 0;
 
@@ -118,6 +129,44 @@ void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned ch
     FClass = class_code;
     FSubClass = sub_class;
     FProtocol = (unsigned char)ReadConfigByte(PCI_progIF);
+
+    FMsiBase = 0;
+    FMsiVectors = 0;
+
+    FMsiXBase = 0;
+    FMsiXVectors = 0;
+
+    ch = ReadConfigByte(PCI_status_reg);
+
+    if (ch & 0x10)
+    {
+        ch = ReadConfigByte(0x34);
+
+        for (i = 0; i < 48; i++)
+        {
+            reg = (unsigned char)(ch & 0xFC);
+
+            if (reg >= 0x40)
+            {
+                ch = ReadConfigByte(reg);
+                switch (ch)
+                {
+                    case 5:
+                        FMsiBase = (unsigned char)(ch + 2);
+                        ch = ReadConfigByte(FMsiBase);
+                        ch = (ch >> 1) & 0x3;
+                        FMsiVectors = 1 << ch;
+                        break;
+
+                    case 0x11:
+                        FMsiXBase = (unsigned char)(ch + 2);
+                        FMsiXVectors = ReadConfigWord(FMsiXBase) + 1;
+                        break;
+                }
+                ch = ReadConfigByte(reg + 1);
+            }
+        }
+    }
 
     Add(this);
 }
@@ -300,6 +349,28 @@ int TPciFunction::GetHandle(unsigned char segment, unsigned char bus, unsigned d
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::GetFunction
+#
+#   Purpose....: Get function from handle
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciFunction *TPciFunction::GetFunction(int handle)
+{
+    TPciFunction *func = 0;
+    int val;
+
+    if (handle > 0 && handle <= FFuncCount)
+        return FFuncArr[handle - 1];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::GetParam
 #
 #   Purpose....: Get param
@@ -347,24 +418,22 @@ int TPciFunction::GetParam(int handle)
 #   Returns....: *
 #
 ##########################################################################*/
-unsigned char TPciFunction::GetIrq(int handle)
+unsigned char TPciFunction::GetIrq(int index)
 {
-    TPciFunction *func = 0;
     TPciIrqRoute *irq = 0;
     unsigned char nr = 0;
 
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
+    if (index)
+        return 0;
 
-    if (func)
-        irq = func->GetIrq();
+    irq = GetIrq();
 
     if (irq)
         nr = (unsigned char)irq->Irq;
 
     if (!nr)
     {
-        nr = func->ReadConfigByte(60);
+        nr = ReadConfigByte(PCI_interrupt_line);
         if (nr == 0xFF)
             nr = 0;
     }
@@ -374,48 +443,43 @@ unsigned char TPciFunction::GetIrq(int handle)
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::GetCap
+#   Name       : TPciFunction::GetMsi
 #
-#   Purpose....: Get capability
+#   Purpose....: Get MSI
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-short int TPciFunction::GetCap(int handle, unsigned char cap)
+unsigned char TPciFunction::GetMsi()
 {
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func)
-        return func->GetCap(cap);
+    if (FMsiBase)
+        return (unsigned char)FMsiVectors;
     else
         return 0;
 }
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::GetPciName
+#   Name       : TPciFunction::GetMsiX
 #
-#   Purpose....: Get PCI name
+#   Purpose....: Get MSI-X
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::GetPciName(int handle, char *buf, int maxsize)
+unsigned char TPciFunction::GetMsiX()
 {
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func)
-        return func->GetPciName(buf, maxsize);
+    if (FMsiXBase)
+    {
+        if (FMsiXVectors < 32)
+            return (unsigned char)FMsiXVectors;
+        else
+            return 32;
+    }
     else
         return 0;
 }
@@ -841,7 +905,7 @@ unsigned char TPciFunction::GetProtocol()
 ##########################################################################*/
 TPciIrqRoute *TPciFunction::GetIrq()
 {
-    char pin = ReadConfigByte(61);
+    char pin = ReadConfigByte(PCI_interrupt_pin);
 
     if (FPciDevice)
         return FPciDevice->GetIrq(pin);
@@ -867,7 +931,7 @@ short int TPciFunction::GetCap(unsigned char cap)
     char ch;
     unsigned char uch;
 
-    ch = ReadConfigByte(6);
+    ch = ReadConfigByte(PCI_status_reg);
 
     if (ch & 0x10)
     {
@@ -930,6 +994,40 @@ int TPciFunction::GetPciName(char *buf, int maxsize)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::PowerOn
+#
+#   Purpose....: Set power state to D0
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::PowerOn()
+{
+    short int reg;
+    short int val;
+
+    if (FPciDevice)
+        FPciDevice->PowerOn();
+
+    reg = GetCap(1);
+    if (reg > 0)
+    {
+        val = ReadConfigWord(reg + 4);
+        WriteConfigWord(reg + 4, 0x8000);
+
+        if (val & 3)
+            RdosWaitMilli(10);
+    }
+
+    val = ReadConfigWord(PCI_command_reg);
+    val |= 7;
+    WriteConfigWord(PCI_command_reg, val);
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::IsAllowed
 #
 #   Purpose....: Check if issuer is allowed to access function
@@ -975,6 +1073,8 @@ void TPciFunction::LockPci(int issuer, const char *name)
     size = strlen(name);
     FOwnerName = new char[size + 1];
     strcpy(FOwnerName, name);
+
+    PowerOn();
 }
 
 /*##########################################################################

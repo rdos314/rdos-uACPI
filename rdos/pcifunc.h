@@ -51,9 +51,7 @@ public:
     static int FindDevice(int start, unsigned short vendor, unsigned short device);
     static int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
     static int GetParam(int handle);
-    static unsigned char GetIrq(int handle);
-    static short int GetCap(int handle, unsigned char cap);
-    static int GetPciName(int handle, char *buf, int maxsize);
+    static TPciFunction *GetFunction(int handle);
     static bool LockPci(int issuer, int handle, const char *name);
     static bool UnlockPci(int issuer, int handle);
 
@@ -74,9 +72,11 @@ public:
     unsigned char GetClass();
     unsigned char GetSubClass();
     unsigned char GetProtocol();
-    TPciIrqRoute *GetIrq();
     short int GetCap(unsigned char cap);
     int GetPciName(char *buf, int maxsize);
+    unsigned char GetIrq(int index);
+    unsigned char GetMsi();
+    unsigned char GetMsiX();
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);
@@ -85,10 +85,13 @@ public:
     void WriteConfigWord(int reg, short val);
     void WriteConfigDword(int reg, int val);
 
+    void PowerOn();
+
 protected:
     void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
     void Add(TPciFunction *func);
     bool IsAllowed(int issuer);
+    TPciIrqRoute *GetIrq();
 
     void LockPci(int issuer, const char *name);
     void UnlockPci();
@@ -108,6 +111,12 @@ protected:
     unsigned char FClass;
     unsigned char FSubClass;
     unsigned char FProtocol;
+
+    unsigned char FMsiBase;
+    int FMsiVectors;
+
+    unsigned char FMsiXBase;
+    int FMsiXVectors;
 };
 
 #endif

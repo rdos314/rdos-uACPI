@@ -31,7 +31,9 @@ int FindDevice(int start, short int vendor, short int device);
 int GetHandle(unsigned char segment, unsigned char bus, unsigned device, unsigned function);
 int GetParam(int handle);
 int GetBus(unsigned char segment, unsigned char bus);
-unsigned char GetIrq(int handle);
+unsigned char GetIrq(int handle, int index);
+unsigned char GetMsi(int handle);
+unsigned char GetMsiX(int handle);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 char ReadPciConfigByte(int issuer, int handle, int reg);
@@ -170,10 +172,44 @@ int LowGetBus(int seg_bus)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowGetIrq "*" parm routine [ebx] value [al]
-unsigned char LowGetIrq(int start)
+#pragma aux LowGetIrq "*" parm routine [ebx] [edi] value [al]
+unsigned char LowGetIrq(int handle, int index)
 {
-    return GetIrq(start);
+    return GetIrq(handle, index);
+}
+
+/*##########################################################################
+#
+#   Name       : GetMsi
+#
+#   Purpose....: Get MSI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetMsi "*" parm routine [ebx] value [al]
+unsigned char LowGetMsi(int handle)
+{
+    return GetMsi(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : GetMsiX
+#
+#   Purpose....: Get MSI-X
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetMsiX "*" parm routine [ebx] value [al]
+unsigned char LowGetMsiX(int handle)
+{
+    return GetMsiX(handle);
 }
 
 /*##########################################################################

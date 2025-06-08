@@ -507,3 +507,19 @@ void TPciDevice::WriteConfigDword(int func, int reg, int val)
 {
     FParent->WriteConfigDword(this, func, reg, val);
 }
+
+/*##########################################################################
+#
+#   Name       : TPciDevice::PowerOn
+#
+#   Purpose....: Set power to D0
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciDevice::PowerOn()
+{
+    FParent->PowerOn();
+}
