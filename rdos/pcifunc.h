@@ -71,8 +71,8 @@ public:
     unsigned char GetMsi();
     unsigned char GetMsiX();
     void UnlockPci();
-    int SetupIrq(int prio);
-    int SetupMsi(int prio, int vectors);
+    int SetupIrq(int core, int prio);
+    int SetupMsi(int core, int prio, int vectors);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);
@@ -82,6 +82,7 @@ public:
     void WriteConfigDword(int reg, int val);
 
     void PowerOn();
+    long long GetBar(int index);
 
 protected:
     void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
@@ -111,6 +112,7 @@ protected:
 
     unsigned char FMsiXBase;
     int FMsiXVectors;
+    int *FMsiXVectorArr;
 };
 
 #endif

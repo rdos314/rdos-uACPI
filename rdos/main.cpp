@@ -60,8 +60,8 @@ int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle, int index);
 unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
-int SetupIrq(int issuer, int handle, int prio);
-int SetupMsi(int issuer, int handle, int prio, int vectors);
+int SetupIrq(int issuer, int handle, int core, int prio);
+int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 
@@ -746,7 +746,7 @@ unsigned char GetMsiX(int handle)
 #   Returns....: *
 #
 ##########################################################################*/
-int SetupIrq(int issuer, int handle, int prio)
+int SetupIrq(int issuer, int handle, int core, int prio)
 {
     TPciFunction *func = TPciFunction::GetFunction(handle);
 
@@ -755,7 +755,7 @@ int SetupIrq(int issuer, int handle, int prio)
             func = 0;
 
     if (func)
-        return func->SetupIrq(prio);
+        return func->SetupIrq(core, prio);
     else
         return 0;
 }
@@ -771,7 +771,7 @@ int SetupIrq(int issuer, int handle, int prio)
 #   Returns....: *
 #
 ##########################################################################*/
-int SetupMsi(int issuer, int handle, int prio, int vectors)
+int SetupMsi(int issuer, int handle, int core, int prio, int vectors)
 {
     TPciFunction *func = TPciFunction::GetFunction(handle);
 
@@ -780,7 +780,7 @@ int SetupMsi(int issuer, int handle, int prio, int vectors)
             func = 0;
 
     if (func)
-        return func->SetupMsi(prio, vectors);
+        return func->SetupMsi(core, prio, vectors);
     else
         return 0;
 }

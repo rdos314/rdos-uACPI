@@ -708,6 +708,7 @@ LocalUnlockPci Endp
 ;       PARAMETERS:     DX      Issuer
 ;                       AH      Priority
 ;                       BX      Handle
+;                       SI      Core
 ;
 ;       RETURNS:        AL      Vector
 ;                       AH      Mode, 0 = fail, 1 = IRQ, 2 = MSI
@@ -721,6 +722,7 @@ LocalSetupIrq Proc near
     movzx ebx,bx
     movzx edx,dx
     movzx edi,ah
+    movzx esi,si
     call LowSetupIrq
     pop edi
 ;
@@ -742,6 +744,7 @@ LocalSetupIrq Endp
 ;                       AH      Priority
 ;                       BX      Handle
 ;                       CX      Requested vectors
+;                       SI      Core
 ;
 ;       RETURNS:        CX      Allocated vectors
 ;
@@ -755,6 +758,7 @@ LocalSetupMsi Proc near
     movzx edx,dx
     movzx edi,ah
     movzx ecx,cx
+    movzx esi,si
     call LowSetupMsi
     pop edi
 ;

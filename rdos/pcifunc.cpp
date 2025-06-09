@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "rdos.h"
+#include "acpi.h"
 #include "pci.h"
 #include "pcifunc.h"
 #include "pcidev.h"
@@ -65,6 +66,7 @@ TPciFunction::TPciFunction()
 
     FMsiXBase = 0;
     FMsiXVectors = 0;
+    FMsiXVectorArr = 0;
 
     Add(this);
 }
@@ -135,6 +137,7 @@ void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned ch
 
     FMsiXBase = 0;
     FMsiXVectors = 0;
+    FMsiXVectorArr = 0;
 
     ch = ReadConfigByte(PCI_status_reg);
 
@@ -486,6 +489,43 @@ unsigned char TPciFunction::GetMsiX()
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::GetBar
+#
+#   Purpose....: Get BAR physical address
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+long long TPciFunction::GetBar(int index)
+{
+    int low, high;
+    long long val;
+
+    if (index >= 0 && index < 6)
+    {
+        low = ReadConfigDword(0x10 + 4 * index);
+        if (low & 1)
+            return 0;
+
+        if (low & 4)
+            high = ReadConfigDword(0x14 + 4 * index);
+        else
+            high = 0;
+
+        low = low & 0xFFFFFFF0;
+        val = (long long)high << 32;
+        val |= low;
+
+        return val;
+    }
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::SetupIrq
 #
 #   Purpose....: SetupIrq
@@ -495,9 +535,96 @@ unsigned char TPciFunction::GetMsiX()
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::SetupIrq(int prio)
+int TPciFunction::SetupIrq(int core, int prio)
 {
-    return 0;
+    unsigned char irq = 0;
+    TPciIrqRoute *route = 0;
+    short int cntrl;
+    int val;
+    int bar;
+    long long phys;
+
+    if (FMsiBase && FMsiVectors)
+    {
+        irq = ServUacpiAllocateInts(1, (unsigned char)prio);
+        if (irq)
+        {
+            val = ServUacpiGetMsiAddress(core);
+            WriteConfigDword(FMsiBase + 2, val);
+
+            val = ServUacpiGetMsiData(irq);
+
+            cntrl = ReadConfigWord(FMsiBase);
+            if (cntrl & 0x80)
+            {
+                WriteConfigDword(FMsiBase + 6, 0);
+                WriteConfigWord(FMsiBase + 10, (short int)val);
+
+                if (cntrl & 0x100)
+                    WriteConfigDword(FMsiBase + 14, 0);
+            }
+            else
+            {
+                WriteConfigWord(FMsiBase + 6, (short int)val);
+
+                if (cntrl & 0x100)
+                    WriteConfigDword(FMsiBase + 10, 0);
+            }
+
+            cntrl &= 0xFF8F;
+            cntrl |= 1;
+            WriteConfigDword(FMsiBase, cntrl);
+        }
+    }
+
+    if (FMsiXBase && FMsiXVectors && !irq)
+    {
+        val = ReadConfigDword(FMsiXBase + 2);
+        bar = val & 7;
+        val &= 0xFFFFFFF8;
+
+        phys = GetBar(bar);
+        if (phys)
+        {
+            phys += val;
+
+            irq = ServUacpiAllocateInts(1, prio);
+            if (irq)
+            {
+                FMsiXVectorArr = (int *)ServUacpiMap(phys, 16);
+
+                val = ServUacpiGetMsiAddress(core);
+                FMsiXVectorArr[0] = val;
+                FMsiXVectorArr[1] = 0;
+
+                val = ServUacpiGetMsiData(irq);
+                FMsiXVectorArr[2] = val;
+                FMsiXVectorArr[3] = 0;
+
+                cntrl = ReadConfigWord(FMsiXBase);
+                cntrl &= 0x3FFF;
+                cntrl |= 0x8000;
+                WriteConfigWord(FMsiXBase, cntrl);
+            }
+        }
+    }
+
+    if (!irq)
+    {
+        route = GetIrq();
+
+        if (route)
+            irq = (unsigned char)route->Irq;
+
+        if (!irq)
+        {
+            irq = ReadConfigByte(PCI_interrupt_line);
+            if (irq == 0xFF)
+                irq = 0;
+        }
+    }
+
+    return irq;
 }
 
 /*##########################################################################
@@ -511,11 +638,11 @@ int TPciFunction::SetupIrq(int prio)
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::SetupMsi(int prio, int vectors)
+int TPciFunction::SetupMsi(int core, int prio, int vectors)
 {
     return 0;
 }
- 
+
 /*##########################################################################
 #
 #   Name       : TPciFunction::LockPci
@@ -539,7 +666,7 @@ bool TPciFunction::LockPci(int issuer, int handle, const char *name)
         if (func->FIssuer)
             if (!func->IsAllowed(issuer))
                 func = 0;
-    
+
     if (func)
     {
         func->LockPci(issuer, name);
