@@ -701,6 +701,73 @@ LocalUnlockPci Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalSetupIrq
+;
+;       DESCRIPTION:    Local setup IRQ
+;
+;       PARAMETERS:     DX      Issuer
+;                       AH      Priority
+;                       BX      Handle
+;
+;       RETURNS:        AL      Vector
+;                       AH      Mode, 0 = fail, 1 = IRQ, 2 = MSI
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowSetupIrq:near
+
+LocalSetupIrq Proc near
+    push edi
+    movzx ebx,bx
+    movzx edx,dx
+    movzx edi,ah
+    call LowSetupIrq
+    pop edi
+;
+    mov [edi].fc_eax,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalSetupIrq Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalSetupMsi
+;
+;       DESCRIPTION:    Local setup MSI
+;
+;       PARAMETERS:     DX      Issuer
+;                       AH      Priority
+;                       BX      Handle
+;                       CX      Requested vectors
+;
+;       RETURNS:        CX      Allocated vectors
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowSetupMsi:near
+
+LocalSetupMsi Proc near
+    push edi
+    movzx ebx,bx
+    movzx edx,dx
+    movzx edi,ah
+    movzx ecx,cx
+    call LowSetupMsi
+    pop edi
+;
+    mov [edi].fc_ecx,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalSetupMsi Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -736,6 +803,8 @@ m015 DD OFFSET LocalLockPci
 m016 DD OFFSET LocalUnlockPci
 m017 DD OFFSET LocalGetMsi
 m018 DD OFFSET LocalGetMsiX
+m019 DD OFFSET LocalSetupIrq
+m020 DD OFFSET LocalSetupMsi
 
 WaitForMsg_    Proc near
     push ebx

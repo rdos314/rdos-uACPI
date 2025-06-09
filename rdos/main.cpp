@@ -60,6 +60,8 @@ int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle, int index);
 unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
+int SetupIrq(int issuer, int handle, int prio);
+int SetupMsi(int issuer, int handle, int prio, int vectors);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 
@@ -735,6 +737,56 @@ unsigned char GetMsiX(int handle)
 
 /*##########################################################################
 #
+#   Name       : SetupIrq
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int SetupIrq(int issuer, int handle, int prio)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        return func->SetupIrq(prio);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : SetupMsi
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int SetupMsi(int issuer, int handle, int prio, int vectors)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        return func->SetupMsi(prio, vectors);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : GetCap
 #
 #   Purpose....:
@@ -788,7 +840,12 @@ int GetPciName(int handle, char *buf, int maxsize)
 ##########################################################################*/
 char ReadPciConfigByte(int issuer, int handle, int reg)
 {
-    return TPciFunction::ReadPciConfigByte(issuer, handle, reg);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->ReadConfigByte(reg);
+    else
+        return -1;
 }
 
 /*##########################################################################
@@ -804,7 +861,12 @@ char ReadPciConfigByte(int issuer, int handle, int reg)
 ##########################################################################*/
 short int ReadPciConfigWord(int issuer, int handle, int reg)
 {
-    return TPciFunction::ReadPciConfigWord(issuer, handle, reg);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->ReadConfigWord(reg);
+    else
+        return -1;
 }
 
 /*##########################################################################
@@ -820,7 +882,12 @@ short int ReadPciConfigWord(int issuer, int handle, int reg)
 ##########################################################################*/
 int ReadPciConfigDword(int issuer, int handle, int reg)
 {
-    return TPciFunction::ReadPciConfigDword(issuer, handle, reg);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->ReadConfigDword(reg);
+    else
+        return -1;
 }
 
 /*##########################################################################
@@ -836,7 +903,14 @@ int ReadPciConfigDword(int issuer, int handle, int reg)
 ##########################################################################*/
 void WritePciConfigByte(int issuer, int handle, int reg, char val)
 {
-    TPciFunction::WritePciConfigByte(issuer, handle, reg, val);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        func->WriteConfigByte(reg, val);
 }
 
 /*##########################################################################
@@ -852,7 +926,14 @@ void WritePciConfigByte(int issuer, int handle, int reg, char val)
 ##########################################################################*/
 void WritePciConfigWord(int issuer, int handle, int reg, short int val)
 {
-    TPciFunction::WritePciConfigWord(issuer, handle, reg, val);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        func->WriteConfigWord(reg, val);
 }
 
 /*##########################################################################
@@ -868,7 +949,14 @@ void WritePciConfigWord(int issuer, int handle, int reg, short int val)
 ##########################################################################*/
 void WritePciConfigDword(int issuer, int handle, int reg, int val)
 {
-    TPciFunction::WritePciConfigDword(issuer, handle, reg, val);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        func->WriteConfigDword(reg, val);
 }
 
 /*##########################################################################
@@ -900,7 +988,19 @@ int LockPci(int issuer, int handle, const char *name)
 ##########################################################################*/
 int UnlockPci(int issuer, int handle)
 {
-    return TPciFunction::UnlockPci(issuer, handle);
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+    {
+        func->UnlockPci();
+        return true;
+    }
+    else
+        return false;
 }
 
 /*##########################################################################

@@ -486,6 +486,38 @@ unsigned char TPciFunction::GetMsiX()
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::SetupIrq
+#
+#   Purpose....: SetupIrq
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::SetupIrq(int prio)
+{
+    return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::SetupMsi
+#
+#   Purpose....: SetupMsi
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::SetupMsi(int prio, int vectors)
+{
+    return 0;
+}
+ 
+/*##########################################################################
+#
 #   Name       : TPciFunction::LockPci
 #
 #   Purpose....: Lock PCI
@@ -498,182 +530,23 @@ unsigned char TPciFunction::GetMsiX()
 bool TPciFunction::LockPci(int issuer, int handle, const char *name)
 {
     TPciFunction *func = 0;
+    bool ok = false;
 
     if (handle > 0 && handle <= FFuncCount)
         func = FFuncArr[handle - 1];
 
-    if (func && func->IsAllowed(issuer))
+    if (func)
+        if (func->FIssuer)
+            if (!func->IsAllowed(issuer))
+                func = 0;
+    
+    if (func)
     {
         func->LockPci(issuer, name);
         return true;
     }
     else
         return false;
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::UnlockPci
-#
-#   Purpose....: Unlock PCI
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-bool TPciFunction::UnlockPci(int issuer, int handle)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func && func->IsAllowed(issuer))
-    {
-        func->UnlockPci();
-        return true;
-    }
-    else
-        return false;
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::ReadPciConfigByte
-#
-#   Purpose....: Read PCI config byte
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-char TPciFunction::ReadPciConfigByte(int issuer, int handle, int reg)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func)
-        return func->ReadConfigByte(reg);
-    else
-        return -1;
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::ReadPciConfigWord
-#
-#   Purpose....: Read PCI config word
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-short int TPciFunction::ReadPciConfigWord(int issuer, int handle, int reg)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func)
-        return func->ReadConfigWord(reg);
-    else
-        return -1;
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::ReadPciConfigDword
-#
-#   Purpose....: Read PCI config dword
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-int TPciFunction::ReadPciConfigDword(int issuer, int handle, int reg)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func)
-        return func->ReadConfigDword(reg);
-    else
-        return -1;
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::WritePciConfigByte
-#
-#   Purpose....: Write PCI config byte
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void TPciFunction::WritePciConfigByte(int issuer, int handle, int reg, char val)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func && func->IsAllowed(issuer))
-        func->WriteConfigByte(reg, val);
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::WritePciConfigWord
-#
-#   Purpose....: Write PCI config word
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void TPciFunction::WritePciConfigWord(int issuer, int handle, int reg, short int val)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func && func->IsAllowed(issuer))
-        func->WriteConfigWord(reg, val);
-}
-
-/*##########################################################################
-#
-#   Name       : TPciFunction::WritePciConfigDword
-#
-#   Purpose....: Write PCI config dword
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void TPciFunction::WritePciConfigDword(int issuer, int handle, int reg, int val)
-{
-    TPciFunction *func = 0;
-
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func && func->IsAllowed(issuer))
-        func->WriteConfigDword(reg, val);
 }
 
 /*##########################################################################

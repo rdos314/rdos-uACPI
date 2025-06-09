@@ -53,15 +53,8 @@ public:
     static int GetParam(int handle);
     static TPciFunction *GetFunction(int handle);
     static bool LockPci(int issuer, int handle, const char *name);
-    static bool UnlockPci(int issuer, int handle);
 
-    static char ReadPciConfigByte(int issuer, int handle, int reg);
-    static short int ReadPciConfigWord(int issuer, int handle, int reg);
-    static int ReadPciConfigDword(int issuer, int handle, int reg);
-    static void WritePciConfigByte(int issuer, int handle, int reg, char val);
-    static void WritePciConfigWord(int issuer, int handle, int reg, short int val);
-    static void WritePciConfigDword(int issuer, int handle, int reg, int val);
-
+    bool IsAllowed(int issuer);
     void SetDevice(TPciDevice *dev);
     int GetSegment();
     int GetBus();
@@ -77,6 +70,9 @@ public:
     unsigned char GetIrq(int index);
     unsigned char GetMsi();
     unsigned char GetMsiX();
+    void UnlockPci();
+    int SetupIrq(int prio);
+    int SetupMsi(int prio, int vectors);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);
@@ -90,11 +86,9 @@ public:
 protected:
     void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
     void Add(TPciFunction *func);
-    bool IsAllowed(int issuer);
     TPciIrqRoute *GetIrq();
 
     void LockPci(int issuer, const char *name);
-    void UnlockPci();
 
     static int FFuncCount;
     static int FFuncSize;

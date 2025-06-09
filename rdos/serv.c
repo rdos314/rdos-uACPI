@@ -34,6 +34,8 @@ int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle, int index);
 unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
+int SetupIrq(int issuer, int handle, int prio);
+int SetupMsi(int issuer, int handle, int prio, int vectors);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 char ReadPciConfigByte(int issuer, int handle, int reg);
@@ -210,6 +212,40 @@ unsigned char LowGetMsi(int handle)
 unsigned char LowGetMsiX(int handle)
 {
     return GetMsiX(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : SetupIrq
+#
+#   Purpose....: Setup IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowSetupIrq "*" parm routine [edx] [ebx] [edi] value [eax]
+int LowSetupIrq(int issuer, int handle, int prio)
+{
+    return SetupIrq(issuer, handle, prio);
+}
+
+/*##########################################################################
+#
+#   Name       : SetupMsi
+#
+#   Purpose....: Setup MSI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowSetupMsi "*" parm routine [edx] [ebx] [edi] [ecx] value [eax]
+int LowSetupMsi(int issuer, int handle, int prio, int vectors)
+{
+    return SetupMsi(issuer, handle, prio, vectors);
 }
 
 /*##########################################################################
