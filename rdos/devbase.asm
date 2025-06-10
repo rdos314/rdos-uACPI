@@ -772,6 +772,34 @@ LocalSetupMsi Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalEnableMsi
+;
+;       DESCRIPTION:    Local enable MSI
+;
+;       PARAMETERS:     DX      Issuer
+;                       BX      Handle
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowEnableMsi:near
+
+LocalEnableMsi Proc near
+    push edi
+    movzx ebx,bx
+    movzx edx,dx
+    call LowEnableMsi
+    pop edi
+;
+    mov [edi].fc_ecx,eax
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalEnableMsi Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -809,6 +837,7 @@ m017 DD OFFSET LocalGetMsi
 m018 DD OFFSET LocalGetMsiX
 m019 DD OFFSET LocalSetupIrq
 m020 DD OFFSET LocalSetupMsi
+m021 DD OFFSET LocalEnableMsi
 
 WaitForMsg_    Proc near
     push ebx

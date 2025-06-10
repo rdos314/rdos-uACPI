@@ -50,24 +50,7 @@ TPciFunction **TPciFunction::FFuncArr = 0;
 ##########################################################################*/
 TPciFunction::TPciFunction()
 {
-    FPciDevice = 0;
-    FPciFunction = 0;
-    FVendor = 0;
-    FDevice = 0;
-    FClass = 0;
-    FSubClass = 0;
-    FProtocol = 0;
-
-    FIssuer = 0;
-    FOwnerName = 0;
-
-    FMsiBase = 0;
-    FMsiVectors = 0;
-
-    FMsiXBase = 0;
-    FMsiXVectors = 0;
-    FMsiXVectorArr = 0;
-
+    Init();
     Add(this);
 }
 
@@ -84,9 +67,12 @@ TPciFunction::TPciFunction()
 ##########################################################################*/
 TPciFunction::TPciFunction(TPciDevice *device, int function, int vendor_device, unsigned char class_code, unsigned char sub_class)
 {
+    Init();
+
     FPciDevice = device;
     FPciFunction = function;
-    Init(vendor_device, class_code, sub_class);
+
+    Setup(vendor_device, class_code, sub_class);
 }
 
 /*##########################################################################
@@ -117,27 +103,58 @@ TPciFunction::~TPciFunction()
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned char sub_class)
+void TPciFunction::Init()
+{
+    int i;
+
+    FPciDevice = 0;
+    FPciFunction = 0;
+    FVendor = 0;
+    FDevice = 0;
+    FClass = 0;
+    FSubClass = 0;
+    FProtocol = 0;
+
+    FIssuer = 0;
+    FOwnerName = 0;
+
+    FMsiBase = 0;
+    FMsiVectors = 0;
+    FUseMsi = false;
+
+    FMsiXBase = 0;
+    FMsiXVectors = 0;
+    FMsiXVectorArr = 0;
+    FUseMsiX = false;
+
+    FIrqCount = 0;
+
+    for (i = 0; i < MAX_PCI_BARS; i++)
+        FBarArr[i] = 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::Setup
+#
+#   Purpose....: Setup device
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::Setup(int vendor_device, unsigned char class_code, unsigned char sub_class)
 {
     int i;
     int reg;
     char ch;
-
-    FIssuer = 0;
-    FOwnerName = 0;
 
     FVendor = (unsigned short)(vendor_device & 0xFFFF);
     FDevice = (unsigned short)((vendor_device >> 16) & 0xFFFF);
     FClass = class_code;
     FSubClass = sub_class;
     FProtocol = (unsigned char)ReadConfigByte(PCI_progIF);
-
-    FMsiBase = 0;
-    FMsiVectors = 0;
-
-    FMsiXBase = 0;
-    FMsiXVectors = 0;
-    FMsiXVectorArr = 0;
 
     ch = ReadConfigByte(PCI_status_reg);
 
@@ -171,7 +188,47 @@ void TPciFunction::Init(int vendor_device, unsigned char class_code, unsigned ch
         }
     }
 
+    SetupBars();
+
     Add(this);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::SetupBars
+#
+#   Purpose....: Setup BAR physical address array
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::SetupBars()
+{
+    int index;
+    int low, high;
+    long long val;
+
+    for (index = 0; index < 6; index++)
+    {
+        low = ReadConfigDword(0x10 + 4 * index);
+        if (low & 1)
+            FBarArr[index] = low;
+        else
+        {
+            if (low & 4)
+            {
+                high = ReadConfigDword(0x14 + 4 * index);
+                val = (long long)high << 32;
+                val |= low;
+                FBarArr[index] = val;
+                index++;
+            }
+            else
+                FBarArr[index] = low;
+        }
+    }
 }
 
 /*##########################################################################
@@ -192,7 +249,7 @@ void TPciFunction::SetDevice(TPciDevice *device)
     unsigned char sub_class = (unsigned char)ReadConfigByte(PCI_subclass);;
 
     FPciDevice = device;
-    Init(vendor_device, class_code, sub_class);
+    Setup(vendor_device, class_code, sub_class);
 }
 
 /*##########################################################################
@@ -412,6 +469,25 @@ int TPciFunction::GetParam(int handle)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::GetBar
+#
+#   Purpose....: Get BAR
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+long long TPciFunction::GetBar(int index)
+{
+    if (index >= 0 && index < 6)
+        return FBarArr[index];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::GetIrq
 #
 #   Purpose....: Get IRQ
@@ -426,19 +502,27 @@ unsigned char TPciFunction::GetIrq(int index)
     TPciIrqRoute *irq = 0;
     unsigned char nr = 0;
 
-    if (index)
-        return 0;
-
-    irq = GetIrq();
-
-    if (irq)
-        nr = (unsigned char)irq->Irq;
-
-    if (!nr)
+    if (FIrqCount)
     {
-        nr = ReadConfigByte(PCI_interrupt_line);
-        if (nr == 0xFF)
-            nr = 0;
+        if (index < FIrqCount)
+            nr = FIrqArr[index];
+    }
+    else
+    {
+        if (index == 0)
+        {
+            irq = GetIrq();
+
+            if (irq)
+                nr = (unsigned char)irq->Irq;
+
+            if (!nr)
+            {
+                nr = ReadConfigByte(PCI_interrupt_line);
+                if (nr == 0xFF)
+                    nr = 0;
+            }
+        }
     }
 
     return nr;
@@ -489,39 +573,35 @@ unsigned char TPciFunction::GetMsiX()
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::GetBar
+#   Name       : TPciFunction::LockPci
 #
-#   Purpose....: Get BAR physical address
+#   Purpose....: Lock PCI
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-long long TPciFunction::GetBar(int index)
+bool TPciFunction::LockPci(int issuer, int handle, const char *name)
 {
-    int low, high;
-    long long val;
+    TPciFunction *func = 0;
+    bool ok = false;
 
-    if (index >= 0 && index < 6)
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        if (func->FIssuer)
+            if (!func->IsAllowed(issuer))
+                func = 0;
+
+    if (func)
     {
-        low = ReadConfigDword(0x10 + 4 * index);
-        if (low & 1)
-            return 0;
-
-        if (low & 4)
-            high = ReadConfigDword(0x14 + 4 * index);
-        else
-            high = 0;
-
-        low = low & 0xFFFFFFF0;
-        val = (long long)high << 32;
-        val |= low;
-
-        return val;
+        func->LockPci(issuer, name);
+        return true;
     }
     else
-        return 0;
+        return false;
 }
 
 /*##########################################################################
@@ -571,9 +651,7 @@ int TPciFunction::SetupIrq(int core, int prio)
                     WriteConfigDword(FMsiBase + 10, 0);
             }
 
-            cntrl &= 0xFF8F;
-            cntrl |= 1;
-            WriteConfigDword(FMsiBase, cntrl);
+            FUseMsi = true;
         }
     }
 
@@ -583,9 +661,17 @@ int TPciFunction::SetupIrq(int core, int prio)
         bar = val & 7;
         val &= 0xFFFFFFF8;
 
-        phys = GetBar(bar);
+        if (bar < 6)
+            phys = FBarArr[bar];
+        else
+            phys = 0;
+
+        if (phys & 1)
+            phys = 0;
+
         if (phys)
         {
+            phys &= 0xFFFFFFFFFFFFFFF0LL;
             phys += val;
 
             irq = ServUacpiAllocateInts(1, prio);
@@ -601,10 +687,7 @@ int TPciFunction::SetupIrq(int core, int prio)
                 FMsiXVectorArr[2] = val;
                 FMsiXVectorArr[3] = 0;
 
-                cntrl = ReadConfigWord(FMsiXBase);
-                cntrl &= 0x3FFF;
-                cntrl |= 0x8000;
-                WriteConfigWord(FMsiXBase, cntrl);
+                FUseMsiX = true;
             }
         }
     }
@@ -622,6 +705,12 @@ int TPciFunction::SetupIrq(int core, int prio)
             if (irq == 0xFF)
                 irq = 0;
         }
+    }
+
+    if (irq)
+    {
+        FIrqCount = 1;
+        FIrqArr[0] = irq;
     }
 
     return irq;
@@ -645,35 +734,34 @@ int TPciFunction::SetupMsi(int core, int prio, int vectors)
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::LockPci
+#   Name       : TPciFunction::EnableMsi
 #
-#   Purpose....: Lock PCI
+#   Purpose....: Enable Msi
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-bool TPciFunction::LockPci(int issuer, int handle, const char *name)
+void TPciFunction::EnableMsi()
 {
-    TPciFunction *func = 0;
-    bool ok = false;
+    short int cntrl;
 
-    if (handle > 0 && handle <= FFuncCount)
-        func = FFuncArr[handle - 1];
-
-    if (func)
-        if (func->FIssuer)
-            if (!func->IsAllowed(issuer))
-                func = 0;
-
-    if (func)
+    if (FUseMsi)
     {
-        func->LockPci(issuer, name);
-        return true;
+        cntrl = ReadConfigWord(FMsiBase);
+        cntrl &= 0xFF8F;
+        cntrl |= 1;
+        WriteConfigDword(FMsiBase, cntrl);
     }
-    else
-        return false;
+
+    if (FUseMsiX)
+    {
+        cntrl = ReadConfigWord(FMsiXBase);
+        cntrl &= 0x3FFF;
+        cntrl |= 0x8000;
+        WriteConfigWord(FMsiXBase, cntrl);
+    }
 }
 
 /*##########################################################################

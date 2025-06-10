@@ -30,6 +30,9 @@
 
 #include "dev.h"
 
+#define MAX_PCI_IRQS	32
+#define MAX_PCI_BARS     6
+
 class TPciDevice;
 class TPciIrqRoute;
 
@@ -73,6 +76,7 @@ public:
     void UnlockPci();
     int SetupIrq(int core, int prio);
     int SetupMsi(int core, int prio, int vectors);
+    void EnableMsi();
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);
@@ -85,7 +89,9 @@ public:
     long long GetBar(int index);
 
 protected:
-    void Init(int vendor_device, unsigned char class_code, unsigned char sub_class);
+    void Init();
+    void Setup(int vendor_device, unsigned char class_code, unsigned char sub_class);
+    void SetupBars();
     void Add(TPciFunction *func);
     TPciIrqRoute *GetIrq();
 
@@ -109,10 +115,17 @@ protected:
 
     unsigned char FMsiBase;
     int FMsiVectors;
+    bool FUseMsi;
 
     unsigned char FMsiXBase;
     int FMsiXVectors;
     int *FMsiXVectorArr;
+    bool FUseMsiX;
+
+    int FIrqCount;
+    unsigned char FIrqArr[MAX_PCI_IRQS];
+
+    long long FBarArr[MAX_PCI_BARS];
 };
 
 #endif

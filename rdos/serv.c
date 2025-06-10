@@ -36,6 +36,7 @@ unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
 int SetupIrq(int issuer, int handle, int core, int prio);
 int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
+void EnablepMsi(int issuer, int handle);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 char ReadPciConfigByte(int issuer, int handle, int reg);
@@ -246,6 +247,23 @@ int LowSetupIrq(int issuer, int handle, int core, int prio)
 int LowSetupMsi(int issuer, int handle, int core, int prio, int vectors)
 {
     return SetupMsi(issuer, handle, core, prio, vectors);
+}
+
+/*##########################################################################
+#
+#   Name       : EnableMsi
+#
+#   Purpose....: Enable MSI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowEnableMsi "*" parm routine [edx] [ebx]
+void LowEnableMsi(int issuer, int handle)
+{
+    EnableMsi(issuer, handle);
 }
 
 /*##########################################################################

@@ -62,6 +62,7 @@ unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
 int SetupIrq(int issuer, int handle, int core, int prio);
 int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
+void EnableMsi(int issuer, int handle);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 
@@ -783,6 +784,29 @@ int SetupMsi(int issuer, int handle, int core, int prio, int vectors)
         return func->SetupMsi(core, prio, vectors);
     else
         return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : EnableMsi
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void EnableMsi(int issuer, int handle)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        func->EnableMsi();
 }
 
 /*##########################################################################
