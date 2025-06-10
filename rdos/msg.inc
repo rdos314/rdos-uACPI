@@ -150,3 +150,6 @@ SETUP_PCI_MSI_CMD          = 20
 ; IN  BX     Handle
 ; IN  DX     Issuer selector
 ENABLE_PCI_MSI_CMD         = 21
+
+; IN  BX     Handle
+IS_PCI_LOCKED_CMD          = 22

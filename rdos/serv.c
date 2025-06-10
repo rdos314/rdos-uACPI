@@ -47,6 +47,7 @@ void WritePciConfigWord(int issuer, int handle, int reg, short int val);
 void WritePciConfigDword(int issuer, int handle, int reg, int val);
 int LockPci(int issuer, int handle, char *name);
 int UnlockPci(int issuer, int handle);
+int IsPciLocked(int handle);
 
 /*##########################################################################
 #
@@ -434,4 +435,21 @@ int LowLockPci(int issuer, int handle, const char *name)
 int LowUnlockPci(int issuer, int handle)
 {
     return UnlockPci(issuer, handle);
+}
+
+/*##########################################################################
+#
+#   Name       : IsPciLocked
+#
+#   Purpose....: Check if locked
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowIsPciLocked "*" parm routine [edx] value [eax]
+int LowIsPciLocked(int handle)
+{
+    return IsPciLocked(handle);
 }

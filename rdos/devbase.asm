@@ -800,6 +800,39 @@ LocalEnableMsi Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalIsLocked
+;
+;       DESCRIPTION:    Local is locked
+;
+;       PARAMETERS:     BX      Handle
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowIsPciLocked:near
+
+LocalIsLocked Proc near
+    push edi
+    movzx edx,dx
+    call LowIsPciLocked
+    pop edi
+;    
+    or eax,eax
+    jz ilFail
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+ilFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalIsLocked Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -838,6 +871,7 @@ m018 DD OFFSET LocalGetMsiX
 m019 DD OFFSET LocalSetupIrq
 m020 DD OFFSET LocalSetupMsi
 m021 DD OFFSET LocalEnableMsi
+m022 DD OFFSET LocalIsLocked
 
 WaitForMsg_    Proc near
     push ebx

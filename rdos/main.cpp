@@ -68,6 +68,7 @@ int GetPciName(int handle, char *buf, int maxsize);
 
 int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
+int IsPciLocked(int handle);
 
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -1023,6 +1024,27 @@ int UnlockPci(int issuer, int handle)
         func->UnlockPci();
         return true;
     }
+    else
+        return false;
+}
+
+/*##########################################################################
+#
+#   Name       : IsPciLocked
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int IsPciLocked(int handle)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->IsPciLocked();
     else
         return false;
 }

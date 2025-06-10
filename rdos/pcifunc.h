@@ -73,7 +73,10 @@ public:
     unsigned char GetIrq(int index);
     unsigned char GetMsi();
     unsigned char GetMsiX();
+
     void UnlockPci();
+    bool IsPciLocked();
+
     int SetupIrq(int core, int prio);
     int SetupMsi(int core, int prio, int vectors);
     void EnableMsi();

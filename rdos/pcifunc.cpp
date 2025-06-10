@@ -1188,6 +1188,25 @@ void TPciFunction::UnlockPci()
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::IsPciLocked
+#
+#   Purpose....: Check if locked
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TPciFunction::IsPciLocked()
+{
+    if (FIssuer)
+        return true;
+    else
+        return false;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::ReadConfigByte
 #
 #   Purpose....: Read config byte
