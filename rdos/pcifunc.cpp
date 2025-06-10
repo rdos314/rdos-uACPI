@@ -713,7 +713,15 @@ int TPciFunction::SetupIrq(int core, int prio)
         FIrqArr[0] = irq;
     }
 
-    return irq;
+    if (FUseMsi || FUseMsiX)
+        return irq | 0x200;
+    else
+    {
+        if (irq)
+            return irq | 0x100;
+        else
+            return 0;
+    }
 }
 
 /*##########################################################################
