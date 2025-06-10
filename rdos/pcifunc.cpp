@@ -564,10 +564,20 @@ unsigned char TPciFunction::GetIrq(int index)
 ##########################################################################*/
 unsigned char TPciFunction::GetMsi()
 {
-    if (FMsiBase)
-        return (unsigned char)FMsiVectors;
+    if (FIrqCount)
+    {
+        if (FUseMsi)
+            return FIrqCount;
+        else
+            return 0;
+    }
     else
-        return 0;
+    {
+        if (FMsiBase)
+            return (unsigned char)FMsiVectors;
+        else
+            return 0;
+    }
 }
 
 /*##########################################################################
@@ -583,15 +593,25 @@ unsigned char TPciFunction::GetMsi()
 ##########################################################################*/
 unsigned char TPciFunction::GetMsiX()
 {
-    if (FMsiXBase)
+    if (FIrqCount)
     {
-        if (FMsiXVectors < 32)
-            return (unsigned char)FMsiXVectors;
+        if (FUseMsiX)
+            return FIrqCount;
         else
-            return 32;
+            return 0;
     }
     else
-        return 0;
+    {
+        if (FMsiXBase)
+        {
+            if (FMsiXVectors < 32)
+                return (unsigned char)FMsiXVectors;
+            else
+                return 32;
+        }
+        else
+            return 0;
+    }
 }
 
 /*##########################################################################

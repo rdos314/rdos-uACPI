@@ -484,7 +484,7 @@ int LowUnlockPci(int issuer, int handle)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowIsPciLocked "*" parm routine [edx] value [eax]
+#pragma aux LowIsPciLocked "*" parm routine [ebx] value [eax]
 int LowIsPciLocked(int handle)
 {
     return IsPciLocked(handle);
