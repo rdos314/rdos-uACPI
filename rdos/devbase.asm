@@ -711,7 +711,7 @@ LocalUnlockPci Endp
 ;                       SI      Core
 ;
 ;       RETURNS:        AL      Vector
-;                       AH      Mode, 0 = fail, 1 = IRQ, 2 = MSI
+;                       CL      Mode, 0 = fail, 1 = IRQ, 2 = MSI
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -726,7 +726,10 @@ LocalSetupIrq Proc near
     call LowSetupIrq
     pop edi
 ;
-    mov [edi].fc_eax,eax
+    mov byte ptr [edi].fc_eax,al
+    shr eax,8
+    mov byte ptr [edi].fc_ecx,al
+;
     mov ebx,[edi].fc_handle
     and [edi].fc_eflags,NOT 1
     ReplyDevCmd
