@@ -815,7 +815,7 @@ LocalEnableMsi Endp
 
 LocalIsLocked Proc near
     push edi
-    movzx edx,dx
+    movzx ebx,bx
     call LowIsPciLocked
     pop edi
 ;    
@@ -832,6 +832,86 @@ ilFail:
     ReplyDevCmd
     ret
 LocalIsLocked Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetBarPhys
+;
+;       DESCRIPTION:    Local get BAR physical address
+;
+;       PARAMETERS:     AL      Bar
+;                       BX      Handle
+;
+;       RETURNS:        EDX:EAX Physical address
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetBarPhys:near
+
+LocalGetBarPhys Proc near
+    push edi
+    movzx ebx,bx
+    movzx edi,al
+    call LowGetBarPhys
+    pop edi
+;    
+    mov [edi].fc_eax,eax
+    mov [edi].fc_edx,edx
+;    
+    or eax,edx
+    jz gbpFail
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+gbpFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalGetBarPhys Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
+;       NAME:           LocalGetBarIo
+;
+;       DESCRIPTION:    Local get BAR IO port
+;
+;       PARAMETERS:     AL      Bar
+;                       BX      Handle
+;
+;       RETURNS:        DX      IO port
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowGetBarIo:near
+
+LocalGetBarIo Proc near
+    push edi
+    movzx ebx,bx
+    movzx edi,al
+    call LowGetBarIo
+    pop edi
+;    
+    movzx eax,ax
+    mov [edi].fc_edx,eax
+;
+    or eax,eax
+    jz gbiFail
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+gbiFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalGetBarIo Endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
@@ -875,6 +955,8 @@ m019 DD OFFSET LocalSetupIrq
 m020 DD OFFSET LocalSetupMsi
 m021 DD OFFSET LocalEnableMsi
 m022 DD OFFSET LocalIsLocked
+m023 DD OFFSET LocalGetBarPhys
+m024 DD OFFSET LocalGetBarIo
 
 WaitForMsg_    Proc near
     push ebx

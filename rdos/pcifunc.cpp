@@ -130,7 +130,10 @@ void TPciFunction::Init()
     FIrqCount = 0;
 
     for (i = 0; i < MAX_PCI_BARS; i++)
-        FBarArr[i] = 0;
+    {
+        FBarPhysArr[i] = 0;
+        FBarIoArr[i] = 0;
+    }
 }
 
 /*##########################################################################
@@ -214,19 +217,20 @@ void TPciFunction::SetupBars()
     {
         low = ReadConfigDword(0x10 + 4 * index);
         if (low & 1)
-            FBarArr[index] = low;
+            FBarIoArr[index] = (short int)(low & 0xFFFC);
         else
         {
             if (low & 4)
             {
+                low &= 0xFFFFFFF0;
                 high = ReadConfigDword(0x14 + 4 * index);
                 val = high << 32;
                 val |= low;
-                FBarArr[index] = val;
+                FBarPhysArr[index] = val;
                 index++;
             }
             else
-                FBarArr[index] = low;
+                FBarPhysArr[index] = low;
         }
     }
 }
@@ -469,19 +473,38 @@ int TPciFunction::GetParam(int handle)
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::GetBar
+#   Name       : TPciFunction::GetBarPhys
 #
-#   Purpose....: Get BAR
+#   Purpose....: Get BAR physical address
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-long long TPciFunction::GetBar(int index)
+long long TPciFunction::GetBarPhys(unsigned char bar)
 {
-    if (index >= 0 && index < 6)
-        return FBarArr[index];
+    if (bar < 6)
+        return FBarPhysArr[bar];
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::GetBarIo
+#
+#   Purpose....: Get BAR IO port
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int TPciFunction::GetBarIo(unsigned char bar)
+{
+    if (bar < 6)
+        return FBarIoArr[bar];
     else
         return 0;
 }
@@ -662,16 +685,12 @@ int TPciFunction::SetupIrq(int core, int prio)
         val &= 0xFFFFFFF8;
 
         if (bar < 6)
-            phys = FBarArr[bar];
+            phys = FBarPhysArr[bar];
         else
-            phys = 0;
-
-        if (phys & 1)
             phys = 0;
 
         if (phys)
         {
-            phys &= 0xFFFFFFFFFFFFFFF0LL;
             phys += val;
 
             irq = ServUacpiAllocateInts(1, prio);

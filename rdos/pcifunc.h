@@ -30,7 +30,7 @@
 
 #include "dev.h"
 
-#define MAX_PCI_IRQS	32
+#define MAX_PCI_IRQS    32
 #define MAX_PCI_BARS     6
 
 class TPciDevice;
@@ -89,7 +89,8 @@ public:
     void WriteConfigDword(int reg, int val);
 
     void PowerOn();
-    long long GetBar(int index);
+    long long GetBarPhys(unsigned char bar);
+    short int GetBarIo(unsigned char bar);
 
 protected:
     void Init();
@@ -128,7 +129,8 @@ protected:
     int FIrqCount;
     unsigned char FIrqArr[MAX_PCI_IRQS];
 
-    long long FBarArr[MAX_PCI_BARS];
+    long long FBarPhysArr[MAX_PCI_BARS];
+    short int FBarIoArr[MAX_PCI_BARS];
 };
 
 #endif

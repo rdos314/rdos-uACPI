@@ -60,6 +60,8 @@ int GetBus(unsigned char segment, unsigned char bus);
 unsigned char GetIrq(int handle, int index);
 unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
+long long GetBarPhys(int handle, unsigned char bar);
+short int GetBarIo(int handle, unsigned char bar);
 int SetupIrq(int issuer, int handle, int core, int prio);
 int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
 void EnableMsi(int issuer, int handle);
@@ -733,6 +735,48 @@ unsigned char GetMsiX(int handle)
 
     if (func)
         return func->GetMsiX();
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : GetBarPhys
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+long long GetBarPhys(int handle, unsigned char bar)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetBarPhys(bar);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : GetBarIo
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int GetBarIo(int handle, unsigned char bar)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        return func->GetBarIo(bar);
     else
         return 0;
 }

@@ -37,6 +37,8 @@ unsigned char GetMsiX(int handle);
 int SetupIrq(int issuer, int handle, int core, int prio);
 int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
 void EnablepMsi(int issuer, int handle);
+long long GetBarPhys(int handle, unsigned char bar);
+short int GetBarIo(int handle, unsigned char bar);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 char ReadPciConfigByte(int issuer, int handle, int reg);
@@ -214,6 +216,40 @@ unsigned char LowGetMsi(int handle)
 unsigned char LowGetMsiX(int handle)
 {
     return GetMsiX(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : GetBarPhys
+#
+#   Purpose....: Get BAR physical address
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetBarPhys "*" parm routine [ebx] [edi] value [edx eax]
+long long LowGetBarPhys(int handle, int bar)
+{
+    return GetBarPhys(handle, (unsigned char)bar);
+}
+
+/*##########################################################################
+#
+#   Name       : GetBarIo
+#
+#   Purpose....: Get BAR IO port
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowGetBarIo "*" parm routine [ebx] [edi] value [ax]
+short int LowGetBarIo(int handle, int bar)
+{
+    return GetBarIo(handle, (unsigned char)bar);
 }
 
 /*##########################################################################
