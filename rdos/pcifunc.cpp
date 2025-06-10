@@ -172,14 +172,14 @@ void TPciFunction::Setup(int vendor_device, unsigned char class_code, unsigned c
                 switch (ch)
                 {
                     case 5:
-                        FMsiBase = (unsigned char)(ch + 2);
+                        FMsiBase = (unsigned char)(reg + 2);
                         ch = ReadConfigByte(FMsiBase);
                         ch = (ch >> 1) & 0x3;
                         FMsiVectors = 1 << ch;
                         break;
 
                     case 0x11:
-                        FMsiXBase = (unsigned char)(ch + 2);
+                        FMsiXBase = (unsigned char)(reg + 2);
                         FMsiXVectors = ReadConfigWord(FMsiXBase) + 1;
                         break;
                 }
@@ -207,7 +207,7 @@ void TPciFunction::Setup(int vendor_device, unsigned char class_code, unsigned c
 void TPciFunction::SetupBars()
 {
     int index;
-    int low, high;
+    unsigned int low, high;
     long long val;
 
     for (index = 0; index < 6; index++)
@@ -220,7 +220,7 @@ void TPciFunction::SetupBars()
             if (low & 4)
             {
                 high = ReadConfigDword(0x14 + 4 * index);
-                val = (long long)high << 32;
+                val = high << 32;
                 val |= low;
                 FBarArr[index] = val;
                 index++;
