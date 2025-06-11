@@ -1157,7 +1157,7 @@ void TPciFunction::PowerOn()
     }
 
     val = ReadConfigWord(PCI_command_reg);
-    val |= 4;
+    val |= 7;
     WriteConfigWord(PCI_command_reg, val);
 }
 
