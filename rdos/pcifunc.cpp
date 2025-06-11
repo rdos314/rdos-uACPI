@@ -224,7 +224,7 @@ void TPciFunction::SetupBars()
             {
                 low &= 0xFFFFFFF0;
                 high = ReadConfigDword(0x14 + 4 * index);
-                val = high << 32;
+                val = (long long)high << 32;
                 val |= low;
                 FBarPhysArr[index] = val;
                 index++;
@@ -1157,7 +1157,7 @@ void TPciFunction::PowerOn()
     }
 
     val = ReadConfigWord(PCI_command_reg);
-    val |= 7;
+    val |= 4;
     WriteConfigWord(PCI_command_reg, val);
 }
 
