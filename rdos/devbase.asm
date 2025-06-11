@@ -916,6 +916,26 @@ LocalGetBarIo Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalReset
+;
+;       DESCRIPTION:    Local RESET
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowReset:near
+
+LocalReset Proc near
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+;
+    call LowReset
+    ret
+LocalReset Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -925,7 +945,6 @@ LocalGetBarIo Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     public WaitForMsg_
-
 
 Unused   Proc near
     ret
@@ -957,6 +976,7 @@ m021 DD OFFSET LocalEnableMsi
 m022 DD OFFSET LocalIsLocked
 m023 DD OFFSET LocalGetBarPhys
 m024 DD OFFSET LocalGetBarIo
+m025 DD OFFSET LocalReset
 
 WaitForMsg_    Proc near
     push ebx

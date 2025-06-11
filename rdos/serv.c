@@ -36,7 +36,7 @@ unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
 int SetupIrq(int issuer, int handle, int core, int prio);
 int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
-void EnablepMsi(int issuer, int handle);
+void EnableMsi(int issuer, int handle);
 long long GetBarPhys(int handle, unsigned char bar);
 short int GetBarIo(int handle, unsigned char bar);
 short int GetCap(int handle, unsigned char cap);
@@ -47,9 +47,10 @@ int ReadPciConfigDword(int issuer, int handle, int reg);
 void WritePciConfigByte(int issuer, int handle, int reg, char val);
 void WritePciConfigWord(int issuer, int handle, int reg, short int val);
 void WritePciConfigDword(int issuer, int handle, int reg, int val);
-int LockPci(int issuer, int handle, char *name);
+int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
+void Reset();
 
 /*##########################################################################
 #
@@ -488,4 +489,21 @@ int LowUnlockPci(int issuer, int handle)
 int LowIsPciLocked(int handle)
 {
     return IsPciLocked(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : Reset
+#
+#   Purpose....: Reset
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowReset "*" parm routine
+void LowReset()
+{
+    Reset();
 }

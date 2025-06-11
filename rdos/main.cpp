@@ -32,6 +32,7 @@
 #include <uacpi/utilities.h>
 #include <uacpi/resources.h>
 #include <uacpi/tables.h>
+#include <uacpi/sleep.h>
 #include "acpi.h"
 #include "rdos.h"
 #include "dev.h"
@@ -71,6 +72,8 @@ int GetPciName(int handle, char *buf, int maxsize);
 int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
+
+void Reset();
 
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -1091,6 +1094,22 @@ int IsPciLocked(int handle)
         return func->IsPciLocked();
     else
         return false;
+}
+
+/*##########################################################################
+#
+#   Name       : Reset
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void Reset()
+{
+    uacpi_reboot();
 }
 
 /*##########################################################################
