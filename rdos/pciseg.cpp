@@ -536,27 +536,17 @@ void TPciSegment::WriteConfigDword(int offs, int val)
 ##########################################################################*/
 char TPciSegment::ReadConfigByte(int handle, int reg)
 {
-    char *ptr;
-
     if (handle >= 0)
     {
         if (FMem)
         {
             if (reg <= 0xFFF)
-            {
-                ptr = FMem + handle + reg;
-                return *ptr;
-            }
+                return ReadConfigByte(handle + reg);
         }
         else
         {
             if (reg <= 0xFF)
-            {
-                handle += reg;
-                handle |= 0x80000000;
-                out_dword(FIo, handle & 0xFFFFFFFC);
-                return in_byte(FIo + 4 + (handle & 3));
-            }
+                return ReadConfigByte(handle + reg);
         }
     }
     return -1;
@@ -575,27 +565,17 @@ char TPciSegment::ReadConfigByte(int handle, int reg)
 ##########################################################################*/
 short TPciSegment::ReadConfigWord(int handle, int reg)
 {
-    short *ptr;
-
     if (handle >= 0)
     {
         if (FMem)
         {
             if (reg <= 0xFFF)
-            {
-                ptr = (short *)(FMem + handle + reg);
-                return *ptr;
-            }
+                return ReadConfigWord(handle + reg);
         }
         else
         {
             if (reg <= 0xFF)
-            {
-                handle += reg;
-                handle |= 0x80000000;
-                out_dword(FIo, handle & 0xFFFFFFFC);
-                return in_word(FIo + 4 + (handle & 3));
-            }
+                return ReadConfigWord(handle + reg);
         }
     }
     return -1;
@@ -614,28 +594,17 @@ short TPciSegment::ReadConfigWord(int handle, int reg)
 ##########################################################################*/
 int TPciSegment::ReadConfigDword(int handle, int reg)
 {
-    int *ptr;
-
     if (handle >= 0)
     {
         if (FMem)
         {
             if (reg <= 0xFFF)
-            {
-                ptr = (int *)(FMem + handle + reg);
-                return *ptr;
-            }
+                return ReadConfigDword(handle + reg);
         }
         else
         {
             if (reg <= 0xFF)
-            {
-                handle += reg;
-                handle |= 0x80000000;
-                out_dword(FIo, handle & 0xFFFFFFFC);
-                return in_dword(FIo + 4 + (handle & 3));
-
-            }
+                return ReadConfigDword(handle + reg);
         }
     }
     return -1;
@@ -654,27 +623,17 @@ int TPciSegment::ReadConfigDword(int handle, int reg)
 ##########################################################################*/
 void TPciSegment::WriteConfigByte(int handle, int reg, char val)
 {
-    char *ptr;
-
     if (handle >= 0)
     {
         if (FMem)
         {
             if (reg <= 0xFFF)
-            {
-                ptr = FMem + handle + reg;
-                *ptr = val;
-            }
+                WriteConfigByte(handle + reg, val);
         }
         else
         {
             if (reg <= 0xFF)
-            {
-                handle += reg;
-                handle |= 0x80000000;
-                out_dword(FIo, handle & 0xFFFFFFFC);
-                out_byte(FIo + 4 + (handle & 3), val);
-            }
+                WriteConfigByte(handle + reg, val);
         }
     }
 }
@@ -692,27 +651,17 @@ void TPciSegment::WriteConfigByte(int handle, int reg, char val)
 ##########################################################################*/
 void TPciSegment::WriteConfigWord(int handle, int reg, short val)
 {
-    short *ptr;
-
     if (handle >= 0)
     {
         if (FMem)
         {
-            if (reg <= 0xFFF)
-            {
-                ptr = (short *)(FMem + handle + reg);
-                *ptr = val;
-            }
+            if (reg <= 0xFFE)
+                WriteConfigWord(handle + reg, val);
         }
         else
         {
-            if (reg <= 0xFF)
-            {
-                handle += reg;
-                handle |= 0x80000000;
-                out_dword(FIo, handle & 0xFFFFFFFC);
-                out_word(FIo + 4 + (handle & 3), val);
-            }
+            if (reg <= 0xFE)
+                WriteConfigWord(handle + reg, val);
         }
     }
 }
@@ -730,27 +679,17 @@ void TPciSegment::WriteConfigWord(int handle, int reg, short val)
 ##########################################################################*/
 void TPciSegment::WriteConfigDword(int handle, int reg, int val)
 {
-    int *ptr;
-
     if (handle >= 0)
     {
         if (FMem)
         {
-            if (reg <= 0xFFF)
-            {
-                ptr = (int *)(FMem + handle + reg);
-                *ptr = val;
-            }
+            if (reg <= 0xFFC)
+                WriteConfigDword(handle + reg, val);
         }
         else
         {
-            if (reg <= 0xFF)
-            {
-                handle += reg;
-                handle |= 0x80000000;
-                out_dword(FIo, handle & 0xFFFFFFFC);
-                out_dword(FIo + 4 + (handle & 3), val);
-            }
+            if (reg <= 0xFC)
+                WriteConfigDword(handle + reg, val);
         }
     }
 }

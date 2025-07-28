@@ -803,9 +803,8 @@ void TPciFunction::EnableMsi()
         cntrl = ReadConfigWord(FMsiBase);
         cntrl &= 0xFF8F;
         cntrl |= 1;
-        WriteConfigDword(FMsiBase, cntrl);
+        WriteConfigWord(FMsiBase, cntrl);
     }
-
     if (FUseMsiX)
     {
         cntrl = ReadConfigWord(FMsiXBase);
