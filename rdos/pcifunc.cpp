@@ -673,7 +673,8 @@ int TPciFunction::SetupIrq(int core, int prio)
 
     if (FMsiBase && FMsiVectors)
     {
-        irq = ServUacpiAllocateInts(1, (unsigned char)prio);
+        FIrqCount = 1;
+        irq = ServUacpiAllocateInts(FIrqCount, (unsigned char)prio);
         if (irq)
         {
             val = ServUacpiGetMsiAddress(core);

@@ -274,7 +274,7 @@ TPciFunction *TPciDevice::AddFunction(int function, int vendor_device)
 
     if (class_code == 6 && sub_class == 4)
     {
-        bus = (unsigned char)ReadConfigByte(function, 26);
+        bus = (unsigned char)ReadConfigByte(function, 25);
         bridge = new TPciBridge(FParent, bus, this, function, vendor_device, class_code, sub_class);
         bridge->ScanForDevices();
         AddBridge(bridge);
