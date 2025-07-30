@@ -673,8 +673,7 @@ int TPciFunction::SetupIrq(int core, int prio)
 
     if (FMsiBase && FMsiVectors)
     {
-        FIrqCount = 1;
-        irq = ServUacpiAllocateInts(FIrqCount, (unsigned char)prio);
+        irq = ServUacpiAllocateInts(1, (unsigned char)prio);
         if (irq)
         {
             val = ServUacpiGetMsiAddress(core);
@@ -781,7 +780,110 @@ int TPciFunction::SetupIrq(int core, int prio)
 ##########################################################################*/
 int TPciFunction::SetupMsi(int core, int prio, int vectors)
 {
-    return 0;
+    unsigned char irq = 0;
+    TPciIrqRoute *route = 0;
+    short int cntrl;
+    int val;
+    int bar;
+    long long phys;
+    int i;
+
+    if (vectors > MAX_PCI_IRQS)
+        return 0;
+
+    if (FMsiXBase && (FMsiXVectors >= vectors))
+    {
+        val = ReadConfigDword(FMsiXBase + 2);
+        bar = val & 7;
+        val &= 0xFFFFFFF8;
+
+        if (bar < 6)
+            phys = FBarPhysArr[bar];
+        else
+            phys = 0;
+
+        if (phys)
+        {
+            phys += val;
+
+
+            for (i = 0; i < vectors; i++)
+            {
+                irq = ServUacpiAllocateInts(1, prio);
+                FIrqArr[i] = irq;
+            }
+
+            if (irq)
+            {
+                FMsiXVectorArr = (int *)ServUacpiMap(phys, 16 * vectors);
+
+                for (i = 0; i < vectors; i++)
+                {
+                    val = ServUacpiGetMsiAddress(core);
+                    FMsiXVectorArr[4 * i] = val;
+                    FMsiXVectorArr[4 * i + 1] = 0;
+
+                    irq = FIrqArr[i];
+                    val = ServUacpiGetMsiData(irq);
+                    FMsiXVectorArr[4 * i + 2] = val;
+                    FMsiXVectorArr[4 * i + 3] = 0;
+                }
+                FUseMsiX = true;
+            }
+            else
+            {
+                for (i = 0; i < vectors; i++)
+                {
+                    irq = FIrqArr[i];
+                    if (irq)
+                        ServUacpiFreeInt(irq);
+                }
+            }
+
+        }
+    }
+
+    if (FMsiBase && (FMsiVectors >= vectors) && !FUseMsiX)
+    {
+        irq = ServUacpiAllocateInts(vectors, (unsigned char)prio);
+        if (irq)
+        {
+            for (i = 0; i < vectors; i++)
+                FIrqArr[i] = irq + i;
+
+            val = ServUacpiGetMsiAddress(core);
+            WriteConfigDword(FMsiBase + 2, val);
+
+            val = ServUacpiGetMsiData(irq);
+
+            cntrl = ReadConfigWord(FMsiBase);
+            if (cntrl & 0x80)
+            {
+                WriteConfigDword(FMsiBase + 6, 0);
+                WriteConfigWord(FMsiBase + 10, (short int)val);
+
+                if (cntrl & 0x100)
+                    WriteConfigDword(FMsiBase + 14, 0);
+            }
+            else
+            {
+                WriteConfigWord(FMsiBase + 6, (short int)val);
+
+                if (cntrl & 0x100)
+                    WriteConfigDword(FMsiBase + 10, 0);
+            }
+
+            FUseMsi = true;
+        }
+    }
+
+    if (FUseMsi || FUseMsiX)
+    {
+        FIrqCount = vectors;
+        return vectors;
+    }
+    else
+        return 0;
 }
 
 /*##########################################################################
@@ -806,6 +908,7 @@ void TPciFunction::EnableMsi()
         cntrl |= 1;
         WriteConfigWord(FMsiBase, cntrl);
     }
+
     if (FUseMsiX)
     {
         cntrl = ReadConfigWord(FMsiXBase);
