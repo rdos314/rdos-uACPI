@@ -135,22 +135,151 @@
     CallGate_create_uuid  \
     __parm [__edi]
 
+#pragma aux RdosFindPciClass = \
+    CallGate_find_pci_class_handle  \
+    "jc fail" \
+    "movzx ebx,bx" \
+    "jmp done" \
+    "fail: " \
+    "xor ebx,ebx" \
+    "done: " \
+    __parm [__ebx] [__ah] [__al] \
+    __value [__ebx]
+
+#pragma aux RdosFindPciProtocol = \
+    CallGate_find_pci_prot_handle  \
+    "jc fail" \
+    "movzx ebx,bx" \
+    "jmp done" \
+    "fail: " \
+    "xor ebx,ebx" \
+    "done: " \
+    __parm [__ebx] [__ah] [__al] [__dl] \
+    __value [__ebx]
+
+#pragma aux RdosFindPciDevice = \
+    CallGate_find_pci_device_handle  \
+    "jc fail" \
+    "movzx ebx,bx" \
+    "jmp done" \
+    "fail: " \
+    "xor ebx,ebx" \
+    "done: " \
+    __parm [__ebx] [__dx] [__cx] \
+    __value [__ebx]
+
+#pragma aux RdosGetPciHandle = \
+    CallGate_get_pci_handle  \
+    "jc fail" \
+    "movzx ebx,bx" \
+    "jmp done" \
+    "fail: " \
+    "xor ebx,ebx" \
+    "done: " \
+    __parm [__dh] [__dl] [__ah] [__al] \
+    __value [__ebx]
+
+#pragma aux RdosGetPciHandleSegment = \
+    CallGate_get_pci_handle_param  \
+    __parm [__ebx] \
+    __value [__dh] \
+    __modify [__ax __dl]
+
+#pragma aux RdosGetPciHandleBus = \
+    CallGate_get_pci_handle_param  \
+    __parm [__ebx] \
+    __value [__dl] \
+    __modify [__ax __dh]
+
+#pragma aux RdosGetPciHandleDevice = \
+    CallGate_get_pci_handle_param  \
+    __parm [__ebx] \
+    __value [__ah] \
+    __modify [__al __dx]
+
+#pragma aux RdosGetPciHandleFunction = \
+    CallGate_get_pci_handle_param  \
+    __parm [__ebx] \
+    __value [__al] \
+    __modify [__ah __dx]
+
+#pragma aux RdosGetPciHandleIrq = \
+    CallGate_get_pci_handle_irq  \
+    __parm [__ebx] [__eax] \
+    __value [__al]
+
+#pragma aux RdosGetPciHandleMsi = \
+    CallGate_get_pci_handle_msi  \
+    __parm [__ebx] \
+    __value [__al]
+
+#pragma aux RdosGetPciHandleMsiX = \
+    CallGate_get_pci_handle_msix  \
+    __parm [__ebx] \
+    __value [__al]
+
+#pragma aux RdosGetPciHandleCap = \
+    CallGate_get_pci_handle_cap  \
+    __parm [__ebx] [__al] \
+    __value [__ax]
+
+#pragma aux RdosReadPciConfigByte = \
+    CallGate_read_pci_config_byte  \
+    __parm [__ebx] [__ecx] \
+    __value [__al]
+
+#pragma aux RdosReadPciConfigWord = \
+    CallGate_read_pci_config_word  \
+    __parm [__ebx] [__ecx] \
+    __value [__ax]
+
+#pragma aux RdosReadPciConfigDword = \
+    CallGate_read_pci_config_dword  \
+    __parm [__ebx] [__ecx] \
+    __value [__eax]
+
+#pragma aux RdosWritePciConfigByte = \
+    CallGate_write_pci_config_byte  \
+    __parm [__ebx] [__ecx] [__al]
+
+#pragma aux RdosWritePciConfigWord = \
+    CallGate_write_pci_config_word  \
+    __parm [__ebx] [__ecx] [__ax]
+
+#pragma aux RdosWritePciConfigDword = \
+    CallGate_write_pci_config_dword  \
+    __parm [__ebx] [__ecx] [__eax]
+
+#pragma aux RdosLockPciHandle = \
+    CallGate_lock_pci_handle  \
+    CarryToBool \
+    __parm [__ebx] [__edi] \
+    __value [__eax]
+
+#pragma aux RdosUnlockPciHandle = \
+    CallGate_unlock_pci_handle  \
+    CarryToBool \
+    __parm [__ebx] \
+    __value [__eax]
+
+#pragma aux RdosIsPciHandleLocked = \
+    CallGate_is_pci_handle_locked  \
+    CarryToBool \
+    __parm [__ebx] \
+    __value [__eax]
+
 #pragma aux RdosGetPciBus = \
-    "mov bh,al" \
     CallGate_get_pci_bus  \
     "jc PciFail" \
-    "movzx eax,bh" \
-    "mov [edx],eax" \
-    "movzx eax,bl" \
-    "mov [esi],eax" \
-    "movzx eax,ch" \
-    "mov [edi],eax" \
+    "mov [ebx],dl" \
+    "mov [esi],ah" \
+    "mov [edi],al" \
     "mov eax,1" \
     "jmp PciDone" \
     "PciFail: " \
     "xor eax,eax" \
     "PciDone: " \
-    __parm [__eax] [__edx] [__esi] [__edi] \
+    __parm [__dh] [__dl] [__ebx] [__esi] [__edi] \
     __value [__eax]
 
 #pragma aux RdosIsPciFunctionUsed = \
@@ -220,14 +349,10 @@
     __modify [__ebx]
 
 #pragma aux RdosGetPciDeviceName = \
-    "mov bh,al" \
-    "mov bl,cl" \
-    "mov ch,dl" \
     CallGate_get_pci_device_name  \
     CarryToBool \
-    __parm [__eax] [__ecx] [__edx] [__edi] \
-    __value [__eax] \
-    __modify [__ebx]
+    __parm [__ebx] [__edi] [__ecx] \
+    __value [__eax]
 
 #pragma aux RdosGetPciMsi = \
     "mov bh,al" \
@@ -3858,7 +3983,7 @@
 #pragma aux RdosSetAdcChannels = \
     CallGate_set_adc_channels  \
     __parm [__ebx] [__eax]
-        
+
 #pragma aux RdosStartAdcFreq = \
     CallGate_start_adc_freq  \
     __parm [__ebx]

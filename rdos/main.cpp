@@ -502,22 +502,6 @@ uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_
 
 /*##########################################################################
 #
-#   Name       : Reset
-#
-#   Purpose....:
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void Reset()
-{
-    uacpi_reboot();
-}
-
-/*##########################################################################
-#
 #   Name       : InitAcpi
 #
 #   Purpose....:
@@ -547,8 +531,6 @@ bool InitAcpi()
         printf("uacpi_namespace_load error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
-
-    ServUacpiSetupReset(&Reset, st);
 
     if (ServUacpiHasApic())
         ret = uacpi_set_interrupt_model(UACPI_INTERRUPT_MODEL_IOAPIC);

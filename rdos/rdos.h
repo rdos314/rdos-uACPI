@@ -1,3 +1,33 @@
+/*#######################################################################
+# RDOS operating system
+# Copyright (C) 1988-2025, Leif Ekblad
+#
+# MIT License
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# The author of this program may be contacted at leif@rdos.net
+#
+# rdos.h
+# RDOS user level interface
+#
+########################################################################*/
 
 #ifndef _RDOS_H
 #define _RDOS_H
@@ -362,15 +392,37 @@ void RDOSAPI RdosCreateUuid(char *uuid);
 
 void RDOSAPI RdosWaitAnio(int Irq);
 
-int RDOSAPI RdosGetPciBus(int ReqBus, int *Bus, int *Device, int *Function);
 int RDOSAPI RdosIsPciFunctionUsed(int Bus, int Dev, int Func);
 int RDOSAPI RdosGetPciIrq(int Bus, int Dev, int Func);
 int RDOSAPI RdosGetPciClass(int Bus, int Dev, int Func, int *Class, int *Subclass);
 int RDOSAPI RdosGetPciInterface(int Bus, int Dev, int Func);
 int RDOSAPI RdosGetPciMsi(int Bus, int Dev, int Func, int *Reg, int *IrqCount);
 int RDOSAPI RdosGetPciMsiX(int Bus, int Dev, int Func, int *Reg, int *IrqCount);
-int RDOSAPI RdosGetPciDeviceName(int Bus, int Dev, int Func, char *AcpiName);
 int RDOSAPI RdosGetPciDeviceVendor(int Bus, int Dev, int Func, int *Vendor, int *Device);
+
+int RDOSAPI RdosGetPciDeviceName(int Handle, char *AcpiName, int MaxSize);
+int RDOSAPI RdosGetPciBus(unsigned char ReqSeg, unsigned char ReqBus, unsigned char *Bus, unsigned char *Device, unsigned char *Function);
+int RDOSAPI RdosFindPciClass(int Start, unsigned char ClassCode, unsigned char SubClass);
+int RDOSAPI RdosFindPciProtocol(int Start, unsigned char ClassCode, unsigned char SubClass, unsigned char Protocol);
+int RDOSAPI RdosFindPciDevice(int Start, short int Vendor, short int Device);
+int RDOSAPI RdosGetPciHandle(unsigned char Segment, unsigned char Bus, unsigned char Device, unsigned char Function);
+unsigned char RDOSAPI RdosGetPciHandleSegment(int Handle);
+unsigned char RDOSAPI RdosGetPciHandleBus(int Handle);
+unsigned char RDOSAPI RdosGetPciHandleDevice(int Handle);
+unsigned char RDOSAPI RdosGetPciHandleFunction(int Handle);
+unsigned char RDOSAPI RdosGetPciHandleIrq(int Handle, int Index);
+unsigned char RDOSAPI RdosGetPciHandleMsi(int Handle);
+unsigned char RDOSAPI RdosGetPciHandleMsiX(int Handle);
+short int RDOSAPI RdosGetPciHandleCap(int Handle, unsigned short int Cap);
+unsigned char RDOSAPI RdosReadPciConfigByte(int Handle, int Register);
+short int RDOSAPI RdosReadPciConfigWord(int Handle, int Register);
+int RDOSAPI RdosReadPciConfigDword(int Handle, int Register);
+void RDOSAPI RdosWritePciConfigByte(int Handle, int Register, unsigned char Value);
+void RDOSAPI RdosWritePciConfigWord(int Handle, int Register, short int Value);
+void RDOSAPI RdosWritePciConfigDword(int Handle, int Register, int Value);
+int RDOSAPI RdosLockPciHandle(int Handle, char *Name);
+int RDOSAPI RdosUnlockPciHandle(int Handle);
+int RDOSAPI RdosIsPciHandleLocked(int Handle);
 
 long RDOSAPI RdosGetAcpiStatus();
 int RDOSAPI RdosGetAcpiObject(int Index, char *AcpiName);

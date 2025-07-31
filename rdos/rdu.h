@@ -1037,6 +1037,26 @@
 #define usergate_set_adc_phase_limit 0x0000035D
 #define usergate_set_adc_channels 0x0000035E
 
+#define usergate_find_pci_class_handle 0x0000035F
+#define usergate_find_pci_prot_handle 0x00000360
+#define usergate_read_pci_config_byte 0x00000361
+#define usergate_read_pci_config_word 0x00000362
+#define usergate_read_pci_config_dword 0x00000363
+#define usergate_write_pci_config_byte 0x00000364
+#define usergate_write_pci_config_word 0x00000365
+#define usergate_write_pci_config_dword 0x00000366
+#define usergate_find_pci_device_handle 0x00000367
+#define usergate_get_pci_handle_param 0x00000368
+#define usergate_get_pci_handle_irq 0x00000369
+#define usergate_get_pci_handle_cap 0x0000036A
+#define usergate_get_pci_handle 0x0000036B
+#define usergate_lock_pci_handle 0x0000036C
+#define usergate_unlock_pci_handle 0x0000036D
+#define usergate_get_pci_handle_msi 0x0000036E
+#define usergate_get_pci_handle_msix 0x0000036F
+#define usergate_is_pci_handle_locked 0x00000370
+#define usergate_default_reset 0x00000371
+
 
 
 #ifdef __FLAT__
@@ -2079,6 +2099,26 @@
 #define CallGate_set_adc_phase_limit 0x55 0x67 0x9a 93 3 0 0 3 0 0x5d
 #define CallGate_set_adc_channels 0x55 0x67 0x9a 94 3 0 0 3 0 0x5d
 
+#define CallGate_find_pci_class_handle 0x55 0x67 0x9a 95 3 0 0 3 0 0x5d
+#define CallGate_find_pci_prot_handle 0x55 0x67 0x9a 96 3 0 0 3 0 0x5d
+#define CallGate_read_pci_config_byte 0x55 0x67 0x9a 97 3 0 0 3 0 0x5d
+#define CallGate_read_pci_config_word 0x55 0x67 0x9a 98 3 0 0 3 0 0x5d
+#define CallGate_read_pci_config_dword 0x55 0x67 0x9a 99 3 0 0 3 0 0x5d
+#define CallGate_write_pci_config_byte 0x55 0x67 0x9a 100 3 0 0 3 0 0x5d
+#define CallGate_write_pci_config_word 0x55 0x67 0x9a 101 3 0 0 3 0 0x5d
+#define CallGate_write_pci_config_dword 0x55 0x67 0x9a 102 3 0 0 3 0 0x5d
+#define CallGate_find_pci_device_handle 0x55 0x67 0x9a 103 3 0 0 3 0 0x5d
+#define CallGate_get_pci_handle_param 0x55 0x67 0x9a 104 3 0 0 3 0 0x5d
+#define CallGate_get_pci_handle_irq 0x55 0x67 0x9a 105 3 0 0 3 0 0x5d
+#define CallGate_get_pci_handle_cap 0x55 0x67 0x9a 106 3 0 0 3 0 0x5d
+#define CallGate_get_pci_handle 0x55 0x67 0x9a 107 3 0 0 3 0 0x5d
+#define CallGate_lock_pci_handle 0x55 0x67 0x9a 108 3 0 0 3 0 0x5d
+#define CallGate_unlock_pci_handle 0x55 0x67 0x9a 109 3 0 0 3 0 0x5d
+#define CallGate_get_pci_handle_msi 0x55 0x67 0x9a 110 3 0 0 3 0 0x5d
+#define CallGate_get_pci_handle_msix 0x55 0x67 0x9a 111 3 0 0 3 0 0x5d
+#define CallGate_is_pci_handle_locked 0x55 0x67 0x9a 112 3 0 0 3 0 0x5d
+#define CallGate_default_reset 0x55 0x67 0x9a 113 3 0 0 3 0 0x5d
+
 #else
 
 #define CallGate_allocate_dos_mem 0x3e 0x67 0x9a 0 0 0 0 3 0
@@ -3118,5 +3158,25 @@
 #define CallGate_set_adc_amp_limit 0x3e 0x67 0x9a 92 3 0 0 3 0
 #define CallGate_set_adc_phase_limit 0x3e 0x67 0x9a 93 3 0 0 3 0
 #define CallGate_set_adc_channels 0x3e 0x67 0x9a 94 3 0 0 3 0
+
+#define CallGate_find_pci_class_handle 0x3e 0x67 0x9a 95 3 0 0 3 0
+#define CallGate_find_pci_prot_handle 0x3e 0x67 0x9a 96 3 0 0 3 0
+#define CallGate_read_pci_config_byte 0x3e 0x67 0x9a 97 3 0 0 3 0
+#define CallGate_read_pci_config_word 0x3e 0x67 0x9a 98 3 0 0 3 0
+#define CallGate_read_pci_config_dword 0x3e 0x67 0x9a 99 3 0 0 3 0
+#define CallGate_write_pci_config_byte 0x3e 0x67 0x9a 100 3 0 0 3 0
+#define CallGate_write_pci_config_word 0x3e 0x67 0x9a 101 3 0 0 3 0
+#define CallGate_write_pci_config_dword 0x3e 0x67 0x9a 102 3 0 0 3 0
+#define CallGate_find_pci_device_handle 0x3e 0x67 0x9a 103 3 0 0 3 0
+#define CallGate_get_pci_handle_param 0x3e 0x67 0x9a 104 3 0 0 3 0
+#define CallGate_get_pci_handle_irq 0x3e 0x67 0x9a 105 3 0 0 3 0
+#define CallGate_get_pci_handle_cap 0x3e 0x67 0x9a 106 3 0 0 3 0
+#define CallGate_get_pci_handle 0x3e 0x67 0x9a 107 3 0 0 3 0
+#define CallGate_lock_pci_handle 0x3e 0x67 0x9a 108 3 0 0 3 0
+#define CallGate_unlock_pci_handle 0x3e 0x67 0x9a 109 3 0 0 3 0
+#define CallGate_get_pci_handle_msi 0x3e 0x67 0x9a 110 3 0 0 3 0
+#define CallGate_get_pci_handle_msix 0x3e 0x67 0x9a 111 3 0 0 3 0
+#define CallGate_is_pci_handle_locked 0x3e 0x67 0x9a 112 3 0 0 3 0
+#define CallGate_default_reset 0x3e 0x67 0x9a 113 3 0 0 3 0
 
 #endif
