@@ -77,8 +77,6 @@ int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
 
-void Reset();
-
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
 int ReadPciConfigDword(int issuer, int handle, int reg);
@@ -504,6 +502,22 @@ uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_
 
 /*##########################################################################
 #
+#   Name       : Reset
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void Reset()
+{
+    uacpi_reboot();
+}
+
+/*##########################################################################
+#
 #   Name       : InitAcpi
 #
 #   Purpose....:
@@ -516,6 +530,7 @@ uacpi_iteration_decision UpdateObj(void *ctx, uacpi_namespace_node *node, uacpi_
 bool InitAcpi()
 {
     uacpi_status ret;
+    char *st = new char[0x1000];
 
     ret = uacpi_initialize(0);
     if (uacpi_unlikely_error(ret))
@@ -532,6 +547,8 @@ bool InitAcpi()
         printf("uacpi_namespace_load error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
+
+    ServUacpiSetupReset(&Reset, st);
 
     if (ServUacpiHasApic())
         ret = uacpi_set_interrupt_model(UACPI_INTERRUPT_MODEL_IOAPIC);
@@ -1098,22 +1115,6 @@ int IsPciLocked(int handle)
         return func->IsPciLocked();
     else
         return false;
-}
-
-/*##########################################################################
-#
-#   Name       : Reset
-#
-#   Purpose....:
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-void Reset()
-{
-    uacpi_reboot();
 }
 
 /*##########################################################################
