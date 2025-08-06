@@ -935,15 +935,33 @@ LocalEvalIntArr Proc near
     push edi
     movzx ebx,bx
     add edi,SIZE dev_cmd_struc
+    mov esi,edi
+    add esi,4
+    mov eax,1000h - SIZE dev_cmd_struc - 5
+    shr eax,2
+    cmp ecx,eax
+    jb eaiInRange
+;
+    mov ecx,eax
+
+eaiInRange:
     call LowEvalIntArr
     pop edi
+;
+    mov [edi].fc_eax,eax
 ;    
     or eax,eax
     jz eiaFail
 ;
+    push edi
+    add edi,SIZE dev_cmd_struc
+    shl eax,2
+    stosd
+    pop edi
+;
     mov ebx,[edi].fc_handle
     and [edi].fc_eflags,NOT 1
-    ReplyDevCmd
+    ReplyDevDataCmd
     ret
 
 eiaFail:

@@ -54,7 +54,7 @@ void WritePciConfigDword(int issuer, int handle, int reg, int val);
 int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
-int EvalIntArr(int handle, char *buffer, int entries);
+int EvalIntArr(int handle, char *name, int *arr, int maxentries);
 
 /*##########################################################################
 #
@@ -506,8 +506,8 @@ int LowIsPciLocked(int handle)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowEvalIntArr "*" parm routine [ebx] [edi] [ecx] value [eax]
-int LowEvalIntArr(int handle, char *buf, int entries)
+#pragma aux LowEvalIntArr "*" parm routine [ebx] [edi] [esi] [ecx] value [eax]
+int LowEvalIntArr(int handle, char *name, int *arr, int entries)
 {
-    return EvalIntArr(handle, buf, entries);
+    return EvalIntArr(handle, name, arr, entries);
 }

@@ -77,7 +77,7 @@ int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
 
-int EvalIntArr(int handle, char *buf, int entries);
+int EvalIntArr(int handle, char *name, int *arr, int entries);
 
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
@@ -1112,17 +1112,16 @@ int IsPciLocked(int handle)
 #   Returns....: *
 #
 ##########################################################################*/
-int EvalIntArr(int handle, char *buf, int maxentries)
+int EvalIntArr(int handle, char *name, int *darr, int maxentries)
 {
     int *arr = new int[maxentries];
-    int *dst = (int *)buf;
     int count;
     int i;
 
-    count = TPciFunction::EvalIntArr(handle, buf, arr, maxentries);
+    count = TPciFunction::EvalIntArr(handle, name, arr, maxentries);
 
     for (i = 0; i < count; i++)
-        dst[i] = arr[i];
+        darr[i] = arr[i];
 
     delete arr;
 
