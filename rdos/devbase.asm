@@ -920,6 +920,41 @@ LocalGetBarIo Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalEvalIntArr
+;
+;       DESCRIPTION:    Local evaluate int array
+;
+;       PARAMETERS:     BX      Handle
+;                       Data    Config name & buffer
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowEvalIntArr:near
+
+LocalEvalIntArr Proc near
+    push edi
+    movzx ebx,bx
+    add edi,SIZE dev_cmd_struc
+    call LowEvalIntArr
+    pop edi
+;    
+    or eax,eax
+    jz eiaFail
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+
+eiaFail:
+    mov ebx,[edi].fc_handle
+    ReplyDevCmd
+    ret
+LocalEvalIntArr Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           WaitForMsg
 ;
 ;       DESCRIPTION:    Wait for msg
@@ -960,6 +995,7 @@ m021 DD OFFSET LocalEnableMsi
 m022 DD OFFSET LocalIsLocked
 m023 DD OFFSET LocalGetBarPhys
 m024 DD OFFSET LocalGetBarIo
+m025 DD OFFSET LocalEvalIntArr
 
 WaitForMsg_    Proc near
     push ebx

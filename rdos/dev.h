@@ -47,6 +47,7 @@ public:
     static TAcpiDevice *Get(int index);
 
     int EvalObjectInt(const char *name, int def);
+    int EvalIntPackage(const char *name, int *arr, int maxentries);
 
 protected:
     void Add(TAcpiDevice *dev);

@@ -29,6 +29,7 @@
 #
 ########################################################################*/
 
+#include <string.h>
 #include "dev.h"
 
 int TAcpiDevice::FDeviceCount = 0;
@@ -177,9 +178,9 @@ void TAcpiDevice::Add(TAcpiDevice *dev)
 
 /*##########################################################################
 #
-#   Name       : TAcpiDevice::IsDevice
+#   Name       : TAcpiDevice::EvalObjectInt
 #
-#   Purpose....: Is device?
+#   Purpose....: Evaluate object as int
 #
 #   In params..: *
 #   Out params.: *
@@ -194,4 +195,46 @@ int TAcpiDevice::EvalObjectInt(const char *name, int def)
         return obj->EvalInt(def);
     else
         return def;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiDevice::EvalObjectPackage
+#
+#   Purpose....: Evaluate object as package
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiDevice::EvalIntPackage(const char *name, int *arr, int maxentries)
+{
+    int count = 0;
+    TAcpiObject *obj;
+    int len = strlen(name);
+    char tname[5];
+
+    if (len > 4)
+    {
+        memcpy(tname, name, 4);
+        tname[4] = 0;
+
+        obj = Find(tname);
+
+        if (obj)
+            count = obj->EvalIntPackage(name + 5, arr, maxentries);
+    }
+    else
+    {
+        if (len == 4)
+        {
+            obj = Find(name);
+
+            if (obj)
+                count = obj->EvalIntPackage(arr, maxentries);
+        }
+    }
+
+    return count;
 }

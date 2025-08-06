@@ -54,6 +54,7 @@ void WritePciConfigDword(int issuer, int handle, int reg, int val);
 int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
+int EvalIntArr(int handle, char *buffer, int entries);
 
 /*##########################################################################
 #
@@ -492,4 +493,21 @@ int LowUnlockPci(int issuer, int handle)
 int LowIsPciLocked(int handle)
 {
     return IsPciLocked(handle);
+}
+
+/*##########################################################################
+#
+#   Name       : EvalIntArr
+#
+#   Purpose....: Evaluate int array
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowEvalIntArr "*" parm routine [ebx] [edi] [ecx] value [eax]
+int LowEvalIntArr(int handle, char *buf, int entries)
+{
+    return EvalIntArr(handle, buf, entries);
 }

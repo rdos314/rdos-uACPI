@@ -61,6 +61,8 @@ public:
     static TPciFunction *GetFunction(int handle);
     static bool LockPci(int issuer, int handle, const char *name);
 
+    static int EvalIntArr(int handle, char *name, int *arr, int maxentries);
+
     bool IsAllowed(int issuer);
     void SetDevice(TPciDevice *dev);
     int GetSegment();

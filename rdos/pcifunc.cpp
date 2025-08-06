@@ -653,6 +653,31 @@ bool TPciFunction::LockPci(int issuer, int handle, const char *name)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::EvalIntArr
+#
+#   Purpose....: Evaluate object int array
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::EvalIntArr(int handle, char *name, int *arr, int maxentries)
+{
+    TPciFunction *func = 0;
+    bool ok = false;
+
+    if (handle > 0 && handle <= FFuncCount)
+        func = FFuncArr[handle - 1];
+
+    if (func)
+        return func->EvalIntPackage(name, arr, maxentries);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::SetupIrq
 #
 #   Purpose....: SetupIrq

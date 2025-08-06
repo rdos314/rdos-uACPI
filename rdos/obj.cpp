@@ -441,3 +441,173 @@ int TAcpiObject::EvalInt(int def)
     }
     return def;
 }
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::GetIntArr
+#
+#   Purpose....: Get int arrat
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiObject::GetIntArr(uacpi_object *obj, int *Arr, int MaxEntries)
+{
+    int i;
+    int count = 0;
+    uacpi_status ret;
+    uacpi_object_array arr;
+    uacpi_object_type type;
+    uacpi_u64 val64;
+
+    type = uacpi_object_get_type(obj);
+
+    switch (type)
+    {
+        case UACPI_OBJECT_PACKAGE:
+            ret = uacpi_object_get_package(obj, &arr);
+
+            if (ret == UACPI_STATUS_OK)
+            {
+                for (i = 0; i < arr.count; i++)
+                {
+                    type = uacpi_object_get_type(arr.objects[i]);
+                    if (type == UACPI_OBJECT_INTEGER && count < MaxEntries)
+                    {
+                        ret = uacpi_object_get_integer(arr.objects[i], &val64);
+                        if (ret == UACPI_STATUS_OK)
+                        {
+                            Arr[count] = (int)val64;
+                            count++;
+                        }
+                    }
+                }
+            }
+
+            break;
+
+        case UACPI_OBJECT_INTEGER:
+            if (count < MaxEntries)
+            {
+                ret = uacpi_object_get_integer(obj, &val64);
+                if (ret == UACPI_STATUS_OK)
+                {
+                    Arr[count] = (int)val64;
+                    count++;
+                }
+            }
+            break;
+    }
+
+    return count;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::DecodeIntPackage
+#
+#   Purpose....: Decode int package
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiObject::DecodeIntPackage(uacpi_object *obj, const char *Name, int *Arr, int MaxEntries)
+{
+    int i;
+    int count = 0;
+    uacpi_status ret;
+    uacpi_object_array arr;
+    uacpi_object_type type;
+    uacpi_data_view view;
+
+    type = uacpi_object_get_type(obj);
+
+    if (type == UACPI_OBJECT_PACKAGE)
+    {
+        ret = uacpi_object_get_package(obj, &arr);
+
+        if (ret == UACPI_STATUS_OK && arr.count)
+        {
+            type = uacpi_object_get_type(arr.objects[0]);
+            if (type == UACPI_OBJECT_STRING)
+            {
+                ret = uacpi_object_get_string(arr.objects[0], &view);
+                if (ret == UACPI_STATUS_OK && !strcmp(Name, view.text))
+                {
+                    for (i = 1; i < arr.count; i++)
+                        count += GetIntArr(arr.objects[i], &Arr[count], MaxEntries - count);
+                }
+            }
+            else
+            {
+                for (i = 0; i < arr.count && !count; i++)
+                    count = DecodeIntPackage(arr.objects[i], Name, Arr, MaxEntries);
+            } 
+        }
+
+    }
+
+    return count;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::EvalIntPackage
+#
+#   Purpose....: Eval int array package
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiObject::EvalIntPackage(const char *Name, int *Arr, int MaxEntries)
+{
+    uacpi_status ret;
+    uacpi_object *obj = UACPI_NULL;
+    uacpi_object_array arr;
+    int count = 0;
+
+    if (FParent)
+    {
+        ret = uacpi_eval(FParent->FNode, FName, UACPI_NULL, &obj);
+        if (ret == UACPI_STATUS_OK)
+        {
+            ret = uacpi_object_get_package(obj, &arr);
+
+            if (ret == UACPI_STATUS_OK)
+                count = DecodeIntPackage(obj, Name, Arr, MaxEntries);
+        }
+    }
+    return count;
+}
+
+/*##########################################################################
+#
+#   Name       : TAcpiObject::EvalIntPackage
+#
+#   Purpose....: Eval int array package
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TAcpiObject::EvalIntPackage(int *Arr, int MaxEntries)
+{
+    uacpi_status ret;
+    uacpi_object *obj = UACPI_NULL;
+    int count = 0;
+
+    if (FParent)
+    {
+        ret = uacpi_eval(FParent->FNode, FName, UACPI_NULL, &obj);
+        if (ret == UACPI_STATUS_OK)
+            count = GetIntArr(obj, Arr, MaxEntries);
+    }
+    return count;
+}

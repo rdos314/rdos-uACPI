@@ -77,6 +77,8 @@ int LockPci(int issuer, int handle, const char *name);
 int UnlockPci(int issuer, int handle);
 int IsPciLocked(int handle);
 
+int EvalIntArr(int handle, char *buf, int entries);
+
 char ReadPciConfigByte(int issuer, int handle, int reg);
 short int ReadPciConfigWord(int issuer, int handle, int reg);
 int ReadPciConfigDword(int issuer, int handle, int reg);
@@ -1097,6 +1099,34 @@ int IsPciLocked(int handle)
         return func->IsPciLocked();
     else
         return false;
+}
+
+/*##########################################################################
+#
+#   Name       : EvalIntArr
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int EvalIntArr(int handle, char *buf, int maxentries)
+{
+    int *arr = new int[maxentries];
+    int *dst = (int *)buf;
+    int count;
+    int i;
+
+    count = TPciFunction::EvalIntArr(handle, buf, arr, maxentries);
+
+    for (i = 0; i < count; i++)
+        dst[i] = arr[i];
+
+    delete arr;
+
+    return count;
 }
 
 /*##########################################################################

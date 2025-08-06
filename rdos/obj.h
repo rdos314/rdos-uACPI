@@ -37,8 +37,7 @@
 #include "str.h"
 
 class TAcpiObject
-{
-public:
+{public:
     TAcpiObject();
     TAcpiObject(TAcpiObject *parent);
     virtual ~TAcpiObject();
@@ -58,11 +57,18 @@ public:
     void SetAcpiParent(TAcpiObject *parent);
     void AddObject(TAcpiObject *obj);
     int EvalInt(int def);
+    int EvalIntPackage(int *Arr, int MaxEntries);
+    int EvalIntPackage(const char *Name, int *Arr, int MaxEntries);
     const char *GetName();
     TAcpiObject *Find(const char *name);
 
 protected:
     void Add(TAcpiObject *obj);
+
+    int GetIntArr(uacpi_object *obj, int *Arr, int MaxEntries);
+    int DecodeIntPackage(uacpi_object *obj, const char *Name, int *Arr, int MaxEntries);
+
+    void EvalPackage(uacpi_object *obj);
 
     static int FObjCount;
     static int FObjSize;
