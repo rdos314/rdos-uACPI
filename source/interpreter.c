@@ -1255,13 +1255,17 @@ static uacpi_bool is_dynamic_table_load(enum uacpi_table_load_cause cause)
     return cause != UACPI_TABLE_LOAD_CAUSE_INIT;
 }
 
-static void prepare_table_load(
-    void *ptr, enum uacpi_table_load_cause cause, uacpi_control_method *in_method
+static uacpi_status prepare_table_load(
+    void *ptr, enum uacpi_table_load_cause cause,
+    uacpi_control_method *in_method
 )
 {
     struct acpi_dsdt *dsdt = ptr;
-    enum uacpi_log_level log_level = UACPI_LOG_TRACE;
+    uacpi_log_level log_level = UACPI_LOG_TRACE;
     const uacpi_char *log_prefix = "load of";
+
+    if (uacpi_unlikely(dsdt->hdr.length < sizeof(dsdt->hdr)))
+        return UACPI_STATUS_INVALID_TABLE_LENGTH;
 
     if (is_dynamic_table_load(cause)) {
         log_prefix = cause == UACPI_TABLE_LOAD_CAUSE_HOST ?
@@ -1277,6 +1281,8 @@ static void prepare_table_load(
     in_method->code = dsdt->definition_block;
     in_method->size = dsdt->hdr.length - sizeof(dsdt->hdr);
     in_method->named_objects_persist = UACPI_TRUE;
+
+    return UACPI_STATUS_OK;
 }
 
 static uacpi_status do_load_table(
@@ -1287,7 +1293,9 @@ static uacpi_status do_load_table(
     struct uacpi_control_method method = { 0 };
     uacpi_status ret;
 
-    prepare_table_load(tbl, cause, &method);
+    ret = prepare_table_load(tbl, cause, &method);
+    if (uacpi_unlikely_error(ret))
+        return ret;
 
     ret = uacpi_execute_control_method(parent, &method, UACPI_NULL, UACPI_NULL);
     if (uacpi_unlikely_error(ret))
@@ -1373,10 +1381,6 @@ static uacpi_status handle_load_table(struct execution_context *ctx)
         root_node = uacpi_namespace_root();
     }
 
-    root_node_item->node = root_node;
-    root_node_item->type = ITEM_NAMESPACE_NODE;
-    uacpi_shareable_ref(root_node);
-
     if (param_path->size > 1) {
         struct item *param_item;
 
@@ -1403,11 +1407,22 @@ static uacpi_status handle_load_table(struct execution_context *ctx)
         report_table_id_find_error("LoadTable", &table_id, ret);
         return ret;
     }
-    uacpi_table_mark_as_loaded(table.index);
 
-    item_array_at(items, 2)->immediate = table.index;
     method = item_array_at(items, 1)->obj->method;
-    prepare_table_load(table.hdr, UACPI_TABLE_LOAD_CAUSE_LOAD_TABLE_OP, method);
+    ret = prepare_table_load(
+        table.hdr, UACPI_TABLE_LOAD_CAUSE_LOAD_TABLE_OP, method
+    );
+    if (uacpi_unlikely_error(ret)) {
+        uacpi_table_unref(&table);
+        return ret;
+    }
+
+    uacpi_table_mark_as_loaded(table.index);
+    item_array_at(items, 2)->immediate = table.index;
+
+    root_node_item->node = root_node;
+    root_node_item->type = ITEM_NAMESPACE_NODE;
+    uacpi_shareable_ref(root_node);
 
     return UACPI_STATUS_OK;
 }
@@ -1430,13 +1445,20 @@ static uacpi_status handle_load(struct execution_context *ctx)
      * detect new AML GPE handlers that might've been loaded.
      * We do this only if table load was successful though.
      */
-    if (item_array_size(items) == 5) {
-        if (item_array_at(items, 4)->obj->integer != 0)
+    if (item_array_size(items) == 6) {
+        uacpi_size idx;
+        uacpi_table tmp_table = { 0 };
+
+        idx = item_array_at(items, 2)->immediate;
+        tmp_table.index = idx;
+        uacpi_table_unref(&tmp_table);
+
+        if (item_array_at(items, 5)->obj->integer != 0)
             uacpi_events_match_post_dynamic_table_load();
         return UACPI_STATUS_OK;
     }
 
-    src = item_array_at(items, 2)->obj;
+    src = item_array_at(items, 3)->obj;
 
     switch (src->type) {
     case UACPI_OBJECT_OPERATION_REGION: {
@@ -1447,6 +1469,7 @@ static uacpi_status handle_load(struct execution_context *ctx)
             op_region->space != UACPI_ADDRESS_SPACE_SYSTEM_MEMORY
         )) {
             uacpi_error("Load: operation region is not SystemMemory\n");
+            ret = UACPI_STATUS_AML_INCOMPATIBLE_OBJECT_TYPE;
             goto error_out;
         }
 
@@ -1455,6 +1478,7 @@ static uacpi_status handle_load(struct execution_context *ctx)
                 "Load: operation region is too small: %"UACPI_PRIu64"\n",
                 UACPI_FMT64(op_region->length)
             );
+            ret = UACPI_STATUS_AML_BAD_ENCODING;
             goto error_out;
         }
 
@@ -1466,6 +1490,7 @@ static uacpi_status handle_load(struct execution_context *ctx)
                 UACPI_FMT64(op_region->offset),
                 UACPI_FMT64(op_region->offset + op_region->length)
             );
+            ret = UACPI_STATUS_MAPPING_FAILED;
             goto error_out;
         }
 
@@ -1483,6 +1508,8 @@ static uacpi_status handle_load(struct execution_context *ctx)
                 "Load: buffer is too small: %zu\n",
                 buffer->size
             );
+
+            ret = UACPI_STATUS_AML_BAD_ENCODING;
             goto error_out;
         }
 
@@ -1497,6 +1524,7 @@ static uacpi_status handle_load(struct execution_context *ctx)
             "Buffer/Field/OperationRegion\n",
             uacpi_object_type_to_string(src->type)
         );
+        ret = UACPI_STATUS_AML_INCOMPATIBLE_OBJECT_TYPE;
         goto error_out;
     }
 
@@ -1505,17 +1533,21 @@ static uacpi_status handle_load(struct execution_context *ctx)
             "Load: table size %u is larger than the declared size %zu\n",
             src_table->length, declared_size
         );
+        ret = UACPI_STATUS_AML_BAD_ENCODING;
         goto error_out;
     }
 
     if (uacpi_unlikely(src_table->length < sizeof(struct acpi_sdt_hdr))) {
         uacpi_error("Load: table size %u is too small\n", src_table->length);
+        ret = UACPI_STATUS_INVALID_TABLE_LENGTH;
         goto error_out;
     }
 
     table_buffer = uacpi_kernel_alloc(src_table->length);
-    if (uacpi_unlikely(table_buffer == UACPI_NULL))
+    if (uacpi_unlikely(table_buffer == UACPI_NULL)) {
+        ret = UACPI_STATUS_OUT_OF_MEMORY;
         goto error_out;
+    }
 
     uacpi_memcpy(table_buffer, src_table, src_table->length);
 
@@ -1530,22 +1562,35 @@ static uacpi_status handle_load(struct execution_context *ctx)
     if (uacpi_unlikely_error(ret)) {
         uacpi_free(table_buffer, src_table->length);
 
+        /*
+         * Treat DENIED as a soft error, that is, fail the Load but don't abort
+         * the currently running method. We simply return False to the caller
+         * to signify an error in this case.
+         */
+        if (uacpi_unlikely(ret == UACPI_STATUS_DENIED))
+            ret = UACPI_STATUS_OK;
+
         if (ret != UACPI_STATUS_OVERRIDDEN)
             goto error_out;
     }
-    uacpi_table_mark_as_loaded(table.index);
-
-    item_array_at(items, 0)->node = uacpi_namespace_root();
 
     method = item_array_at(items, 1)->obj->method;
-    prepare_table_load(table.ptr, UACPI_TABLE_LOAD_CAUSE_LOAD_OP, method);
+    ret = prepare_table_load(table.ptr, UACPI_TABLE_LOAD_CAUSE_LOAD_OP, method);
+    if (uacpi_unlikely_error(ret)) {
+        uacpi_table_unref(&table);
+        goto error_out;
+    }
 
+    uacpi_table_mark_as_loaded(table.index);
+    item_array_at(items, 2)->immediate = table.index;
+
+    item_array_at(items, 0)->node = uacpi_namespace_root();
     return UACPI_STATUS_OK;
 
 error_out:
     if (unmap_src && src_table)
         uacpi_kernel_unmap(src_table, declared_size);
-    return UACPI_STATUS_OK;
+    return ret;
 }
 
 uacpi_status uacpi_execute_table(void *tbl, enum uacpi_table_load_cause cause)
