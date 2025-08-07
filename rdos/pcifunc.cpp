@@ -903,12 +903,15 @@ int TPciFunction::SetupMsi(int core, int prio, int vectors)
     }
 
     if (FUseMsi || FUseMsiX)
-    {
         FIrqCount = vectors;
+
+    if (FUseMsi)
+        return vectors | (irq << 8);
+
+    if (FUseMsiX)
         return vectors;
-    }
-    else
-        return 0;
+
+    return 0;
 }
 
 /*##########################################################################

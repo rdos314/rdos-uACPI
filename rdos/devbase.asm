@@ -715,7 +715,7 @@ LocalUnlockPci Endp
 ;                       SI      Core
 ;
 ;       RETURNS:        AL      Vector
-;                       CL      Mode, 0 = fail, 1 = IRQ, 2 = MSI
+;                       CL      Mode, 0 = fail, 1 = IRQ, 2 = MSI or MSI-X
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -753,7 +753,8 @@ LocalSetupIrq Endp
 ;                       CX      Requested vectors
 ;                       SI      Core
 ;
-;       RETURNS:        CX      Allocated vectors
+;       RETURNS:        AL      Allocated vectors
+;                       CL      MSI-X = 0, MSI = base vector
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -769,7 +770,10 @@ LocalSetupMsi Proc near
     call LowSetupMsi
     pop edi
 ;
-    mov [edi].fc_ecx,eax
+    mov byte ptr [edi].fc_eax,al
+    shr eax,8
+    mov byte ptr [edi].fc_ecx,al
+;
     mov ebx,[edi].fc_handle
     and [edi].fc_eflags,NOT 1
     ReplyDevCmd
