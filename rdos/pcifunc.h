@@ -84,8 +84,9 @@ public:
     bool IsPciLocked();
 
     int SetupIrq(int core, int prio);
-    int SetupMsi(int core, int prio, int vectors);
-    void EnableMsi();
+    int ReqMsi(int core, int prio, int vectors);
+    int SetupMsi(int index, int core, int prio);
+    void EnableMsi(int index);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);

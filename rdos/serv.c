@@ -39,8 +39,9 @@ unsigned char GetIrq(int handle, int index);
 unsigned char GetMsi(int handle);
 unsigned char GetMsiX(int handle);
 int SetupIrq(int issuer, int handle, int core, int prio);
-int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
-void EnableMsi(int issuer, int handle);
+int ReqMsi(int issuer, int handle, int core, int prio, int vectors);
+int SetupMsi(int issuer, int handle, int entry, int core, int prio);
+int EnableMsi(int issuer, int handle, int entry);
 long long GetBarPhys(int handle, unsigned char bar);
 short int GetBarIo(int handle, unsigned char bar);
 short int GetCap(int handle, unsigned char cap);
@@ -276,6 +277,23 @@ int LowSetupIrq(int issuer, int handle, int core, int prio)
 
 /*##########################################################################
 #
+#   Name       : ReqMsi
+#
+#   Purpose....: Req MSI
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+#pragma aux LowReqMsi "*" parm routine [edx] [ebx] [esi] [edi] [ecx] value [eax]
+int LowReqMsi(int issuer, int handle, int core, int prio, int vectors)
+{
+    return ReqMsi(issuer, handle, core, prio, vectors);
+}
+
+/*##########################################################################
+#
 #   Name       : SetupMsi
 #
 #   Purpose....: Setup MSI
@@ -285,10 +303,10 @@ int LowSetupIrq(int issuer, int handle, int core, int prio)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowSetupMsi "*" parm routine [edx] [ebx] [esi] [edi] [ecx] value [eax]
-int LowSetupMsi(int issuer, int handle, int core, int prio, int vectors)
+#pragma aux LowSetupMsi "*" parm routine [edx] [ebx] [eax] [esi] [edi] value [eax]
+int LowSetupMsi(int issuer, int handle, int entry, int core, int prio)
 {
-    return SetupMsi(issuer, handle, core, prio, vectors);
+    return SetupMsi(issuer, handle, entry, core, prio);
 }
 
 /*##########################################################################
@@ -302,10 +320,10 @@ int LowSetupMsi(int issuer, int handle, int core, int prio, int vectors)
 #   Returns....: *
 #
 ##########################################################################*/
-#pragma aux LowEnableMsi "*" parm routine [edx] [ebx]
-void LowEnableMsi(int issuer, int handle)
+#pragma aux LowEnableMsi "*" parm routine [edx] [ebx] [eax]
+void LowEnableMsi(int issuer, int handle, int entry)
 {
-    EnableMsi(issuer, handle);
+    EnableMsi(issuer, handle, entry);
 }
 
 /*##########################################################################

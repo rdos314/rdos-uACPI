@@ -68,8 +68,9 @@ unsigned char GetMsiX(int handle);
 long long GetBarPhys(int handle, unsigned char bar);
 short int GetBarIo(int handle, unsigned char bar);
 int SetupIrq(int issuer, int handle, int core, int prio);
-int SetupMsi(int issuer, int handle, int core, int prio, int vectors);
-void EnableMsi(int issuer, int handle);
+int ReqMsi(int issuer, int handle, int core, int prio, int vectors);
+int SetupMsi(int issuer, int handle, int entry, int core, int prio);
+void EnableMsi(int issuer, int handle, int entry);
 short int GetCap(int handle, unsigned char cap);
 int GetPciName(int handle, char *buf, int maxsize);
 
@@ -816,6 +817,31 @@ int SetupIrq(int issuer, int handle, int core, int prio)
 
 /*##########################################################################
 #
+#   Name       : ReqMsi
+#
+#   Purpose....:
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int ReqMsi(int issuer, int handle, int core, int prio, int vectors)
+{
+    TPciFunction *func = TPciFunction::GetFunction(handle);
+
+    if (func)
+        if (!func->IsAllowed(issuer))
+            func = 0;
+
+    if (func)
+        return func->ReqMsi(core, prio, vectors);
+    else
+        return 0;
+}
+
+/*##########################################################################
+#
 #   Name       : SetupMsi
 #
 #   Purpose....:
@@ -825,7 +851,7 @@ int SetupIrq(int issuer, int handle, int core, int prio)
 #   Returns....: *
 #
 ##########################################################################*/
-int SetupMsi(int issuer, int handle, int core, int prio, int vectors)
+int SetupMsi(int issuer, int handle, int entry, int core, int prio)
 {
     TPciFunction *func = TPciFunction::GetFunction(handle);
 
@@ -834,7 +860,7 @@ int SetupMsi(int issuer, int handle, int core, int prio, int vectors)
             func = 0;
 
     if (func)
-        return func->SetupMsi(core, prio, vectors);
+        return func->SetupMsi(entry, core, prio);
     else
         return 0;
 }
@@ -850,7 +876,7 @@ int SetupMsi(int issuer, int handle, int core, int prio, int vectors)
 #   Returns....: *
 #
 ##########################################################################*/
-void EnableMsi(int issuer, int handle)
+void EnableMsi(int issuer, int handle, int entry)
 {
     TPciFunction *func = TPciFunction::GetFunction(handle);
 
@@ -859,7 +885,7 @@ void EnableMsi(int issuer, int handle)
             func = 0;
 
     if (func)
-        func->EnableMsi();
+        func->EnableMsi(entry);
 }
 
 /*##########################################################################

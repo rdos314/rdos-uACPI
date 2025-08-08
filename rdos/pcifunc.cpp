@@ -794,16 +794,16 @@ int TPciFunction::SetupIrq(int core, int prio)
 
 /*##########################################################################
 #
-#   Name       : TPciFunction::SetupMsi
+#   Name       : TPciFunction::ReqMsi
 #
-#   Purpose....: SetupMsi
+#   Purpose....: Req Msi
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-int TPciFunction::SetupMsi(int core, int prio, int vectors)
+int TPciFunction::ReqMsi(int core, int prio, int vectors)
 {
     unsigned char irq = 0;
     TPciIrqRoute *route = 0;
@@ -818,6 +818,10 @@ int TPciFunction::SetupMsi(int core, int prio, int vectors)
 
     if (FMsiXBase && (FMsiXVectors >= vectors))
     {
+        cntrl = ReadConfigWord(FMsiXBase);
+        cntrl &= 0x7FFF;
+        WriteConfigWord(FMsiXBase, cntrl);
+
         val = ReadConfigDword(FMsiXBase + 2);
         bar = val & 7;
         val &= 0xFFFFFFF8;
@@ -831,45 +835,24 @@ int TPciFunction::SetupMsi(int core, int prio, int vectors)
         {
             phys += val;
 
+            for (i = 0; i < vectors; i++)
+                FIrqArr[i] = 0;
+
+            FMsiXVectorArr = (int *)ServUacpiMap(phys, 16 * vectors);
 
             for (i = 0; i < vectors; i++)
-            {
-                irq = ServUacpiAllocateInts(1, prio);
-                FIrqArr[i] = irq;
-            }
-
-            if (irq)
-            {
-                FMsiXVectorArr = (int *)ServUacpiMap(phys, 16 * vectors);
-
-                for (i = 0; i < vectors; i++)
-                {
-                    val = ServUacpiGetMsiAddress(core);
-                    FMsiXVectorArr[4 * i] = val;
-                    FMsiXVectorArr[4 * i + 1] = 0;
-
-                    irq = FIrqArr[i];
-                    val = ServUacpiGetMsiData(irq);
-                    FMsiXVectorArr[4 * i + 2] = val;
-                    FMsiXVectorArr[4 * i + 3] = 0;
-                }
-                FUseMsiX = true;
-            }
-            else
-            {
-                for (i = 0; i < vectors; i++)
-                {
-                    irq = FIrqArr[i];
-                    if (irq)
-                        ServUacpiFreeInt(irq);
-                }
-            }
-
+                FMsiXVectorArr[4 * i + 3] = 1;
+              
+            FUseMsiX = true;
         }
     }
 
     if (FMsiBase && (FMsiVectors >= vectors) && !FUseMsiX)
     {
+        cntrl = ReadConfigWord(FMsiBase);
+        cntrl &= 0xFFFE;
+        WriteConfigWord(FMsiBase, cntrl);
+
         irq = ServUacpiAllocateInts(vectors, (unsigned char)prio);
         if (irq)
         {
@@ -916,6 +899,53 @@ int TPciFunction::SetupMsi(int core, int prio, int vectors)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::SetupMsi
+#
+#   Purpose....: SetupMsi
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TPciFunction::SetupMsi(int index, int core, int prio)
+{
+    unsigned char irq = 0;
+    int val;
+
+    if (FUseMsi)
+    {
+        if (index < FMsiVectors)
+            irq = FIrqArr[index];
+    }
+
+    if (FUseMsiX)
+    {
+        if (index < FMsiXVectors)
+        {
+            irq = FIrqArr[index];
+
+            if (!irq)
+                irq = ServUacpiAllocateInts(1, prio);
+
+            if (irq)
+            {
+                FIrqArr[index] = irq;
+
+                val = ServUacpiGetMsiAddress(core);
+                FMsiXVectorArr[4 * index] = val;
+                FMsiXVectorArr[4 * index + 1] = 0;
+
+                val = ServUacpiGetMsiData(irq);
+                FMsiXVectorArr[4 * index + 2] = val;
+            }
+        }
+    }
+    return irq;
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::EnableMsi
 #
 #   Purpose....: Enable Msi
@@ -925,8 +955,9 @@ int TPciFunction::SetupMsi(int core, int prio, int vectors)
 #   Returns....: *
 #
 ##########################################################################*/
-void TPciFunction::EnableMsi()
+void TPciFunction::EnableMsi(int index)
 {
+    unsigned char irq;
     short int cntrl;
 
     if (FUseMsi)
@@ -939,6 +970,14 @@ void TPciFunction::EnableMsi()
 
     if (FUseMsiX)
     {
+        if (index < FMsiXVectors)
+        {
+            irq = FIrqArr[index];
+
+            if (irq)
+                FMsiXVectorArr[4 * index + 3] = 0;
+        }
+
         cntrl = ReadConfigWord(FMsiXBase);
         cntrl &= 0x3FFF;
         cntrl |= 0x8000;

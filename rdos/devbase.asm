@@ -743,6 +743,46 @@ LocalSetupIrq Endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;       
 ;
+;       NAME:           LocalReqMsi
+;
+;       DESCRIPTION:    Local req MSI
+;
+;       PARAMETERS:     DX      Issuer
+;                       AH      Priority
+;                       BX      Handle
+;                       CL      Requested vectors
+;                       SI      Core
+;
+;       RETURNS:        AL      Allocated vectors
+;                       CL      MSI-X = 0, MSI = base vector
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    extern LowReqMsi:near
+
+LocalReqMsi Proc near
+    push edi
+    movzx ebx,bx
+    movzx edx,dx
+    movzx edi,ah
+    movzx ecx,cl
+    movzx esi,si
+    call LowReqMsi
+    pop edi
+;
+    mov byte ptr [edi].fc_eax,al
+    shr eax,8
+    mov byte ptr [edi].fc_ecx,al
+;
+    mov ebx,[edi].fc_handle
+    and [edi].fc_eflags,NOT 1
+    ReplyDevCmd
+    ret
+LocalReqMsi Endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;       
+;
 ;       NAME:           LocalSetupMsi
 ;
 ;       DESCRIPTION:    Local setup MSI
@@ -750,11 +790,10 @@ LocalSetupIrq Endp
 ;       PARAMETERS:     DX      Issuer
 ;                       AH      Priority
 ;                       BX      Handle
-;                       CX      Requested vectors
+;                       AL      Entry #
 ;                       SI      Core
 ;
-;       RETURNS:        AL      Allocated vectors
-;                       CL      MSI-X = 0, MSI = base vector
+;       RETURNS:        AL      Vector
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -765,14 +804,12 @@ LocalSetupMsi Proc near
     movzx ebx,bx
     movzx edx,dx
     movzx edi,ah
-    movzx ecx,cx
     movzx esi,si
+    movzx eax,al
     call LowSetupMsi
     pop edi
 ;
     mov byte ptr [edi].fc_eax,al
-    shr eax,8
-    mov byte ptr [edi].fc_ecx,al
 ;
     mov ebx,[edi].fc_handle
     and [edi].fc_eflags,NOT 1
@@ -789,6 +826,7 @@ LocalSetupMsi Endp
 ;
 ;       PARAMETERS:     DX      Issuer
 ;                       BX      Handle
+;                       AL      Entry #
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -798,10 +836,10 @@ LocalEnableMsi Proc near
     push edi
     movzx ebx,bx
     movzx edx,dx
+    movzx eax,al
     call LowEnableMsi
     pop edi
 ;
-    mov [edi].fc_ecx,eax
     mov ebx,[edi].fc_handle
     and [edi].fc_eflags,NOT 1
     ReplyDevCmd
@@ -1012,12 +1050,13 @@ m016 DD OFFSET LocalUnlockPci
 m017 DD OFFSET LocalGetMsi
 m018 DD OFFSET LocalGetMsiX
 m019 DD OFFSET LocalSetupIrq
-m020 DD OFFSET LocalSetupMsi
-m021 DD OFFSET LocalEnableMsi
-m022 DD OFFSET LocalIsLocked
-m023 DD OFFSET LocalGetBarPhys
-m024 DD OFFSET LocalGetBarIo
-m025 DD OFFSET LocalEvalIntArr
+m020 DD OFFSET LocalReqMsi
+m021 DD OFFSET LocalSetupMsi
+m022 DD OFFSET LocalEnableMsi
+m023 DD OFFSET LocalIsLocked
+m024 DD OFFSET LocalGetBarPhys
+m025 DD OFFSET LocalGetBarIo
+m026 DD OFFSET LocalEvalIntArr
 
 WaitForMsg_    Proc near
     push ebx
