@@ -94,3 +94,13 @@ ReplyDevCmd  MACRO
 ReplyDevDataCmd  MACRO    
     ServGate uacpi_reply_data_cmd_nr
                     ENDM
+
+; OUT EAX             Pointer to task queue
+UacpiGetTaskQueue  MACRO
+    ServGate uacpi_get_task_queue_nr
+                    ENDM
+
+; IN  EAX             Current index in task queue
+UacpiWaitTaskQueue  MACRO
+    ServGate uacpi_wait_task_queue_nr
+                    ENDM

@@ -30,6 +30,9 @@ void RDOSAPI ServUacpiFreeInt(unsigned char irq);
 int RDOSAPI ServUacpiGetMsiAddress(int core);
 int RDOSAPI ServUacpiGetMsiData(unsigned char irq);
 
+void *RDOSAPI ServUacpiGetTaskQueue();
+void RDOSAPI ServUacpiWaitTaskQueue(int index);
+
 #ifdef __cplusplus
 }
 #endif
