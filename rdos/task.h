@@ -34,10 +34,8 @@
 
 struct TTaskQueueEntry
 {
-    long long Par64;
-    int Par32;
-    short int Par16;
     short int Op;
+    short int Id;
 };
 
 class TTaskHandler

@@ -224,10 +224,7 @@ TPciBridge *TPciSegment::Add(int bus)
     if (index >= 0 && index < FBusCount)
     {
         if (!FBusArr[index])
-        {
-            printf("New bus: %d\r\n", bus);
             FBusArr[index] = new TPciBridge(this, bus);
-        }
         
         return FBusArr[index];
     }

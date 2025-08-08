@@ -44,6 +44,7 @@
 #include "pcibrg.h"
 #include "pciseg.h"
 #include "cpu.h"
+#include "task.h"
 
 extern "C"
 {
@@ -94,6 +95,7 @@ extern int WaitForMsg();
 
 static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
+static TTaskHandler TaskHandler;
 
 /*##########################################################################
 #
@@ -1175,6 +1177,8 @@ int main(int argc, char **argv)
 //        RdosWaitMilli(50);
 
     InitAcpi();
+
+    TaskHandler.Start();
 
     printf("%d processor cores\r\n", TAcpiProcessor::Count());
     printf("%d devices\r\n", TAcpiDevice::Count());

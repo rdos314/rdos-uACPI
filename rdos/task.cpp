@@ -116,9 +116,11 @@ void TTaskHandler::HandleQueue(struct TTaskQueueEntry *entry)
     switch (entry->Op)
     {
         case REQ_CREATE_THREAD:
+            printf("Created: %d\r\n", entry->Id);
             break;
 
         case REQ_TERMINATE_THREAD:
+            printf("Terminated: %d\r\n", entry->Id);
             break;
 
     }
@@ -151,7 +153,7 @@ void TTaskHandler::Execute()
             entry = &FQueueArr[index];
             HandleQueue(entry);
             entry->Op = 0;
-            index = (index + 1) % 256;
+            index = (index + 1) % 1024;
         }
         else
             ServUacpiWaitTaskQueue(index);
