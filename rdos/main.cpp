@@ -22,7 +22,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# The author of this program may be contacted at leif@rdos.net#
+# The author of this program may be contacted at leif@rdos.net
+#
 # acpi.cpp
 # Main acpi server
 #
@@ -43,6 +44,7 @@
 #include "pcibrg.h"
 #include "pciseg.h"
 #include "cpu.h"
+#include "thrstat.h"
 
 #define REQ_CREATE_THREAD       1
 #define REQ_TERMINATE_THREAD    2
@@ -103,6 +105,139 @@ extern int WaitForMsg();
 static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
 static struct TTaskQueueEntry *TaskQueueArr;
+static int ThreadSize = 0;
+static int ThreadCount = 0;
+static TThreadState **ThreadArr = 0;
+
+/*##########################################################################
+#
+#   Name       : FindThread
+#
+#   Purpose....: Find thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static TThreadState *FindThread(short int id)
+{
+    int i;
+    TThreadState *state;    
+
+    for (i = 0; i < ThreadSize; i++)
+    {
+        state = ThreadArr[i];
+        if (state && state->GetId() == id)
+            return state;
+    }
+    return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : GrowThreadArr
+#
+#   Purpose....: Grow thread array
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void GrowThreadArr()
+{
+    int i;
+    int Size = 2 * (ThreadSize + 1);
+    TThreadState **NewArr;
+
+    NewArr = new TThreadState*[Size];
+
+    for (i = 0; i < ThreadSize; i++)
+        NewArr[i] = ThreadArr[i];
+
+    for (i = ThreadSize; i < Size; i++)
+        NewArr[i] = 0;
+
+    if (ThreadArr)
+        delete ThreadArr;
+
+    ThreadArr = NewArr;
+    ThreadSize = Size;
+}
+
+/*##########################################################################
+#
+#   Name       : AddThread
+#
+#   Purpose....: Add new thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void AddThread(short int id)
+{
+    int i;
+    bool found = false;
+
+    if (ThreadCount == ThreadSize)
+        GrowThreadArr();
+
+    for (i = ThreadCount; i < ThreadSize && !found; i++)
+    {
+        if (ThreadArr[i] == 0)
+        {
+            printf("Added: %d at %d\r\n", id, i);
+            ThreadArr[i] = new TThreadState(i, id);
+            found = true;
+        }
+    }
+
+    for (i = 0; i < ThreadCount && !found; i++)
+    {
+        if (ThreadArr[i] == 0)
+        {
+            printf("Added: %d at %d\r\n", id, i);
+            ThreadArr[i] = new TThreadState(i, id);
+            found = true;
+        }
+    }
+
+    if (found)
+        ThreadCount++;
+    else
+        printf("Not added: %d\r\n", id);
+}
+
+/*##########################################################################
+#
+#   Name       : RemoveThread
+#
+#   Purpose....: Remove thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void RemoveThread(short int id)
+{
+    TThreadState *state = FindThread(id);
+    int pos;
+
+    if (state)
+    {
+        pos = state->GetPos();
+        ThreadArr[pos] = 0;
+        delete state;
+        ThreadCount--;
+        printf("Terminated: %d at %d\r\n", id, pos);
+    }
+    else
+        printf("Terminated: %d, not found\r\n", id);
+}
 
 /*##########################################################################
 #
@@ -120,11 +255,11 @@ static void HandleTaskQueue(struct TTaskQueueEntry *entry)
     switch (entry->Op)
     {
         case REQ_CREATE_THREAD:
-            printf("Created: %d\r\n", entry->Id);
+            AddThread(entry->Id);
             break;
 
         case REQ_TERMINATE_THREAD:
-            printf("Terminated: %d\r\n", entry->Id);
+            RemoveThread(entry->Id);
             break;
 
     }
