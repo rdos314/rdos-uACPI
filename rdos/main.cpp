@@ -22,8 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# The author of this program may be contacted at leif@rdos.net
-#
+# The author of this program may be contacted at leif@rdos.net#
 # acpi.cpp
 # Main acpi server
 #
@@ -44,7 +43,15 @@
 #include "pcibrg.h"
 #include "pciseg.h"
 #include "cpu.h"
-#include "task.h"
+
+#define REQ_CREATE_THREAD       1
+#define REQ_TERMINATE_THREAD    2
+
+struct TTaskQueueEntry
+{
+    short int Op;
+    short int Id;
+};
 
 extern "C"
 {
@@ -95,7 +102,67 @@ extern int WaitForMsg();
 
 static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
-static TTaskHandler TaskHandler;
+static struct TTaskQueueEntry *TaskQueueArr;
+
+/*##########################################################################
+#
+#   Name       : HandleTaskQueue
+#
+#   Purpose....: Handle task queue entry
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void HandleTaskQueue(struct TTaskQueueEntry *entry)
+{
+    switch (entry->Op)
+    {
+        case REQ_CREATE_THREAD:
+            printf("Created: %d\r\n", entry->Id);
+            break;
+
+        case REQ_TERMINATE_THREAD:
+            printf("Terminated: %d\r\n", entry->Id);
+            break;
+
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TaskHandler
+#
+#   Purpose....: Task handler
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void TaskHandler(void *ptr)
+{
+    int index;
+    struct TTaskQueueEntry *entry;
+
+    TaskQueueArr = (struct TTaskQueueEntry *)ServUacpiGetTaskQueue();
+
+    index = 0;
+
+    for (;;)
+    {
+        if (TaskQueueArr[index].Op)
+        {
+            entry = &TaskQueueArr[index];
+            HandleTaskQueue(entry);
+            entry->Op = 0;
+            index = (index + 1) % 1024;
+        }
+        else
+            ServUacpiWaitTaskQueue(index);
+    }
+}
 
 /*##########################################################################
 #
@@ -1178,12 +1245,12 @@ int main(int argc, char **argv)
 
     InitAcpi();
 
-    TaskHandler.Start();
-
     printf("%d processor cores\r\n", TAcpiProcessor::Count());
     printf("%d devices\r\n", TAcpiDevice::Count());
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());
+
+    RdosCreateThread(TaskHandler, "Task Handler", 0, 0x2000);
 
     for (;;)
         WaitForMsg();
