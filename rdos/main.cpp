@@ -45,6 +45,7 @@
 #include "pciseg.h"
 #include "cpu.h"
 #include "thrstat.h"
+#include "section.h"
 
 #define REQ_CREATE_THREAD       1
 #define REQ_TERMINATE_THREAD    2
@@ -105,6 +106,8 @@ extern int WaitForMsg();
 static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
 static struct TTaskQueueEntry *TaskQueueArr;
+
+static TSection TaskSection("Task.Sect");
 static int ThreadSize = 0;
 static int ThreadCount = 0;
 static TThreadState **ThreadArr = 0;
@@ -295,6 +298,49 @@ static void TaskHandler(void *ptr)
             ServUacpiWaitTaskQueue(index);
     }
 }
+
+/*##########################################################################
+#
+#   Name       : Schedule
+#
+#   Purpose....: Scheduler
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void TaskScheduler(void *ptr)
+{
+    int i;
+    TThreadState *state;
+
+    for (;;)
+    {
+        RdosWaitMilli(250);
+
+        TaskSection.Enter();
+
+        for (i = 0; i < ThreadSize; i++)
+        {
+            state = ThreadArr[i];
+            if (state)
+            {
+                if (state->Update())
+                {
+                    if (state->HasNewCore())
+                        printf("Thread %d move to core %d\r\n", state->GetId(), state->GetCore());
+
+                    if (state->HasNewIrq())
+                        printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
+                }
+            }
+        }
+
+        TaskSection.Leave();
+    }
+}
+
 
 /*##########################################################################
 #
@@ -1382,7 +1428,8 @@ int main(int argc, char **argv)
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());
 
-    RdosCreateThread(TaskHandler, "Task Handler", 0, 0x2000);
+    RdosCreatePrioThread(TaskHandler, 10, "Task Handler", 0, 0x2000);
+    RdosCreateThread(TaskScheduler, "Schedule", 0, 0x2000);
 
     for (;;)
         WaitForMsg();

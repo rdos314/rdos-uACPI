@@ -83,9 +83,24 @@ void TThreadState::Init()
 {
     struct TCurrThreadState state;
 
+    FNewCore = false;
+    FNewIrq = false;
+    FUsedTics = 0;
+
+
     if (ServUacpiGetThreadState(FId, &state))
     {
-        printf("Thread: %d, Core: %d, Prio: %d\r\n", FId, state.Core, state.Prio);
+        FCore = state.Core;
+        FPrio = state.Prio;
+        FIrq = state.Irq;
+        FTics = state.Tics;
+    }
+    else
+    {
+        FCore = 0;
+        FPrio = -1;
+        FIrq = 0;
+        FTics = 0;
     }
 }
 
@@ -120,3 +135,129 @@ short int TThreadState::GetId()
 {
     return FId;
 }
+
+/*##########################################################################
+#
+#   Name       : ThreadState::Update
+#
+#   Purpose....: Update
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TThreadState::Update()
+{
+    bool changed = false;
+    struct TCurrThreadState state;
+
+    if (ServUacpiGetThreadState(FId, &state))
+    {
+        if (FCore != state.Core)
+        {
+            FCore = state.Core;
+            FNewCore = true;
+            changed = true;
+        }
+        else
+            FNewCore = false;
+
+        FPrio = state.Prio;
+
+        if (FIrq != state.Irq)
+        {
+            FIrq = state.Irq;
+            FNewIrq = true;
+            changed = true;
+        }
+        else
+            FNewIrq = false;
+
+        FUsedTics = (int)(state.Tics - FTics);       
+        FTics = state.Tics;
+    }
+
+    return changed;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::HasNewCore
+#
+#   Purpose....: Check for new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TThreadState::HasNewCore()
+{
+    return FNewCore;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::HasNewIrq
+#
+#   Purpose....: Check for new IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TThreadState::HasNewIrq()
+{
+    return FNewIrq;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::GetCore
+#
+#   Purpose....: Get core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int TThreadState::GetCore()
+{
+    return FCore;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::GetIrq
+#
+#   Purpose....: Get IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+unsigned char TThreadState::GetIrq()
+{
+    return FIrq;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::GetUsedTics
+#
+#   Purpose....: Get tics since last call to update
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TThreadState::GetUsedTics()
+{
+    return FUsedTics;
+}
+

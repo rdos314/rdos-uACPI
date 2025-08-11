@@ -24,44 +24,28 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# thrstat.h
-# Thread state
+# section.h
+# Critical section class
 #
 ########################################################################*/
 
-#ifndef _THREAD_STAT_H
-#define _THREAD_STAT_H
+#ifndef _SECTION_H
+#define _SECTION_H
 
-class TThreadState
+#include "rdos.h"
+
+class TSection
 {
 public:
-    TThreadState(int pos, short int id);
-    virtual ~TThreadState();
+    TSection(const char *Name);
+    ~TSection();
 
-    int GetPos();
-    short int GetId();
+    void Enter() const;
+    void Leave() const;
 
-    bool Update();
-    bool HasNewCore();
-    bool HasNewIrq();
-    short int GetCore();
-    unsigned char GetIrq();
-    int GetUsedTics();
-
-protected:
-    void Init();
-
-    short int FCore;
-    short int FPrio;
-    unsigned char FIrq;
-    long long FTics;
-    int FUsedTics;
-
-    bool FNewCore;
-    bool FNewIrq;
-
-    int FPos;
-    short int FId;
+private:
+    struct RdosFutex Futex;
+    char FName[33];
 };
 
 #endif
