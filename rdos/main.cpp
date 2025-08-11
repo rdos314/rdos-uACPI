@@ -189,7 +189,6 @@ static void AddThread(short int id)
     {
         if (ThreadArr[i] == 0)
         {
-            printf("Added: %d at %d\r\n", id, i);
             ThreadArr[i] = new TThreadState(i, id);
             found = true;
         }
@@ -199,7 +198,6 @@ static void AddThread(short int id)
     {
         if (ThreadArr[i] == 0)
         {
-            printf("Added: %d at %d\r\n", id, i);
             ThreadArr[i] = new TThreadState(i, id);
             found = true;
         }
@@ -233,7 +231,6 @@ static void RemoveThread(short int id)
         ThreadArr[pos] = 0;
         delete state;
         ThreadCount--;
-        printf("Terminated: %d at %d\r\n", id, pos);
     }
     else
         printf("Terminated: %d, not found\r\n", id);

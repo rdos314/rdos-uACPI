@@ -44,6 +44,11 @@ public:
 protected:
     void Init();
 
+    short int FCore;
+    short int FPrio;
+    unsigned char FIrq;
+    long long FTics;
+
     int FPos;
     short int FId;
 };

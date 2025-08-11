@@ -29,7 +29,9 @@
 #
 ########################################################################*/
 
+#include <stdio.h>
 #include "rdos.h"
+#include "acpi.h"
 #include "thrstat.h"
 
 /*##########################################################################
@@ -79,6 +81,12 @@ TThreadState::~TThreadState()
 ##########################################################################*/
 void TThreadState::Init()
 {
+    struct TCurrThreadState state;
+
+    if (ServUacpiGetThreadState(FId, &state))
+    {
+        printf("Thread: %d, Core: %d, Prio: %d\r\n", FId, state.Core, state.Prio);
+    }
 }
 
 /*##########################################################################
