@@ -53,7 +53,8 @@
 struct TTaskQueueEntry
 {
     short int Op;
-    short int Id;
+    short int Spare;
+    int Handle;
 };
 
 extern "C"
@@ -180,36 +181,16 @@ static void GrowThreadArr()
 #   Returns....: *
 #
 ##########################################################################*/
-static void AddThread(short int id)
+static void AddThread(int index, int id)
 {
-    int i;
-    bool found = false;
-
-    if (ThreadCount == ThreadSize)
+    while (index >= ThreadSize)
         GrowThreadArr();
 
-    for (i = ThreadCount; i < ThreadSize && !found; i++)
-    {
-        if (ThreadArr[i] == 0)
-        {
-            ThreadArr[i] = new TThreadState(i, id);
-            found = true;
-        }
-    }
+    if (ThreadArr[index])
+        printf("Already has entry: %d\r\n", index);
 
-    for (i = 0; i < ThreadCount && !found; i++)
-    {
-        if (ThreadArr[i] == 0)
-        {
-            ThreadArr[i] = new TThreadState(i, id);
-            found = true;
-        }
-    }
-
-    if (found)
-        ThreadCount++;
-    else
-        printf("Not added: %d\r\n", id);
+    ThreadArr[index] = new TThreadState(index, id);
+    ThreadCount++;
 }
 
 /*##########################################################################
@@ -223,20 +204,17 @@ static void AddThread(short int id)
 #   Returns....: *
 #
 ##########################################################################*/
-static void RemoveThread(short int id)
+static void RemoveThread(int index, int id)
 {
-    TThreadState *state = FindThread(id);
-    int pos;
+    TThreadState *state = ThreadArr[index];
 
-    if (state)
-    {
-        pos = state->GetPos();
-        ThreadArr[pos] = 0;
-        delete state;
-        ThreadCount--;
-    }
-    else
-        printf("Terminated: %d, not found\r\n", id);
+    ThreadArr[index] = 0;
+
+    if (state->GetPos() != index)
+        printf("Bad delete index: %d\r\n", index);
+
+    delete state;
+    ThreadCount--;
 }
 
 /*##########################################################################
@@ -252,14 +230,21 @@ static void RemoveThread(short int id)
 ##########################################################################*/
 static void HandleTaskQueue(struct TTaskQueueEntry *entry)
 {
+    int index;
+    int id;
+    
     switch (entry->Op)
     {
         case REQ_CREATE_THREAD:
-            AddThread(entry->Id);
+            index = (entry->Handle >> 16);
+            id = entry->Handle & 0x7FFF;
+            AddThread(index, id);
             break;
 
         case REQ_TERMINATE_THREAD:
-            RemoveThread(entry->Id);
+            index = (entry->Handle >> 16);
+            id = entry->Handle & 0x7FFF;
+            RemoveThread(index, id);
             break;
 
     }
