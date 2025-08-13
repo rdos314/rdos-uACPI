@@ -181,15 +181,17 @@ static void GrowThreadArr()
 #   Returns....: *
 #
 ##########################################################################*/
-static void AddThread(int index, int id)
+static void AddThread(int handle)
 {
+    int index = handle >> 16;
+
     while (index >= ThreadSize)
         GrowThreadArr();
 
     if (ThreadArr[index])
         printf("Already has entry: %d\r\n", index);
 
-    ThreadArr[index] = new TThreadState(index, id);
+    ThreadArr[index] = new TThreadState(handle);
     ThreadCount++;
 }
 
@@ -204,8 +206,9 @@ static void AddThread(int index, int id)
 #   Returns....: *
 #
 ##########################################################################*/
-static void RemoveThread(int index, int id)
+static void RemoveThread(int handle)
 {
+    int index = handle >> 16;
     TThreadState *state = ThreadArr[index];
 
     ThreadArr[index] = 0;
@@ -230,21 +233,14 @@ static void RemoveThread(int index, int id)
 ##########################################################################*/
 static void HandleTaskQueue(struct TTaskQueueEntry *entry)
 {
-    int index;
-    int id;
-    
     switch (entry->Op)
     {
         case REQ_CREATE_THREAD:
-            index = (entry->Handle >> 16);
-            id = entry->Handle & 0x7FFF;
-            AddThread(index, id);
+            AddThread(entry->Handle);
             break;
 
         case REQ_TERMINATE_THREAD:
-            index = (entry->Handle >> 16);
-            id = entry->Handle & 0x7FFF;
-            RemoveThread(index, id);
+            RemoveThread(entry->Handle);
             break;
 
     }
@@ -325,7 +321,6 @@ static void TaskScheduler(void *ptr)
         TaskSection.Leave();
     }
 }
-
 
 /*##########################################################################
 #

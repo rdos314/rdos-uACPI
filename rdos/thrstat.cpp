@@ -45,10 +45,9 @@
 #   Returns....: *
 #
 ##########################################################################*/
-TThreadState::TThreadState(int pos, short int id)
+TThreadState::TThreadState(int handle)
 {
-    FPos = pos;
-    FId = id;
+    FHandle = handle;
 
     Init();
 }
@@ -66,6 +65,7 @@ TThreadState::TThreadState(int pos, short int id)
 ##########################################################################*/
 TThreadState::~TThreadState()
 {
+    printf("Deleted %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 }
 
 /*##########################################################################
@@ -83,12 +83,15 @@ void TThreadState::Init()
 {
     struct TCurrThreadState state;
 
+    ServUacpiGetThreadName(FHandle, FName);
+
     FNewCore = false;
     FNewIrq = false;
     FUsedTics = 0;
 
+    printf("Added %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 
-    if (ServUacpiGetThreadState(FId, &state))
+    if (ServUacpiGetThreadState(FHandle, &state))
     {
         FCore = state.Core;
         FPrio = state.Prio;
@@ -117,14 +120,14 @@ void TThreadState::Init()
 ##########################################################################*/
 int TThreadState::GetPos()
 {
-    return FPos;
+    return FHandle >> 16;
 }
 
 /*##########################################################################
 #
 #   Name       : ThreadState::GetId
 #
-#   Purpose....: Get ID
+#   Purpose....: Get Id
 #
 #   In params..: *
 #   Out params.: *
@@ -133,7 +136,23 @@ int TThreadState::GetPos()
 ##########################################################################*/
 short int TThreadState::GetId()
 {
-    return FId;
+    return FHandle & 0x7FFF;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::GetName
+#
+#   Purpose....: Get name
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+const char *TThreadState::GetName()
+{
+    return FName;
 }
 
 /*##########################################################################
@@ -152,7 +171,7 @@ bool TThreadState::Update()
     bool changed = false;
     struct TCurrThreadState state;
 
-    if (ServUacpiGetThreadState(FId, &state))
+    if (ServUacpiGetThreadState(FHandle, &state))
     {
         if (FCore != state.Core)
         {

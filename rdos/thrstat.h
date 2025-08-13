@@ -35,11 +35,12 @@
 class TThreadState
 {
 public:
-    TThreadState(int pos, short int id);
+    TThreadState(int handle);
     virtual ~TThreadState();
 
     int GetPos();
     short int GetId();
+    const char *GetName();
 
     bool Update();
     bool HasNewCore();
@@ -60,8 +61,9 @@ protected:
     bool FNewCore;
     bool FNewIrq;
 
-    int FPos;
-    short int FId;
+    int FHandle;
+
+    char FName[40];
 };
 
 #endif
