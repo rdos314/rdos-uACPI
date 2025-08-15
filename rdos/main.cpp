@@ -49,8 +49,10 @@
 
 #define REQ_CREATE_THREAD       1
 #define REQ_TERMINATE_THREAD    2
-#define REQ_CREATE_PROGRAM      3
-#define REQ_TERMINATE_PROGRAM   4
+#define REQ_CREATE_PROCESS      3
+#define REQ_TERMINATE_PROCESS   4
+#define REQ_CREATE_PROGRAM      5
+#define REQ_TERMINATE_PROGRAM   6
 
 struct TTaskQueueEntry
 {
@@ -224,6 +226,44 @@ static void RemoveThread(int handle)
 
 /*##########################################################################
 #
+#   Name       : AddProcess
+#
+#   Purpose....: Add new process
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void AddProcess(int handle)
+{
+    int index = handle >> 16;
+    int id = handle & 0x7FFF;
+
+    printf("Add Process %d.%d\r\n", id, index);
+}
+
+/*##########################################################################
+#
+#   Name       : RemoveProcess
+#
+#   Purpose....: Remove process
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void RemoveProcess(int handle)
+{
+    int index = handle >> 16;
+    int id = handle & 0x7FFF;
+
+    printf("Remove Process %d.%d\r\n", id, index);
+}
+
+/*##########################################################################
+#
 #   Name       : AddProgram
 #
 #   Purpose....: Add new program
@@ -238,7 +278,7 @@ static void AddProgram(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Add Program %d.%d\r\n", index, id);
+    printf("Add Program %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -257,7 +297,7 @@ static void RemoveProgram(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Remove Program %d.%d\r\n", index, id);
+    printf("Remove Program %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -281,6 +321,14 @@ static void HandleTaskQueue(struct TTaskQueueEntry *entry)
 
         case REQ_TERMINATE_THREAD:
             RemoveThread(entry->Handle);
+            break;
+
+        case REQ_CREATE_PROCESS:
+            AddProcess(entry->Handle);
+            break;
+
+        case REQ_TERMINATE_PROCESS:
+            RemoveProcess(entry->Handle);
             break;
 
         case REQ_CREATE_PROGRAM:
