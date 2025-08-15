@@ -53,6 +53,8 @@
 #define REQ_TERMINATE_PROCESS   4
 #define REQ_CREATE_PROGRAM      5
 #define REQ_TERMINATE_PROGRAM   6
+#define REQ_LOAD_MODULE         7
+#define REQ_UNLOAD_MODULE       8
 
 struct TTaskQueueEntry
 {
@@ -302,6 +304,44 @@ static void RemoveProgram(int handle)
 
 /*##########################################################################
 #
+#   Name       : LoadModule
+#
+#   Purpose....: Load new module
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void LoadModule(int handle)
+{
+    int index = handle >> 16;
+    int id = handle & 0x7FFF;
+
+    printf("Load Module %d.%d\r\n", id, index);
+}
+
+/*##########################################################################
+#
+#   Name       : UnloadModule
+#
+#   Purpose....: Unload module
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void UnloadModule(int handle)
+{
+    int index = handle >> 16;
+    int id = handle & 0x7FFF;
+
+    printf("Unload Module %d.%d\r\n", id, index);
+}
+
+/*##########################################################################
+#
 #   Name       : HandleTaskQueue
 #
 #   Purpose....: Handle task queue entry
@@ -337,6 +377,14 @@ static void HandleTaskQueue(struct TTaskQueueEntry *entry)
 
         case REQ_TERMINATE_PROGRAM:
             RemoveProgram(entry->Handle);
+            break;
+
+        case REQ_LOAD_MODULE:
+            LoadModule(entry->Handle);
+            break;
+
+        case REQ_UNLOAD_MODULE:
+            UnloadModule(entry->Handle);
             break;
     }
 }
