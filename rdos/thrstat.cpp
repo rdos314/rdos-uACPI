@@ -33,6 +33,7 @@
 #include "rdos.h"
 #include "acpi.h"
 #include "thrstat.h"
+#include "irqstat.h"
 
 /*##########################################################################
 #
@@ -45,9 +46,10 @@
 #   Returns....: *
 #
 ##########################################################################*/
-TThreadState::TThreadState(int handle)
+TThreadState::TThreadState(int handle, TIrqState **irq)
 {
     FHandle = handle;
+    FIrqArr = irq;
 
     Init();
 }
@@ -65,6 +67,12 @@ TThreadState::TThreadState(int handle)
 ##########################################################################*/
 TThreadState::~TThreadState()
 {
+    int i;
+
+    for (i = 0; i < 256; i++)
+        if (FIrqArr[i])
+            FIrqArr[i]->DeleteServer(this);
+
     printf("Deleted %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 }
 
@@ -85,6 +93,7 @@ void TThreadState::Init()
 
     ServUacpiGetThreadName(FHandle, FName);
 
+    FHasIrq = false;
     FNewCore = false;
     FNewIrq = false;
     FUsedTics = 0;
@@ -170,6 +179,12 @@ bool TThreadState::Update()
 {
     bool changed = false;
     struct TCurrThreadState state;
+    int IrqArr[8];
+    int val;
+    int i;
+    int j;
+    int mask;
+    int irq;
 
     if (ServUacpiGetThreadState(FHandle, &state))
     {
@@ -195,6 +210,32 @@ bool TThreadState::Update()
 
         FUsedTics = (int)(state.Tics - FTics);       
         FTics = state.Tics;
+
+        if (state.Flags & STATE_FLAG_IRQ)
+        {
+            ServUacpiGetThreadIrqArr(FHandle, IrqArr);
+            for (i = 0; i < 8; i++)
+            {
+                val = IrqArr[i];
+                if (val)
+                {
+                    mask = 1;
+                    for (j = 0; j < 32; j++)
+                    {
+                        if (val & mask)
+                        {
+                            irq = 32 * i + j;
+
+                            if (!FIrqArr[irq])
+                                FIrqArr[irq] = new TIrqState(irq);
+
+                            FIrqArr[irq]->AddServer(this);
+                        }
+                        mask = mask << 1;
+                    }
+                }
+            }
+        }
     }
 
     return changed;

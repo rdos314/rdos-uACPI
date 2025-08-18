@@ -24,50 +24,37 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# thrstat.h
-# Thread state
+# irqstat.h
+# IRQ state
 #
 ########################################################################*/
 
-#ifndef _THREAD_STAT_H
-#define _THREAD_STAT_H
+#ifndef _IRQ_STAT_H
+#define _IRQ_STAT_H
 
-class TIrqState;
+#define MAX_IRQ_SERVERS   4
 
-class TThreadState
+class TThreadState;
+
+class TIrqState
 {
 public:
-    TThreadState(int handle, TIrqState **irq);
-    virtual ~TThreadState();
+    TIrqState(int irq);
+    virtual ~TIrqState();
 
-    int GetPos();
-    short int GetId();
-    const char *GetName();
+    int GetCore();
+    int GetIrq();
+    int GetServers();
+    TThreadState *GetServer();
 
-    bool Update();
-    bool HasNewCore();
-    bool HasNewIrq();
-    short int GetCore();
-    unsigned char GetIrq();
-    int GetUsedTics();
+    void AddServer(TThreadState *thread);
+    void DeleteServer(TThreadState *thread);
 
 protected:
-    void Init();
-
-    short int FCore;
-    short int FPrio;
-    unsigned char FIrq;
-    long long FTics;
-    int FUsedTics;
-
-    bool FHasIrq;
-    bool FNewCore;
-    bool FNewIrq;
-
-    int FHandle;
-    TIrqState **FIrqArr;
-
-    char FName[40];
+    int FIrq;
+    int FCore;    
+    int FServerCount;
+    TThreadState *FServerArr[MAX_IRQ_SERVERS];     
 };
 
 #endif

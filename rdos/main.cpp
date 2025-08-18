@@ -45,6 +45,7 @@
 #include "pciseg.h"
 #include "cpu.h"
 #include "thrstat.h"
+#include "irqstat.h"
 #include "section.h"
 
 #define REQ_CREATE_THREAD       1
@@ -118,6 +119,7 @@ static TSection TaskSection("Task.Sect");
 static int ThreadSize = 0;
 static int ThreadCount = 0;
 static TThreadState **ThreadArr = 0;
+static TIrqState **IrqArr = 0;
 
 /*##########################################################################
 #
@@ -174,6 +176,14 @@ static void GrowThreadArr()
 
     ThreadArr = NewArr;
     ThreadSize = Size;
+
+    if (!IrqArr)
+    {
+        IrqArr = new TIrqState*[256];
+
+        for (i = 0; i < 256; i++)
+            IrqArr[i] = 0;
+    }
 }
 
 /*##########################################################################
@@ -197,7 +207,7 @@ static void AddThread(int handle)
     if (ThreadArr[index])
         printf("Already has entry: %d\r\n", index);
 
-    ThreadArr[index] = new TThreadState(handle);
+    ThreadArr[index] = new TThreadState(handle, IrqArr);
     ThreadCount++;
 }
 
@@ -242,7 +252,7 @@ static void AddProcess(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Add Process %d.%d\r\n", id, index);
+//    printf("Add Process %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -261,7 +271,7 @@ static void RemoveProcess(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Remove Process %d.%d\r\n", id, index);
+//    printf("Remove Process %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -280,7 +290,7 @@ static void AddProgram(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Add Program %d.%d\r\n", id, index);
+//    printf("Add Program %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -299,7 +309,7 @@ static void RemoveProgram(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Remove Program %d.%d\r\n", id, index);
+//    printf("Remove Program %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -318,7 +328,7 @@ static void LoadModule(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Load Module %d.%d\r\n", id, index);
+//    printf("Load Module %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
@@ -337,7 +347,7 @@ static void UnloadModule(int handle)
     int index = handle >> 16;
     int id = handle & 0x7FFF;
 
-    printf("Unload Module %d.%d\r\n", id, index);
+//    printf("Unload Module %d.%d\r\n", id, index);
 }
 
 /*##########################################################################
