@@ -31,10 +31,6 @@
 
 #include "cpu.h"
 
-int TAcpiProcessor::FProcessorCount = 0;
-int TAcpiProcessor::FProcessorSize = 0;
-TAcpiProcessor **TAcpiProcessor::FProcessorArr = 0;
-
 /*##########################################################################
 #
 #   Name       : TAcpiProcessor::TAcpiProcessor
@@ -49,7 +45,6 @@ TAcpiProcessor **TAcpiProcessor::FProcessorArr = 0;
 TAcpiProcessor::TAcpiProcessor(TAcpiObject *parent)
   : TAcpiObject(parent)
 {
-    Add(this);
 }
 
 /*##########################################################################
@@ -85,76 +80,47 @@ bool TAcpiProcessor::IsProcessor()
 
 /*##########################################################################
 #
-#   Name       : TAcpiProcessor::Count
+#   Name       : TCore::TCore
 #
-#   Purpose....: Get processor count
+#   Purpose....: Constructor for TCore
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-int TAcpiProcessor::Count()
+TCore::TCore()
 {
-    return FProcessorCount;
+    FProc = 0;
 }
 
 /*##########################################################################
 #
-#   Name       : TAcpiProcessor::Get
+#   Name       : TCore::TCore
 #
-#   Purpose....: Get processor #
+#   Purpose....: Constructor for TCore
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiProcessor *TAcpiProcessor::Get(int index)
+TCore::TCore(TAcpiProcessor *proc)
 {
-    if (index >= 0 && index < FProcessorCount)
-        return FProcessorArr[index];
-    else
-        return 0;
+    FProc = proc;
 }
 
 /*##########################################################################
 #
-#   Name       : TAcpiProcessor::Add
+#   Name       : TCore::~TCore
 #
-#   Purpose....: Add processor
+#   Purpose....: Destructor for TCore
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-void TAcpiProcessor::Add(TAcpiProcessor *proc)
+TCore::~TCore()
 {
-    TAcpiProcessor **arr;
-    int size;
-    int i;
-
-    if (FProcessorSize == FProcessorCount)
-    {
-        if (FProcessorSize)
-        {
-            size = 2 * FProcessorSize;
-            arr = new TAcpiProcessor *[size];
-
-            for (i = 0; i < FProcessorSize; i++)
-                arr[i] = FProcessorArr[i];
-
-            delete FProcessorArr;
-            FProcessorArr = arr;
-            FProcessorSize = size;
-        }
-        else
-        {
-            FProcessorSize = 4;
-            FProcessorArr = new TAcpiProcessor *[FProcessorSize];
-        }
-    }
-    FProcessorArr[FProcessorCount] = proc;
-    FProcessorCount++;
 }

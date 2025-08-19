@@ -69,7 +69,7 @@ TThreadState::~TThreadState()
 {
     FScheduler->DeleteServer(this);
 
-    printf("Deleted %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
+//    printf("Deleted %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 }
 
 /*##########################################################################
@@ -94,7 +94,7 @@ void TThreadState::Init()
     FNewIrq = false;
     FUsedTics = 0;
 
-    printf("Added %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
+//    printf("Added %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 
     if (ServUacpiGetThreadState(FHandle, &state))
     {

@@ -34,6 +34,7 @@
 
 #include "thrstat.h"
 #include "irq.h"
+#include "cpu.h"
 
 class TScheduler
 {
@@ -42,6 +43,8 @@ friend class TIrq;
 public:
     TScheduler();
     virtual ~TScheduler();
+
+    void AddCore(TAcpiProcessor *proc);
 
     TThreadState *FindThread(short int id);
     TThreadState *AddThread(int handle);
@@ -55,6 +58,10 @@ protected:
 
     void AddServer(int irq, TThreadState *thread);
     void DeleteServer(TThreadState *thread);
+
+    int FCoreSize;
+    int FCoreCount;
+    TCore **FCoreArr;
 
     TIrq *FIrqArr[256];
 

@@ -116,7 +116,6 @@ static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
 static struct TTaskQueueEntry *TaskQueueArr;
 
-static TSection TaskSection("Task.Sect");
 static TScheduler Scheduler;
 
 /*##########################################################################
@@ -526,6 +525,27 @@ bool IsPciRoot(uacpi_id_string *hid)
 
 /*##########################################################################
 #
+#   Name       : IsProcessor
+#
+#   Purpose....: Check if device is a processor
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool IsProcessor(uacpi_id_string *hid)
+{
+    if (hid->size)
+    {
+        if (!strcmp(hid->value, "ACPI0007"))
+            return true;
+    }
+    return false;
+}
+
+/*##########################################################################
+#
 #   Name       : ProcessEcam
 #
 #   Purpose....: Process ecam
@@ -648,12 +668,21 @@ TAcpiDevice *FindPciDevice(TAcpiObject *parent, uacpi_namespace_node *node, uacp
 #   Returns....: *
 #
 ##########################################################################*/
-TAcpiProcessor *AddProcessor(TAcpiObject *parent, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
+void AddProcessor(TAcpiProcessor *proc, uacpi_namespace_node *node, uacpi_namespace_node_info *info)
 {
-    TAcpiProcessor *proc = new TAcpiProcessor(parent);
+    uacpi_id_string *uid;
+    uacpi_status ret;
 
     proc->Setup(node, info);
-    return proc;
+
+    ret = uacpi_eval_uid(node, &uid);
+    if (ret == UACPI_STATUS_OK)
+    {
+        printf("CPU UID <%s>\r\n", uid);
+        uacpi_free_id_string(uid);
+    }
+
+    Scheduler.AddCore(proc);
 }
 
 /*##########################################################################
@@ -672,8 +701,8 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
     uacpi_namespace_node_info *info;
     uacpi_status ret;
     TAcpiObject *obj;
-    TAcpiDevice *dev;
-    TAcpiProcessor *proc;
+    TAcpiDevice *dev = 0;
+    TAcpiProcessor *proc = 0;
     char name[5];
 
     ret = uacpi_get_namespace_node_info(node, &info);
@@ -692,6 +721,11 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
             obj = ObjArr[node_depth - 1];
             if (IsPciRoot(&info->hid))
                 dev = AddPciRoot(obj, node, info);
+            else if (IsProcessor(&info->hid))
+            {
+                proc = new TAcpiProcessor(ObjArr[node_depth - 1]);
+                AddProcessor(proc, node, info);
+            }
             else if (obj)
             {
                 if (obj->IsPciFunction())
@@ -708,12 +742,15 @@ uacpi_iteration_decision AddObj(void *ctx, uacpi_namespace_node *node, uacpi_u32
             if (!dev)
                 uacpi_free_namespace_node_info(info);
 
-            ObjArr[node_depth] = dev;
+            if (proc)
+                ObjArr[node_depth] = proc;
+            else
+                ObjArr[node_depth] = dev;
             break;
 
         case UACPI_OBJECT_PROCESSOR:
             proc = new TAcpiProcessor(ObjArr[node_depth - 1]);
-            proc->Setup(node, info);
+            AddProcessor(proc, node, info);
             ObjArr[node_depth] = proc;
             break;
 
@@ -1429,7 +1466,6 @@ int main(int argc, char **argv)
 
     InitAcpi();
 
-    printf("%d processor cores\r\n", TAcpiProcessor::Count());
     printf("%d devices\r\n", TAcpiDevice::Count());
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());

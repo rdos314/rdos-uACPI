@@ -42,16 +42,17 @@ public:
 
     virtual bool IsProcessor();
 
-    static int Count();
-    static TAcpiProcessor *Get(int index);
+};
+
+class TCore
+{
+public:
+    TCore();
+    TCore(TAcpiProcessor *proc);
+    ~TCore();
 
 protected:
-    static void Add(TAcpiProcessor *proc);
-
-    static int FProcessorCount;
-    static int FProcessorSize;
-    static TAcpiProcessor **FProcessorArr;
-
+    TAcpiProcessor *FProc;
 };
 
 #endif

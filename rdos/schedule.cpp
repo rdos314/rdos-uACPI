@@ -33,6 +33,7 @@
 #include "rdos.h"
 #include "acpi.h"
 #include "schedule.h"
+#include "cpu.h"
 
 /*##########################################################################
 #
@@ -64,6 +65,13 @@ static void ThreadStartup(void *ptr)
 TScheduler::TScheduler()
 {
     int i;
+
+    FCoreCount = 0;
+    FCoreSize = ServUacpiGetCoreCount();
+    FCoreArr = new TCore*[FCoreCount];
+
+    for (i = 0; i < FCoreSize; i++)
+        FCoreArr[i] = 0;
 
     for (i = 0; i < 256; i++)
         FIrqArr[i] = 0;
@@ -107,6 +115,27 @@ TScheduler::~TScheduler()
 void TScheduler::Start()
 {
     RdosCreatePrioThread(ThreadStartup, 10, "Scheduler", this, 0x4000);
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::AddCore
+#
+#   Purpose....: Add core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::AddCore(TAcpiProcessor *proc)
+{
+    if (FCoreSize > FCoreCount)
+    {
+        printf("Added core %d\r\n", FCoreCount);
+        FCoreArr[FCoreCount] = new TCore(proc);
+        FCoreCount++;
+    }
 }
 
 /*##########################################################################
