@@ -24,8 +24,8 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# irqstat.cpp
-# IRQ state class
+# irq.cpp
+# IRQ class
 #
 ########################################################################*/
 
@@ -33,60 +33,44 @@
 #include "rdos.h"
 #include "acpi.h"
 #include "thrstat.h"
-#include "irqstat.h"
+#include "irq.h"
 
 /*##########################################################################
 #
-#   Name       : TIrqState::TIrqState
+#   Name       : TIrq::TIrq
 #
-#   Purpose....: Constructor for IRQ state
+#   Purpose....: Constructor for IRQ
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TIrqState::TIrqState(int irq)
+TIrq::TIrq()
 {
     FCore = 0;
-    FIrq = irq;
     FServerCount = 0;
+    FDisabled = false;
 }
 
 /*##########################################################################
 #
-#   Name       : TIrqState::~TIrqState
+#   Name       : TIrq::~TIrq
 #
-#   Purpose....: Destructor for IRQ state
+#   Purpose....: Destructor for IRQ
 #
 #   In params..: *
 #   Out params.: *
 #   Returns....: *
 #
 ##########################################################################*/
-TIrqState::~TIrqState()
+TIrq::~TIrq()
 {
 }
 
 /*##########################################################################
 #
-#   Name       : TIrqState::GetIrq
-#
-#   Purpose....: Get IRQ
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-int TIrqState::GetIrq()
-{
-    return FIrq;
-}
-
-/*##########################################################################
-#
-#   Name       : TIrqState::GetCore
+#   Name       : TIrq::GetCore
 #
 #   Purpose....: Get core
 #
@@ -95,14 +79,14 @@ int TIrqState::GetIrq()
 #   Returns....: *
 #
 ##########################################################################*/
-int TIrqState::GetCore()
+int TIrq::GetCore()
 {
     return FCore;
 }
 
 /*##########################################################################
 #
-#   Name       : TIrqState::GetServers
+#   Name       : TIrq::GetServers
 #
 #   Purpose....: Get servers
 #
@@ -111,14 +95,17 @@ int TIrqState::GetCore()
 #   Returns....: *
 #
 ##########################################################################*/
-int TIrqState::GetServers()
+int TIrq::GetServers()
 {
-    return FServerCount;
+    if (FDisabled)
+        return -1;
+    else
+        return FServerCount;
 }
 
 /*##########################################################################
 #
-#   Name       : TIrqState::GetServer
+#   Name       : TIrq::GetServer
 #
 #   Purpose....: Get server
 #
@@ -127,9 +114,9 @@ int TIrqState::GetServers()
 #   Returns....: *
 #
 ##########################################################################*/
-TThreadState *TIrqState::GetServer()
+TThreadState *TIrq::GetServer()
 {
-    if (FServerCount == 1)
+    if (!FDisabled && FServerCount == 1)
         return FServerArr[0];
     else
         return 0;
@@ -137,7 +124,7 @@ TThreadState *TIrqState::GetServer()
 
 /*##########################################################################
 #
-#   Name       : TIrqState::AddServer
+#   Name       : TIrq::AddServer
 #
 #   Purpose....: Add server
 #
@@ -146,27 +133,35 @@ TThreadState *TIrqState::GetServer()
 #   Returns....: *
 #
 ##########################################################################*/
-void TIrqState::AddServer(TThreadState *thread)
+bool TIrq::AddServer(TThreadState *thread)
 {
     int i;
     bool found = false;
 
-    for (i = 0; i < FServerCount && !found; i++)
-        if (FServerArr[i] == thread)
-            found = true;
-
-    if (!found && FServerCount < 4)
+    if (!FDisabled)
     {
-        printf("Added server %d <%s> for IRQ %d\r\n", thread->GetId(), thread->GetName(), FIrq);
+        for (i = 0; i < FServerCount && !found; i++)
+            if (FServerArr[i] == thread)
+                found = true;
 
-        FServerArr[FServerCount] = thread;
-        FServerCount++;
+        if (!found && FServerCount < 4)
+        {
+            if (FServerCount > 1)
+                FDisabled = true;
+            else
+            {
+                FServerArr[FServerCount] = thread;
+                FServerCount++;
+            }
+            return true;
+        }
     }
+    return false;
 }
 
 /*##########################################################################
 #
-#   Name       : TIrqState::DeleteServer
+#   Name       : TIrq::DeleteServer
 #
 #   Purpose....: Delete server
 #
@@ -175,11 +170,12 @@ void TIrqState::AddServer(TThreadState *thread)
 #   Returns....: *
 #
 ##########################################################################*/
-void TIrqState::DeleteServer(TThreadState *thread)
+bool TIrq::DeleteServer(TThreadState *thread)
 {
     if (FServerCount == 1 && FServerArr[0] == thread)
     {
-        printf("Deleted server %d <%s> for IRQ %d\r\n", thread->GetId(), thread->GetName(), FIrq);
         FServerCount = 0;
+        return true;
     }
+    return false;
 }

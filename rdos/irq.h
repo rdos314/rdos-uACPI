@@ -24,34 +24,33 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# irqstat.h
-# IRQ state
+# irq.h
+# IRQ class
 #
 ########################################################################*/
 
-#ifndef _IRQ_STAT_H
-#define _IRQ_STAT_H
+#ifndef _IRQ_H
+#define _IRQ_H
 
 #define MAX_IRQ_SERVERS   4
 
 class TThreadState;
 
-class TIrqState
+class TIrq
 {
 public:
-    TIrqState(int irq);
-    virtual ~TIrqState();
+    TIrq();
+    virtual ~TIrq();
 
     int GetCore();
-    int GetIrq();
     int GetServers();
     TThreadState *GetServer();
 
-    void AddServer(TThreadState *thread);
-    void DeleteServer(TThreadState *thread);
+    bool AddServer(TThreadState *thread);
+    bool DeleteServer(TThreadState *thread);
 
 protected:
-    int FIrq;
+    bool FDisabled;
     int FCore;    
     int FServerCount;
     TThreadState *FServerArr[MAX_IRQ_SERVERS];     

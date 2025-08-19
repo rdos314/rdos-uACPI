@@ -24,50 +24,28 @@
 #
 # The author of this program may be contacted at leif@rdos.net
 #
-# thrstat.h
-# Thread state
+# schedule.h
+# Scheduler class
 #
 ########################################################################*/
 
-#ifndef _THREAD_STAT_H
-#define _THREAD_STAT_H
+#ifndef _SCHED_H
+#define _SCHED_H
 
-class TScheduler;
+#include "thrstat.h"
+#include "irq.h"
 
-class TThreadState
+class TScheduler
 {
 public:
-    TThreadState(int handle, TScheduler *scheduler);
-    virtual ~TThreadState();
+    TScheduler();
+    virtual ~TScheduler();
 
-    int GetPos();
-    short int GetId();
-    const char *GetName();
-
-    bool Update();
-    bool HasNewCore();
-    bool HasNewIrq();
-    short int GetCore();
-    unsigned char GetIrq();
-    int GetUsedTics();
+    void AddServer(int irq, TThreadState *thread);
+    void DeleteServer(TThreadState *thread);
 
 protected:
-    void Init();
-
-    short int FCore;
-    short int FPrio;
-    unsigned char FIrq;
-    long long FTics;
-    int FUsedTics;
-
-    bool FHasIrq;
-    bool FNewCore;
-    bool FNewIrq;
-
-    int FHandle;
-    TScheduler *FScheduler;
-
-    char FName[40];
+    TIrq *FIrqArr[256];
 };
 
 #endif

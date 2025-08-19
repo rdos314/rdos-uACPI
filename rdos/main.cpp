@@ -45,7 +45,8 @@
 #include "pciseg.h"
 #include "cpu.h"
 #include "thrstat.h"
-#include "irqstat.h"
+#include "irq.h"
+#include "schedule.h"
 #include "section.h"
 
 #define REQ_CREATE_THREAD       1
@@ -119,7 +120,7 @@ static TSection TaskSection("Task.Sect");
 static int ThreadSize = 0;
 static int ThreadCount = 0;
 static TThreadState **ThreadArr = 0;
-static TIrqState **IrqArr = 0;
+static TScheduler Scheduler;
 
 /*##########################################################################
 #
@@ -176,14 +177,6 @@ static void GrowThreadArr()
 
     ThreadArr = NewArr;
     ThreadSize = Size;
-
-    if (!IrqArr)
-    {
-        IrqArr = new TIrqState*[256];
-
-        for (i = 0; i < 256; i++)
-            IrqArr[i] = 0;
-    }
 }
 
 /*##########################################################################
@@ -207,7 +200,7 @@ static void AddThread(int handle)
     if (ThreadArr[index])
         printf("Already has entry: %d\r\n", index);
 
-    ThreadArr[index] = new TThreadState(handle, IrqArr);
+    ThreadArr[index] = new TThreadState(handle, &Scheduler);
     ThreadCount++;
 }
 

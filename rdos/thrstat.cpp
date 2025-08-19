@@ -33,7 +33,7 @@
 #include "rdos.h"
 #include "acpi.h"
 #include "thrstat.h"
-#include "irqstat.h"
+#include "schedule.h"
 
 /*##########################################################################
 #
@@ -46,10 +46,10 @@
 #   Returns....: *
 #
 ##########################################################################*/
-TThreadState::TThreadState(int handle, TIrqState **irq)
+TThreadState::TThreadState(int handle, TScheduler *scheduler)
 {
     FHandle = handle;
-    FIrqArr = irq;
+    FScheduler = scheduler;
 
     Init();
 }
@@ -67,11 +67,7 @@ TThreadState::TThreadState(int handle, TIrqState **irq)
 ##########################################################################*/
 TThreadState::~TThreadState()
 {
-    int i;
-
-    for (i = 0; i < 256; i++)
-        if (FIrqArr[i])
-            FIrqArr[i]->DeleteServer(this);
+    FScheduler->DeleteServer(this);
 
     printf("Deleted %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 }
@@ -225,11 +221,7 @@ bool TThreadState::Update()
                         if (val & mask)
                         {
                             irq = 32 * i + j;
-
-                            if (!FIrqArr[irq])
-                                FIrqArr[irq] = new TIrqState(irq);
-
-                            FIrqArr[irq]->AddServer(this);
+                            FScheduler->AddServer(irq, this);
                         }
                         mask = mask << 1;
                     }
