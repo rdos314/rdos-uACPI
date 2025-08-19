@@ -37,15 +37,30 @@
 
 class TScheduler
 {
+friend class TThreadState;
+friend class TIrq;
 public:
     TScheduler();
     virtual ~TScheduler();
 
+    TThreadState *FindThread(short int id);
+    TThreadState *AddThread(int handle);
+    void RemoveThread(int handle);
+
+    void Start();
+    void Execute();
+
+protected:
+    void GrowThreadArr();
+
     void AddServer(int irq, TThreadState *thread);
     void DeleteServer(TThreadState *thread);
 
-protected:
     TIrq *FIrqArr[256];
+
+    int FThreadSize;
+    int FThreadCount;
+    TThreadState **FThreadArr;
 };
 
 #endif

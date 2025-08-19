@@ -36,6 +36,22 @@
 
 /*##########################################################################
 #
+#   Name       : ThreadStartup
+#
+#   Purpose....: Startup procedure for thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+static void ThreadStartup(void *ptr)
+{
+    ((TScheduler *)ptr)->Execute();
+}
+
+/*##########################################################################
+#
 #   Name       : TScheduler::TScheduler
 #
 #   Purpose....: Constructor for scheduler
@@ -51,6 +67,10 @@ TScheduler::TScheduler()
 
     for (i = 0; i < 256; i++)
         FIrqArr[i] = 0;
+
+    FThreadCount = 0;
+    FThreadSize = 0;
+    FThreadArr = 0;
 }
 
 /*##########################################################################
@@ -71,6 +91,131 @@ TScheduler::~TScheduler()
     for (i = 0; i < 256; i++)
         if (FIrqArr[i])
             delete FIrqArr[i];
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::Start
+#
+#   Purpose....: Start scheduler
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::Start()
+{
+    RdosCreatePrioThread(ThreadStartup, 10, "Scheduler", this, 0x4000);
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::GrowThreadArr
+#
+#   Purpose....: Grow thread array
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::GrowThreadArr()
+{
+    int i;
+    int Size = 2 * (FThreadSize + 1);
+    TThreadState **NewArr;
+
+    NewArr = new TThreadState*[Size];
+
+    for (i = 0; i < FThreadSize; i++)
+        NewArr[i] = FThreadArr[i];
+
+    for (i = FThreadSize; i < Size; i++)
+        NewArr[i] = 0;
+
+    if (FThreadArr)
+        delete FThreadArr;
+
+    FThreadArr = NewArr;
+    FThreadSize = Size;
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::FindThread
+#
+#   Purpose....: Find thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TThreadState *TScheduler::FindThread(short int id)
+{
+    int i;
+    TThreadState *state;    
+
+    for (i = 0; i < FThreadSize; i++)
+    {
+        state = FThreadArr[i];
+        if (state && state->GetId() == id)
+            return state;
+    }
+    return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::AddThread
+#
+#   Purpose....: Add new thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TThreadState *TScheduler::AddThread(int handle)
+{
+    int index = handle >> 16;
+
+    while (index >= FThreadSize)
+        GrowThreadArr();
+
+    if (FThreadArr[index])
+        printf("Already has entry: %d\r\n", index);
+
+    FThreadArr[index] = new TThreadState(handle, this);
+    FThreadCount++;
+
+    return FThreadArr[index];
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::RemoveThread
+#
+#   Purpose....: Remove thread
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::RemoveThread(int handle)
+{
+    int index = handle >> 16;
+    TThreadState *state = FThreadArr[index];
+
+    FThreadArr[index] = 0;
+
+    if (state->GetPos() != index)
+        printf("Bad delete index: %d\r\n", index);
+
+    delete state;
+    FThreadCount--;
 }
 
 /*##########################################################################
@@ -116,4 +261,46 @@ void TScheduler::DeleteServer(TThreadState *thread)
     for (i = 0; i < 256; i++)
         if (FIrqArr[i])
             changed |= FIrqArr[i]->DeleteServer(thread);
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::Execute
+#
+#   Purpose....: Execute
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::Execute()
+{
+    int i;
+    TThreadState *state;
+
+    for (;;)
+    {
+        RdosWaitMilli(250);
+
+//        TaskSection.Enter();
+
+        for (i = 0; i < FThreadSize; i++)
+        {
+            state = FThreadArr[i];
+            if (state)
+            {
+                if (state->Update())
+                {
+                    if (state->HasNewCore())
+                        printf("Thread %d move to core %d\r\n", state->GetId(), state->GetCore());
+
+                    if (state->HasNewIrq())
+                        printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
+                }
+            }
+        }
+
+//        TaskSection.Leave();
+    }
 }

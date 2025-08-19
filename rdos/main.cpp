@@ -117,67 +117,7 @@ static TPciSegment *PciSegArr[256] = {0};
 static struct TTaskQueueEntry *TaskQueueArr;
 
 static TSection TaskSection("Task.Sect");
-static int ThreadSize = 0;
-static int ThreadCount = 0;
-static TThreadState **ThreadArr = 0;
 static TScheduler Scheduler;
-
-/*##########################################################################
-#
-#   Name       : FindThread
-#
-#   Purpose....: Find thread
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-static TThreadState *FindThread(short int id)
-{
-    int i;
-    TThreadState *state;    
-
-    for (i = 0; i < ThreadSize; i++)
-    {
-        state = ThreadArr[i];
-        if (state && state->GetId() == id)
-            return state;
-    }
-    return 0;
-}
-
-/*##########################################################################
-#
-#   Name       : GrowThreadArr
-#
-#   Purpose....: Grow thread array
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-static void GrowThreadArr()
-{
-    int i;
-    int Size = 2 * (ThreadSize + 1);
-    TThreadState **NewArr;
-
-    NewArr = new TThreadState*[Size];
-
-    for (i = 0; i < ThreadSize; i++)
-        NewArr[i] = ThreadArr[i];
-
-    for (i = ThreadSize; i < Size; i++)
-        NewArr[i] = 0;
-
-    if (ThreadArr)
-        delete ThreadArr;
-
-    ThreadArr = NewArr;
-    ThreadSize = Size;
-}
 
 /*##########################################################################
 #
@@ -192,16 +132,7 @@ static void GrowThreadArr()
 ##########################################################################*/
 static void AddThread(int handle)
 {
-    int index = handle >> 16;
-
-    while (index >= ThreadSize)
-        GrowThreadArr();
-
-    if (ThreadArr[index])
-        printf("Already has entry: %d\r\n", index);
-
-    ThreadArr[index] = new TThreadState(handle, &Scheduler);
-    ThreadCount++;
+    Scheduler.AddThread(handle);
 }
 
 /*##########################################################################
@@ -217,16 +148,7 @@ static void AddThread(int handle)
 ##########################################################################*/
 static void RemoveThread(int handle)
 {
-    int index = handle >> 16;
-    TThreadState *state = ThreadArr[index];
-
-    ThreadArr[index] = 0;
-
-    if (state->GetPos() != index)
-        printf("Bad delete index: %d\r\n", index);
-
-    delete state;
-    ThreadCount--;
+    Scheduler.RemoveThread(handle);
 }
 
 /*##########################################################################
@@ -423,48 +345,6 @@ static void TaskHandler(void *ptr)
         }
         else
             ServUacpiWaitTaskQueue(index);
-    }
-}
-
-/*##########################################################################
-#
-#   Name       : Schedule
-#
-#   Purpose....: Scheduler
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-static void TaskScheduler(void *ptr)
-{
-    int i;
-    TThreadState *state;
-
-    for (;;)
-    {
-        RdosWaitMilli(250);
-
-        TaskSection.Enter();
-
-        for (i = 0; i < ThreadSize; i++)
-        {
-            state = ThreadArr[i];
-            if (state)
-            {
-                if (state->Update())
-                {
-                    if (state->HasNewCore())
-                        printf("Thread %d move to core %d\r\n", state->GetId(), state->GetCore());
-
-                    if (state->HasNewIrq())
-                        printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
-                }
-            }
-        }
-
-        TaskSection.Leave();
     }
 }
 
@@ -1554,8 +1434,8 @@ int main(int argc, char **argv)
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());
 
+    Scheduler.Start();
     RdosCreatePrioThread(TaskHandler, 10, "Task Handler", 0, 0x2000);
-    RdosCreateThread(TaskScheduler, "Schedule", 0, 0x2000);
 
     for (;;)
         WaitForMsg();
