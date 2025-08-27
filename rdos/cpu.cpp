@@ -141,6 +141,8 @@ TCore::~TCore()
 ##########################################################################*/
 void TCore::Init()
 {
+    FStarted = false;
+
     FNullThread = 0;
     FThreadSize = 0;
     FThreadCount = 0;
@@ -204,6 +206,8 @@ void TCore::AddThread(TThreadState *thread)
 
     if (thread->GetPrio())
     {
+        FStarted = true;
+
         if (FThreadCount == FThreadSize)
             GrowThreadArr();
 
@@ -263,6 +267,22 @@ void TCore::RemoveThread(TThreadState *thread)
 
 /*##########################################################################
 #
+#   Name       : TCore::IsStarted
+#
+#   Purpose....: Check if started
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+bool TCore::IsStarted()
+{
+    return FStarted;
+}
+
+/*##########################################################################
+#
 #   Name       : TCore::Update
 #
 #   Purpose....: Update core stats
@@ -272,7 +292,7 @@ void TCore::RemoveThread(TThreadState *thread)
 #   Returns....: *
 #
 ##########################################################################*/
-void TCore::Update()
+bool TCore::Update()
 {
     TThreadState *state;
     int load = 0;
@@ -304,6 +324,65 @@ void TCore::Update()
 
     FLoadTics = load;
     FIdleTics = idle;
+
+    if (load + idle > 1193046 / LOADS_PER_SEC / 2)
+    {
+        FStarted = true;
+        return true;
+    }
+    else
+    {
+        FStarted = false;
+        return false;
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TCore::GetOptThread
+#
+#   Purpose....: Get thread with optimal load to move
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TThreadState *TCore::GetOptThread(double opt_load)
+{
+    int i;
+    TThreadState *state;
+    bool found = false;
+    double load;
+    double diff;
+    double best_diff = opt_load / 2;
+    int best_id;
+
+    for (i = 0; i < FThreadSize; i++)
+    {
+        state = FThreadArr[i];
+
+        if (state)
+        {
+            load = state->GetSecLoad();
+            if (load > opt_load)
+                diff = load - opt_load;
+            else
+                diff = opt_load - load;
+
+            if (diff < best_diff)
+            {
+                found = true;
+                best_diff = diff;
+                best_id = i;
+            }
+        }
+    }
+
+    if (found)
+        return FThreadArr[best_id];
+    else
+        return 0;
 }
 
 /*##########################################################################

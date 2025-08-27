@@ -52,10 +52,13 @@ public:
     TCore(TAcpiProcessor *proc);
     ~TCore();
 
+    bool IsStarted();
+
     void AddThread(TThreadState *thread);
     void RemoveThread(TThreadState *thread);
 
-    void Update();
+    bool Update();
+    TThreadState *GetOptThread(double load);
 
     double GetThreadLoad();
     double GetIdleLoad();
@@ -69,6 +72,8 @@ protected:
     void GrowThreadArr();
 
     TAcpiProcessor *FProc;
+
+    bool FStarted;
 
     TThreadState *FNullThread;
 

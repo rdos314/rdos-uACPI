@@ -54,6 +54,10 @@ public:
     void Execute();
 
 protected:
+    void UpdateThreads();
+    void UpdateCores();
+    void StartCore();
+
     void GrowThreadArr();
 
     void AddServer(int irq, TThreadState *thread);
@@ -61,6 +65,7 @@ protected:
 
     int FCoreSize;
     int FCoreCount;
+    int FActiveCores;
     TCore **FCoreArr;
 
     TIrq *FIrqArr[256];

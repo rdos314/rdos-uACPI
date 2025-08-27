@@ -321,6 +321,146 @@ void TScheduler::DeleteServer(TThreadState *thread)
 
 /*##########################################################################
 #
+#   Name       : TScheduler::StartCore
+#
+#   Purpose....: Start a new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::StartCore()
+{
+    int i;
+    TCore *core;
+
+    for (i = 0; i < FCoreCount; i++)
+    {
+        core = FCoreArr[i];
+        if (core)
+        {
+            if (!core->IsStarted()) 
+            {
+                printf("Core %d, started\r\n", i);
+                ServUacpiStartCore(i);
+                break;
+            }
+        }
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::UpdateThreads
+#
+#   Purpose....: Update threads
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::UpdateThreads()
+{
+    int i;
+    TThreadState *state;
+
+    for (i = 0; i < FThreadSize; i++)
+    {
+        state = FThreadArr[i];
+        if (state)
+        {
+            if (state->Update())
+            {
+                if (state->HasNewCore())
+                    printf("Thread %d move to core %d\r\n", state->GetId(), state->GetCore());
+
+                if (state->HasNewIrq())
+                    printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
+            }
+        }
+    }
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::UpdateCores
+#
+#   Purpose....: Update cores
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::UpdateCores()
+{
+    int i;
+    TCore *core;
+    TThreadState *state;
+    double load;
+    double min_load = 100.0;
+    double max_load = 0.0;
+    double load_sum = 0.0;
+    double opt_load;
+    int max_core;
+    int min_core;
+
+    char str[100];
+
+    FActiveCores = 0;
+
+    for (i = 0; i < FCoreCount; i++)
+    {
+        core = FCoreArr[i];
+        if (core)
+        {
+            if (core->Update())
+            {
+                FActiveCores++;
+                load = core->GetThreadLoad();
+                load_sum += load;
+
+                if (load < min_load)
+                {
+                    min_load = load;
+                    min_core = i;
+                }
+
+                if (load > max_load)
+                {
+                    max_load = load;
+                    max_core = i;
+                }
+            }
+        }
+    }
+
+    if (FActiveCores)
+    {
+        load = load_sum / (double)FActiveCores;
+
+        if (load > 30.0)
+            StartCore();
+        else
+        {
+            opt_load = (max_load - min_load) / 2.0;
+            if (opt_load > 5.0)
+            {
+                core = FCoreArr[max_core];
+                state = core->GetOptThread(opt_load);
+                if (state)
+                    printf("Move thread %s from core %d\r\n", state->GetName(), max_core);                
+            }
+        }
+
+        printf("Active: %d, Load: %3.1Lf%%, Min: %d: %3.1Lf%%, Max: %d: %3.1Lf%%\r\n", FActiveCores, load, min_core, min_load, max_core, max_load);
+    }
+}
+
+/*##########################################################################
+#
 #   Name       : TScheduler::Execute
 #
 #   Purpose....: Execute
@@ -332,17 +472,9 @@ void TScheduler::DeleteServer(TThreadState *thread)
 ##########################################################################*/
 void TScheduler::Execute()
 {
-    int i;
-    TThreadState *state;
-    TCore *core;
     unsigned long msb;
     unsigned long lsb;
     unsigned long prev;
-
-    double load;
-    double idle;
-    double missing;
-    char str[100];
 
     RdosGetSysTime(&msb, &lsb);
 
@@ -358,36 +490,8 @@ void TScheduler::Execute()
 
 //        TaskSection.Enter();
 
-        for (i = 0; i < FThreadSize; i++)
-        {
-            state = FThreadArr[i];
-            if (state)
-            {
-                if (state->Update())
-                {
-                    if (state->HasNewCore())
-                        printf("Thread %d move to core %d\r\n", state->GetId(), state->GetCore());
-
-                    if (state->HasNewIrq())
-                        printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
-                }
-            }
-        }
-
-        for (i = 0; i < FCoreCount; i++)
-        {
-            core = FCoreArr[i];
-            if (core)
-            {
-                core->Update();
-                idle = core->GetIdleLoad();
-                load = core->GetThreadLoad();
-                missing = core->GetIntLoad();
-                if (missing < 50.0)
-                    printf("Core %d load: %3.1Lf%%, idle: %3.1Lf%%, missing: %3.1Lf%%\r\n", i, load, idle, missing);
-            }
-        }
-
+        UpdateThreads();
+        UpdateCores();
 
 
 //        TaskSection.Leave();
