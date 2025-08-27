@@ -276,6 +276,34 @@ void TScheduler::RemoveThread(int handle)
 
 /*##########################################################################
 #
+#   Name       : TScheduler::Moved
+#
+#   Purpose....: Thread is moved
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::Moved(TThreadState *thread, short int to)
+{
+    short int from = thread->GetCore();
+    TCore *core;
+
+    core = FCoreArr[from];
+    if (core)
+        core->RemoveThread(thread);
+
+    core = FCoreArr[to];
+    if (core)
+        core->AddThread(thread);
+
+    printf("Thread %s moved from core %d to core %d\r\n", thread->GetName(), from, to);
+
+}
+
+/*##########################################################################
+#
 #   Name       : TScheduler::AddServer
 #
 #   Purpose....: Add server for IRQ
@@ -373,9 +401,6 @@ void TScheduler::UpdateThreads()
         {
             if (state->Update())
             {
-                if (state->HasNewCore())
-                    printf("Thread %d move to core %d\r\n", state->GetId(), state->GetCore());
-
                 if (state->HasNewIrq())
                     printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
             }
@@ -451,11 +476,14 @@ void TScheduler::UpdateCores()
                 core = FCoreArr[max_core];
                 state = core->GetOptThread(opt_load);
                 if (state)
-                    printf("Move thread %s from core %d\r\n", state->GetName(), max_core);                
+                {
+                    state->MoveToCore(min_core);
+//                    printf("Move thread %s from core %d\r\n", state->GetName(), max_core);                
+                }
             }
         }
 
-        printf("Active: %d, Load: %3.1Lf%%, Min: %d: %3.1Lf%%, Max: %d: %3.1Lf%%\r\n", FActiveCores, load, min_core, min_load, max_core, max_load);
+//        printf("Active: %d, Load: %3.1Lf%%, Min: %d: %3.1Lf%%, Max: %d: %3.1Lf%%\r\n", FActiveCores, load, min_core, min_load, max_core, max_load);
     }
 }
 

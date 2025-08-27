@@ -90,7 +90,6 @@ void TThreadState::Init()
     ServUacpiGetThreadName(FHandle, FName);
 
     FHasIrq = false;
-    FNewCore = false;
     FNewIrq = false;
     FUsedTics = 0;
     FLoadCount = 0;
@@ -164,6 +163,22 @@ const char *TThreadState::GetName()
 
 /*##########################################################################
 #
+#   Name       : ThreadState::MoveToCore
+#
+#   Purpose....: Move to core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TThreadState::MoveToCore(int core)
+{
+    ServUacpiSetThreadCore(FHandle, core);
+}
+
+/*##########################################################################
+#
 #   Name       : ThreadState::Update
 #
 #   Purpose....: Update
@@ -188,12 +203,9 @@ bool TThreadState::Update()
     {
         if (FCore != state.Core)
         {
+            FScheduler->Moved(this, state.Core);
             FCore = state.Core;
-            FNewCore = true;
-            changed = true;
         }
-        else
-            FNewCore = false;
 
         FPrio = state.Prio;
 
@@ -244,22 +256,6 @@ bool TThreadState::Update()
     }
 
     return changed;
-}
-
-/*##########################################################################
-#
-#   Name       : ThreadState::HasNewCore
-#
-#   Purpose....: Check for new core
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-bool TThreadState::HasNewCore()
-{
-    return FNewCore;
 }
 
 /*##########################################################################

@@ -60,6 +60,7 @@ protected:
 
     void GrowThreadArr();
 
+    void Moved(TThreadState *thread, short int core);
     void AddServer(int irq, TThreadState *thread);
     void DeleteServer(TThreadState *thread);
 
