@@ -209,6 +209,9 @@ TThreadState *TScheduler::FindThread(short int id)
 TThreadState *TScheduler::AddThread(int handle)
 {
     int index = handle >> 16;
+    TThreadState *state;
+    short int coreid;
+    TCore *core;
 
     while (index >= FThreadSize)
         GrowThreadArr();
@@ -216,10 +219,23 @@ TThreadState *TScheduler::AddThread(int handle)
     if (FThreadArr[index])
         printf("Already has entry: %d\r\n", index);
 
-    FThreadArr[index] = new TThreadState(handle, this);
+    state = new TThreadState(handle, this);
+
+    FThreadArr[index] = state;
     FThreadCount++;
 
-    return FThreadArr[index];
+    coreid = state->GetCore();
+
+    if (coreid >= 0 && coreid < FCoreCount)
+    {
+        core = FCoreArr[coreid];
+        if (core)
+            core->AddThread(state);
+        else
+            printf("core not found\r\n");
+    }
+
+    return state;
 }
 
 /*##########################################################################
@@ -237,11 +253,22 @@ void TScheduler::RemoveThread(int handle)
 {
     int index = handle >> 16;
     TThreadState *state = FThreadArr[index];
+    short int coreid;
+    TCore *core;
 
     FThreadArr[index] = 0;
 
     if (state->GetPos() != index)
         printf("Bad delete index: %d\r\n", index);
+
+    coreid = state->GetCore();
+
+    if (coreid >= 0 && coreid < FCoreCount)
+    {
+        core = FCoreArr[coreid];
+        if (core)
+            core->RemoveThread(state);
+    }
 
     delete state;
     FThreadCount--;
@@ -307,9 +334,15 @@ void TScheduler::Execute()
 {
     int i;
     TThreadState *state;
+    TCore *core;
     unsigned long msb;
     unsigned long lsb;
     unsigned long prev;
+
+    double load;
+    double idle;
+    double missing;
+    char str[100];
 
     RdosGetSysTime(&msb, &lsb);
 
@@ -340,6 +373,22 @@ void TScheduler::Execute()
                 }
             }
         }
+
+        for (i = 0; i < FCoreCount; i++)
+        {
+            core = FCoreArr[i];
+            if (core)
+            {
+                core->Update();
+                idle = core->GetIdleLoad();
+                load = core->GetThreadLoad();
+                missing = core->GetIntLoad();
+                if (missing < 50.0)
+                    printf("Core %d load: %3.1Lf%%, idle: %3.1Lf%%, missing: %3.1Lf%%\r\n", i, load, idle, missing);
+            }
+        }
+
+
 
 //        TaskSection.Leave();
     }

@@ -33,6 +33,7 @@
 #define _CPU_H
 
 #include "obj.h"
+#include "thrstat.h"
 
 class TAcpiProcessor : public TAcpiObject
 {
@@ -51,8 +52,37 @@ public:
     TCore(TAcpiProcessor *proc);
     ~TCore();
 
+    void AddThread(TThreadState *thread);
+    void RemoveThread(TThreadState *thread);
+
+    void Update();
+
+    double GetThreadLoad();
+    double GetIdleLoad();
+    double GetIntLoad();
+
+    double GetSecLoad();
+    double GetMinLoad();
+
 protected:
+    void Init();
+    void GrowThreadArr();
+
     TAcpiProcessor *FProc;
+
+    TThreadState *FNullThread;
+
+    int FThreadSize;
+    int FThreadCount;
+    TThreadState **FThreadArr;
+
+    int FLoadTics;
+    int FIdleTics;
+
+    int FLoadCount;
+    int FLoadStart;
+    int FLoadArr[MAX_LOAD_COUNT];
+    int FIdleArr[MAX_LOAD_COUNT];
 };
 
 #endif

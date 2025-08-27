@@ -211,12 +211,12 @@ bool TThreadState::Update()
 
         if (FLoadCount == MAX_LOAD_COUNT)
         {
-            FLoadArr[FLoadStart] = FTics;
+            FLoadArr[FLoadStart] = FUsedTics;
             FLoadStart = (FLoadStart + 1) % MAX_LOAD_COUNT;
         }
         else
         {
-            FLoadArr[FLoadCount] = FTics;
+            FLoadArr[FLoadCount] = FUsedTics;
             FLoadCount++;
         }
 
@@ -296,6 +296,22 @@ short int TThreadState::GetCore()
 
 /*##########################################################################
 #
+#   Name       : ThreadState::GetPrio
+#
+#   Purpose....: Get prio
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+short int TThreadState::GetPrio()
+{
+    return FPrio;
+}
+
+/*##########################################################################
+#
 #   Name       : ThreadState::GetIrq
 #
 #   Purpose....: Get IRQ
@@ -339,7 +355,7 @@ int TThreadState::GetUsedTics()
 ##########################################################################*/
 double TThreadState::GetLoad()
 {
-    return (double)FUsedTics / 1193046.0 / (double)LOADS_PER_SEC;
+    return (double)FUsedTics / 1193046.0 * (double)LOADS_PER_SEC * 100.0;
 }
 
 /*##########################################################################
@@ -381,7 +397,7 @@ double TThreadState::GetSecLoad()
             sum += FLoadArr[i];
 
     }
-    return (double)sum / 1193046.0 / (double)LOADS_PER_SEC;        
+    return (double)sum / 1193046.0 * (double)LOADS_PER_SEC * 100.0;        
 }
 
 /*##########################################################################
@@ -404,5 +420,5 @@ double TThreadState::GetMinLoad()
     for (i = 0; i < count; i++)
         sum += FLoadArr[i];
 
-    return (double)sum / 1193046.0 / (double)LOADS_PER_SEC / 60.0;        
+    return (double)sum / 1193046.0 * (double)LOADS_PER_SEC / 60.0 * 100.0;        
 }

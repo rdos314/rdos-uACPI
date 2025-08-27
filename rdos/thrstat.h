@@ -51,6 +51,7 @@ public:
     bool HasNewCore();
     bool HasNewIrq();
     short int GetCore();
+    short int GetPrio();
     unsigned char GetIrq();
     int GetUsedTics();
     double GetLoad();
