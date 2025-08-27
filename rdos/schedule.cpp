@@ -307,10 +307,21 @@ void TScheduler::Execute()
 {
     int i;
     TThreadState *state;
+    unsigned long msb;
+    unsigned long lsb;
+    unsigned long prev;
+
+    RdosGetSysTime(&msb, &lsb);
 
     for (;;)
     {
-        RdosWaitMilli(250);
+        prev = lsb;
+        lsb += 1193046 / LOADS_PER_SEC;        
+
+        if (lsb < prev)
+            msb++;
+ 
+        RdosWaitUntil(msb, lsb);
 
 //        TaskSection.Enter();
 

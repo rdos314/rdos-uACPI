@@ -32,6 +32,9 @@
 #ifndef _THREAD_STAT_H
 #define _THREAD_STAT_H
 
+#define LOADS_PER_SEC       4
+#define MAX_LOAD_COUNT      (LOADS_PER_SEC * 60)
+
 class TScheduler;
 
 class TThreadState
@@ -50,6 +53,9 @@ public:
     short int GetCore();
     unsigned char GetIrq();
     int GetUsedTics();
+    double GetLoad();
+    double GetSecLoad();
+    double GetMinLoad();
 
 protected:
     void Init();
@@ -59,6 +65,10 @@ protected:
     unsigned char FIrq;
     long long FTics;
     int FUsedTics;
+
+    int FLoadCount;
+    int FLoadStart;
+    int FLoadArr[MAX_LOAD_COUNT];
 
     bool FHasIrq;
     bool FNewCore;

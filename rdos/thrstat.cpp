@@ -93,6 +93,8 @@ void TThreadState::Init()
     FNewCore = false;
     FNewIrq = false;
     FUsedTics = 0;
+    FLoadCount = 0;
+    FLoadStart = 0;
 
 //    printf("Added %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
 
@@ -207,6 +209,17 @@ bool TThreadState::Update()
         FUsedTics = (int)(state.Tics - FTics);       
         FTics = state.Tics;
 
+        if (FLoadCount == MAX_LOAD_COUNT)
+        {
+            FLoadArr[FLoadStart] = FTics;
+            FLoadStart = (FLoadStart + 1) % MAX_LOAD_COUNT;
+        }
+        else
+        {
+            FLoadArr[FLoadCount] = FTics;
+            FLoadCount++;
+        }
+
         if (state.Flags & STATE_FLAG_IRQ)
         {
             ServUacpiGetThreadIrqArr(FHandle, IrqArr);
@@ -313,3 +326,83 @@ int TThreadState::GetUsedTics()
     return FUsedTics;
 }
 
+/*##########################################################################
+#
+#   Name       : ThreadState::GetLoad
+#
+#   Purpose....: Get current load
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+double TThreadState::GetLoad()
+{
+    return (double)FUsedTics / 1193046.0 / (double)LOADS_PER_SEC;
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::GetSecLoad
+#
+#   Purpose....: Get load last second
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+double TThreadState::GetSecLoad()
+{
+    int sum = 0;
+    int count = FLoadCount;
+    int ind;
+    int i;
+
+    if (count == MAX_LOAD_COUNT)
+    {
+        ind = FLoadStart - LOADS_PER_SEC;
+        if (ind < 0)
+            ind += MAX_LOAD_COUNT;
+
+        for (i = 0; i < LOADS_PER_SEC; i++)
+        {
+            sum += FLoadArr[ind];
+            ind = (ind + 1) % MAX_LOAD_COUNT;
+        }
+    }
+    else
+    {
+        if (count > LOADS_PER_SEC)
+            count = LOADS_PER_SEC;
+
+        for (i = 0; i < count; i++)
+            sum += FLoadArr[i];
+
+    }
+    return (double)sum / 1193046.0 / (double)LOADS_PER_SEC;        
+}
+
+/*##########################################################################
+#
+#   Name       : ThreadState::GetMinLoad
+#
+#   Purpose....: Get load last minute
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+double TThreadState::GetMinLoad()
+{
+    int sum = 0;
+    int count = FLoadCount;
+    int i;
+
+    for (i = 0; i < count; i++)
+        sum += FLoadArr[i];
+
+    return (double)sum / 1193046.0 / (double)LOADS_PER_SEC / 60.0;        
+}
