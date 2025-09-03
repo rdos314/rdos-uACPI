@@ -57,6 +57,7 @@ public:
     void AddThread(TThreadState *thread);
     void RemoveThread(TThreadState *thread);
 
+    int GetThreadCount();
     bool Update();
     TThreadState *GetOptThread(double load);
 

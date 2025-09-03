@@ -116,7 +116,7 @@ static TAcpiObject *ObjArr[256] = {0};
 static TPciSegment *PciSegArr[256] = {0};
 static struct TTaskQueueEntry *TaskQueueArr;
 
-static TScheduler Scheduler;
+static TScheduler *Scheduler = 0;
 
 /*##########################################################################
 #
@@ -131,7 +131,7 @@ static TScheduler Scheduler;
 ##########################################################################*/
 static void AddThread(int handle)
 {
-    Scheduler.AddThread(handle);
+    Scheduler->AddThread(handle);
 }
 
 /*##########################################################################
@@ -147,7 +147,7 @@ static void AddThread(int handle)
 ##########################################################################*/
 static void RemoveThread(int handle)
 {
-    Scheduler.RemoveThread(handle);
+    Scheduler->RemoveThread(handle);
 }
 
 /*##########################################################################
@@ -682,7 +682,7 @@ void AddProcessor(TAcpiProcessor *proc, uacpi_namespace_node *node, uacpi_namesp
         uacpi_free_id_string(uid);
     }
 
-    Scheduler.AddCore(proc);
+    Scheduler->AddCore(proc);
 }
 
 /*##########################################################################
@@ -841,6 +841,8 @@ bool InitAcpi()
         printf("uacpi_namespace_initialize error: %s\n", uacpi_status_to_string(ret));
         return false;
     }
+
+    Scheduler = new TScheduler;
 
     uacpi_namespace_for_each_child(uacpi_namespace_root(), AddObj, UpdateObj, UACPI_OBJECT_ANY_BIT, UACPI_MAX_DEPTH_ANY, UACPI_NULL);
 
@@ -1470,7 +1472,7 @@ int main(int argc, char **argv)
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());
 
-    Scheduler.Start();
+    Scheduler->Start();
     RdosCreatePrioThread(TaskHandler, 10, "Task Handler", 0, 0x2000);
 
     for (;;)

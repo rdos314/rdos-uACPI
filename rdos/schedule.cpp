@@ -431,6 +431,7 @@ void TScheduler::UpdateCores()
     double opt_load;
     int max_core;
     int min_core;
+    int threads;
 
     char str[100];
 
@@ -445,6 +446,7 @@ void TScheduler::UpdateCores()
             {
                 FActiveCores++;
                 load = core->GetThreadLoad();
+                threads = core->GetThreadCount();
                 load_sum += load;
 
                 if (load < min_load)
@@ -458,6 +460,7 @@ void TScheduler::UpdateCores()
                     max_load = load;
                     max_core = i;
                 }
+//                printf("Core %d, Load: %3.1Lf%%, Threads: %d\r\n", i, load, threads);
             }
         }
     }
@@ -471,15 +474,12 @@ void TScheduler::UpdateCores()
         else
         {
             opt_load = (max_load - min_load) / 2.0;
-            if (opt_load > 5.0)
+            if (opt_load > 1.0)
             {
                 core = FCoreArr[max_core];
                 state = core->GetOptThread(opt_load);
                 if (state)
-                {
                     state->MoveToCore(min_core);
-//                    printf("Move thread %s from core %d\r\n", state->GetName(), max_core);                
-                }
             }
         }
 
@@ -503,6 +503,12 @@ void TScheduler::Execute()
     unsigned long msb;
     unsigned long lsb;
     unsigned long prev;
+    int MyProc;
+
+    StartCore();
+
+    MyProc = ServUacpiGetProcess();
+    printf("My Proc: %d\r\n", MyProc);
 
     RdosGetSysTime(&msb, &lsb);
 

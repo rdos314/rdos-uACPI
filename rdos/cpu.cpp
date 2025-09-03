@@ -283,6 +283,22 @@ bool TCore::IsStarted()
 
 /*##########################################################################
 #
+#   Name       : TCore::GetThreadCount
+#
+#   Purpose....: Get thread count
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TCore::GetThreadCount()
+{
+    return FThreadCount;
+}
+
+/*##########################################################################
+#
 #   Name       : TCore::Update
 #
 #   Purpose....: Update core stats
@@ -365,16 +381,16 @@ TThreadState *TCore::GetOptThread(double opt_load)
         if (state)
         {
             load = state->GetSecLoad();
-            if (load > opt_load)
-                diff = load - opt_load;
-            else
+            if (load < opt_load)
+            {
                 diff = opt_load - load;
 
-            if (diff < best_diff)
-            {
-                found = true;
-                best_diff = diff;
-                best_id = i;
+                if (diff < best_diff)
+                {
+                    found = true;
+                    best_diff = diff;
+                    best_id = i;
+                }
             }
         }
     }
