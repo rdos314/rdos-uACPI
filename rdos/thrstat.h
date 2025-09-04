@@ -76,6 +76,7 @@ protected:
     bool FNewIrq;
 
     int FHandle;
+    int FProcId;
     TScheduler *FScheduler;
 
     char FName[40];

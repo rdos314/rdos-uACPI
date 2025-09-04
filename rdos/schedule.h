@@ -45,6 +45,8 @@ public:
     virtual ~TScheduler();
 
     void AddCore(TAcpiProcessor *proc);
+    int GetCoreCount();
+    void MoveToScheduleCore();
 
     TThreadState *FindThread(short int id);
     TThreadState *AddThread(int handle);

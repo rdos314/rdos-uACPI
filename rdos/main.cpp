@@ -329,6 +329,8 @@ static void TaskHandler(void *ptr)
     int index;
     struct TTaskQueueEntry *entry;
 
+    Scheduler->MoveToScheduleCore();
+
     TaskQueueArr = (struct TTaskQueueEntry *)ServUacpiGetTaskQueue();
 
     index = 0;
@@ -683,6 +685,9 @@ void AddProcessor(TAcpiProcessor *proc, uacpi_namespace_node *node, uacpi_namesp
     }
 
     Scheduler->AddCore(proc);
+
+    if (Scheduler->GetCoreCount() == 2)
+        Scheduler->Start();
 }
 
 /*##########################################################################
@@ -1472,8 +1477,9 @@ int main(int argc, char **argv)
     printf("%d objects\r\n", TAcpiObject::Count());
     printf("%d PCI functions\r\n", TPciFunction::Count());
 
-    Scheduler->Start();
     RdosCreatePrioThread(TaskHandler, 10, "Task Handler", 0, 0x2000);
+
+    Scheduler->MoveToScheduleCore();
 
     for (;;)
         WaitForMsg();

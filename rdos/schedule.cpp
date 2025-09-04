@@ -140,6 +140,22 @@ void TScheduler::AddCore(TAcpiProcessor *proc)
 
 /*##########################################################################
 #
+#   Name       : TScheduler::GetCoreCount
+#
+#   Purpose....: Get core count
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+int TScheduler::GetCoreCount()
+{
+    return FCoreCount;
+}
+
+/*##########################################################################
+#
 #   Name       : TScheduler::GrowThreadArr
 #
 #   Purpose....: Grow thread array
@@ -425,6 +441,7 @@ void TScheduler::UpdateCores()
     TCore *core;
     TThreadState *state;
     double load;
+    double load_1 = 0.0;
     double min_load = 100.0;
     double max_load = 0.0;
     double load_sum = 0.0;
@@ -449,16 +466,22 @@ void TScheduler::UpdateCores()
                 threads = core->GetThreadCount();
                 load_sum += load;
 
-                if (load < min_load)
-                {
-                    min_load = load;
-                    min_core = i;
-                }
-
                 if (load > max_load)
                 {
                     max_load = load;
                     max_core = i;
+                }
+
+                if (i == 1)
+                    load_1 = load;
+                else
+                {
+                    if (load < min_load)
+                    {
+                        min_load = load;
+                        min_core = i;
+                    }
+
                 }
 //                printf("Core %d, Load: %3.1Lf%%, Threads: %d\r\n", i, load, threads);
             }
@@ -479,12 +502,46 @@ void TScheduler::UpdateCores()
                 core = FCoreArr[max_core];
                 state = core->GetOptThread(opt_load);
                 if (state)
-                    state->MoveToCore(min_core);
+                    if (max_core == 1)
+                        if (state->GetPrio() > 2)
+                            state = 0;
+
+                if (state)
+                {
+                    if (state->GetPrio() > 2)
+                        state->MoveToCore(min_core);
+                    else
+                    {
+                        if (load_1 < min_load)
+                            state->MoveToCore(1);
+                        else
+                            state->MoveToCore(min_core);
+                    }
+                }
             }
         }
 
 //        printf("Active: %d, Load: %3.1Lf%%, Min: %d: %3.1Lf%%, Max: %d: %3.1Lf%%\r\n", FActiveCores, load, min_core, min_load, max_core, max_load);
     }
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::MoveToScheduleCore
+#
+#   Purpose....: Move to schedule core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::MoveToScheduleCore()
+{
+    int MyId;
+
+    MyId = ServUacpiGetThread();
+    ServUacpiSetThreadCore(MyId, 1);
 }
 
 /*##########################################################################
@@ -500,15 +557,19 @@ void TScheduler::UpdateCores()
 ##########################################################################*/
 void TScheduler::Execute()
 {
+    TCore *core;
     unsigned long msb;
     unsigned long lsb;
     unsigned long prev;
-    int MyProc;
 
-    StartCore();
+    core = FCoreArr[1];
+    if (core)
+    {
+        printf("Core 1, started\r\n");
+        ServUacpiStartCore(1);
+    }
 
-    MyProc = ServUacpiGetProcess();
-    printf("My Proc: %d\r\n", MyProc);
+    MoveToScheduleCore();
 
     RdosGetSysTime(&msb, &lsb);
 

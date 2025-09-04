@@ -89,13 +89,15 @@ void TThreadState::Init()
 
     ServUacpiGetThreadName(FHandle, FName);
 
+    FProcId = ServUacpiGetThreadProcess(FHandle);
+
     FHasIrq = false;
     FNewIrq = false;
     FUsedTics = 0;
     FLoadCount = 0;
     FLoadStart = 0;
 
-//    printf("Added %d.%d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FName);
+    printf("Added %d.%d PID: %d <%s>\r\n", FHandle & 0x7FFF, FHandle >> 16, FProcId, FName);
 
     if (ServUacpiGetThreadState(FHandle, &state))
     {
