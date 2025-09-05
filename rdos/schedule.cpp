@@ -540,8 +540,11 @@ void TScheduler::MoveToScheduleCore()
 {
     int MyId;
 
-    MyId = ServUacpiGetThread();
-    ServUacpiSetThreadCore(MyId, 1);
+    if (GetCoreCount() >= 2)
+    {
+        MyId = ServUacpiGetThread();
+        ServUacpiSetThreadCore(MyId, 1);
+    }
 }
 
 /*##########################################################################
