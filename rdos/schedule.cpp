@@ -359,7 +359,10 @@ void TScheduler::AddServer(int irq, TThreadState *thread)
     changed = FIrqArr[irq]->AddServer(thread);
 
     if (changed)
+    {
+        thread->SetIrq((unsigned char)irq);
         printf("Added server %d <%s> for IRQ %02hX\r\n", thread->GetId(), thread->GetName(), irq);
+    }
 }
 
 /*##########################################################################
@@ -489,13 +492,7 @@ void TScheduler::UpdateThreads()
     {
         state = FThreadArr[i];
         if (state)
-        {
-            if (state->Update())
-            {
-                if (state->HasNewIrq())
-                    printf("Thread %d assigned to new IRQ %d\r\n", state->GetId(), state->GetIrq());
-            }
-        }
+            state->Update();
     }
 }
 

@@ -91,8 +91,6 @@ void TThreadState::Init()
 
     FProcId = ServUacpiGetThreadProcess(FHandle);
 
-    FHasIrq = false;
-    FNewIrq = false;
     FUsedTics = 0;
     FLoadCount = 0;
     FLoadStart = 0;
@@ -165,6 +163,24 @@ const char *TThreadState::GetName()
 
 /*##########################################################################
 #
+#   Name       : ThreadState::SetIrq
+#
+#   Purpose....: Set IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TThreadState::SetIrq(unsigned char irq)
+{
+    ServUacpiSetThreadIrq(FHandle, irq);
+
+    FIrq = irq;
+}
+
+/*##########################################################################
+#
 #   Name       : ThreadState::MoveToCore
 #
 #   Purpose....: Move to core
@@ -190,7 +206,7 @@ void TThreadState::MoveToCore(int core)
 #   Returns....: *
 #
 ##########################################################################*/
-bool TThreadState::Update()
+void TThreadState::Update()
 {
     bool changed = false;
     struct TCurrThreadState state;
@@ -210,15 +226,6 @@ bool TThreadState::Update()
         }
 
         FPrio = state.Prio;
-
-        if (FIrq != state.Irq)
-        {
-            FIrq = state.Irq;
-            FNewIrq = true;
-            changed = true;
-        }
-        else
-            FNewIrq = false;
 
         FUsedTics = (int)(state.Tics - FTics);       
         FTics = state.Tics;
@@ -256,24 +263,6 @@ bool TThreadState::Update()
             }
         }
     }
-
-    return changed;
-}
-
-/*##########################################################################
-#
-#   Name       : ThreadState::HasNewIrq
-#
-#   Purpose....: Check for new IRQ
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-bool TThreadState::HasNewIrq()
-{
-    return FNewIrq;
 }
 
 /*##########################################################################

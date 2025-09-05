@@ -48,9 +48,9 @@ public:
     const char *GetName();
 
     void MoveToCore(int core);
+    void SetIrq(unsigned char irq);
 
-    bool Update();
-    bool HasNewIrq();
+    void Update();
     short int GetCore();
     short int GetPrio();
     unsigned char GetIrq();
@@ -73,7 +73,6 @@ protected:
     int FLoadArr[MAX_LOAD_COUNT];
 
     bool FHasIrq;
-    bool FNewIrq;
 
     int FHandle;
     int FProcId;
