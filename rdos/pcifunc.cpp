@@ -987,6 +987,98 @@ void TPciFunction::EnableMsi(int index)
 
 /*##########################################################################
 #
+#   Name       : TPciFunction::MoveIoapic
+#
+#   Purpose....: Move IRQ to new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::MoveIoapic(int index, int core)
+{
+    unsigned char irq = FIrqArr[index];
+
+    printf("Move IRQ %02hX to core %d\r\n", irq, core);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::MoveMsi
+#
+#   Purpose....: Move MSI to new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::MoveMsi(int index, int core)
+{
+    int val;
+
+    val = ServUacpiGetMsiAddress(core);
+    WriteConfigDword(FMsiBase + 2, val);
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::MoveMsiX
+#
+#   Purpose....: Move MSI-X to new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::MoveMsiX(int index, int core)
+{
+    int val;
+
+    val = ServUacpiGetMsiAddress(core);
+    FMsiXVectorArr[4 * index] = val;
+}
+
+/*##########################################################################
+#
+#   Name       : TPciFunction::MoveIrq
+#
+#   Purpose....: Move IRQ to new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TPciFunction::MoveIrq(unsigned char irq, int core)
+{
+    int i;
+    bool found;
+
+    for (i = 0; i < FIrqCount; i++)
+    {
+        if (FIrqArr[i] == irq)
+        {
+            found = true;
+
+            if (FUseMsiX)
+                MoveMsiX(i, core);
+            else if (FUseMsi)
+                MoveMsi(i, core);
+            else
+                MoveIoapic(i, core);
+        }
+    }
+
+    if (!found)
+        printf("IRQ %02hX not found in PCI func\r\n", irq);
+
+}
+
+/*##########################################################################
+#
 #   Name       : TPciFunction::Add
 #
 #   Purpose....: Add function

@@ -34,6 +34,7 @@
 #include "acpi.h"
 #include "thrstat.h"
 #include "irq.h"
+#include "pcifunc.h"
 
 /*##########################################################################
 #
@@ -51,6 +52,7 @@ TIrq::TIrq()
     FCore = 0;
     FServerCount = 0;
     FDisabled = false;
+    FFunc = 0;
 }
 
 /*##########################################################################
@@ -120,6 +122,38 @@ TThreadState *TIrq::GetServer()
         return FServerArr[0];
     else
         return 0;
+}
+
+/*##########################################################################
+#
+#   Name       : TIrq::SetPciFunction
+#
+#   Purpose....: Set PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TIrq::SetPciFunction(TPciFunction *func)
+{
+    FFunc = func;
+}
+
+/*##########################################################################
+#
+#   Name       : TIrq::GetPciFunction
+#
+#   Purpose....: Get PCI function
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+TPciFunction *TIrq::GetPciFunction()
+{
+    return FFunc;
 }
 
 /*##########################################################################

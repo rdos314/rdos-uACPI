@@ -36,6 +36,8 @@
 #include "irq.h"
 #include "cpu.h"
 
+class TPciFunction;
+
 class TScheduler
 {
 friend class TThreadState;
@@ -44,6 +46,7 @@ public:
     TScheduler();
     virtual ~TScheduler();
 
+    void AddIrq(TPciFunction *pci, int irq);
     void AddCore(TAcpiProcessor *proc);
     int GetCoreCount();
     void MoveToScheduleCore();
@@ -59,6 +62,8 @@ protected:
     void UpdateThreads();
     void UpdateCores();
     void StartCore();
+    void MoveIrq(int irq, int core);
+    void MoveToCore(TThreadState *state, int core);
 
     void GrowThreadArr();
 

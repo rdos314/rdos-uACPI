@@ -1101,15 +1101,19 @@ short int GetBarIo(int handle, unsigned char bar)
 int SetupIrq(int issuer, int handle, int core, int prio)
 {
     TPciFunction *func = TPciFunction::GetFunction(handle);
+    int irq = 0;
 
     if (func)
         if (!func->IsAllowed(issuer))
             func = 0;
 
     if (func)
-        return func->SetupIrq(core, prio);
-    else
-        return 0;
+        irq = func->SetupIrq(core, prio);
+
+    if (irq)
+        Scheduler->AddIrq(func, irq & 0xFF);
+
+    return irq;   
 }
 
 /*##########################################################################
@@ -1151,15 +1155,19 @@ int ReqMsi(int issuer, int handle, int core, int prio, int vectors)
 int SetupMsi(int issuer, int handle, int entry, int core, int prio)
 {
     TPciFunction *func = TPciFunction::GetFunction(handle);
+    int irq = 0;
 
     if (func)
         if (!func->IsAllowed(issuer))
             func = 0;
 
     if (func)
-        return func->SetupMsi(entry, core, prio);
-    else
-        return 0;
+        irq = func->SetupMsi(entry, core, prio);
+
+    if (irq)
+        Scheduler->AddIrq(func, irq & 0xFF);
+
+    return irq;
 }
 
 /*##########################################################################

@@ -34,6 +34,7 @@
 #include "acpi.h"
 #include "schedule.h"
 #include "cpu.h"
+#include "pcifunc.h"
 
 /*##########################################################################
 #
@@ -320,6 +321,25 @@ void TScheduler::Moved(TThreadState *thread, short int to)
 
 /*##########################################################################
 #
+#   Name       : TScheduler::AddIrq
+#
+#   Purpose....: Add IRQ
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::AddIrq(TPciFunction *pci, int irq)
+{
+    if (!FIrqArr[irq])
+        FIrqArr[irq] = new TIrq();
+
+    FIrqArr[irq]->SetPciFunction(pci);
+}
+
+/*##########################################################################
+#
 #   Name       : TScheduler::AddServer
 #
 #   Purpose....: Add server for IRQ
@@ -392,6 +412,61 @@ void TScheduler::StartCore()
             }
         }
     }
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::MoveIrq
+#
+#   Purpose....: Move IRQ to new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::MoveIrq(int nr, int core)
+{
+    TIrq *irq = FIrqArr[nr];
+    TPciFunction *func = irq->GetPciFunction();
+
+    if (func)
+        func->MoveIrq((unsigned char)nr, core);
+    else
+        printf("Move IRQ %02hX to core %d\r\n", nr, core);
+
+}
+
+/*##########################################################################
+#
+#   Name       : TScheduler::MoveToCore
+#
+#   Purpose....: Move thread to new core
+#
+#   In params..: *
+#   Out params.: *
+#   Returns....: *
+#
+##########################################################################*/
+void TScheduler::MoveToCore(TThreadState *state, int core)
+{
+    TIrq *irq;
+    TThreadState *thread;
+    int i;
+
+    for (i = 0; i < 256; i++)
+    {
+        irq = FIrqArr[i];
+
+        if (irq)
+        {
+            thread = irq->GetServer();
+            if (thread == state)
+                MoveIrq(i, core);
+        }
+    }
+
+    state->MoveToCore(core);
 }
 
 /*##########################################################################
@@ -509,13 +584,13 @@ void TScheduler::UpdateCores()
                 if (state)
                 {
                     if (state->GetPrio() > 2)
-                        state->MoveToCore(min_core);
+                        MoveToCore(state, min_core);
                     else
                     {
                         if (load_1 < min_load)
-                            state->MoveToCore(1);
+                            MoveToCore(state, 1);
                         else
-                            state->MoveToCore(min_core);
+                            MoveToCore(state, min_core);
                     }
                 }
             }

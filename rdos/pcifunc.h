@@ -87,6 +87,7 @@ public:
     int ReqMsi(int core, int prio, int vectors);
     int SetupMsi(int index, int core, int prio);
     void EnableMsi(int index);
+    void MoveIrq(unsigned char irq, int core);
 
     char ReadConfigByte(int reg);
     short ReadConfigWord(int reg);
@@ -105,6 +106,10 @@ protected:
     void SetupBars();
     void Add(TPciFunction *func);
     TPciIrqRoute *GetIrq();
+
+    void MoveIoapic(int index, int core);
+    void MoveMsi(int index, int core);
+    void MoveMsiX(int index, int core);
 
     void LockPci(int issuer, const char *name);
 

@@ -35,6 +35,7 @@
 #define MAX_IRQ_SERVERS   4
 
 class TThreadState;
+class TPciFunction;
 
 class TIrq
 {
@@ -46,11 +47,15 @@ public:
     int GetServers();
     TThreadState *GetServer();
 
+    TPciFunction *GetPciFunction();
+    void SetPciFunction(TPciFunction *func);
+
     bool AddServer(TThreadState *thread);
     bool DeleteServer(TThreadState *thread);
 
 protected:
     bool FDisabled;
+    TPciFunction *FFunc;
     int FCore;    
     int FServerCount;
     TThreadState *FServerArr[MAX_IRQ_SERVERS];     

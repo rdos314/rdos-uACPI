@@ -234,7 +234,7 @@ bool TThreadState::Update()
             FLoadCount++;
         }
 
-        if (state.Flags & STATE_FLAG_IRQ)
+        if (GetPrio() > 2 && (state.Flags & STATE_FLAG_IRQ))
         {
             ServUacpiGetThreadIrqArr(FHandle, IrqArr);
             for (i = 0; i < 8; i++)
