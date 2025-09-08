@@ -684,10 +684,11 @@ void AddProcessor(TAcpiProcessor *proc, uacpi_namespace_node *node, uacpi_namesp
         uacpi_free_id_string(uid);
     }
 
-    Scheduler->AddCore(proc);
-
-    if (Scheduler->GetCoreCount() == 2)
-        Scheduler->Start();
+    if (Scheduler->AddCore(proc))
+    {
+        if (Scheduler->GetCoreCount() == 2)
+            Scheduler->Start();
+    }
 }
 
 /*##########################################################################

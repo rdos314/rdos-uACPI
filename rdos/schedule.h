@@ -47,7 +47,7 @@ public:
     virtual ~TScheduler();
 
     void AddIrq(TPciFunction *pci, int irq);
-    void AddCore(TAcpiProcessor *proc);
+    bool AddCore(TAcpiProcessor *proc);
     int GetCoreCount();
     void MoveToScheduleCore();
 

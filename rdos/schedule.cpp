@@ -129,14 +129,17 @@ void TScheduler::Start()
 #   Returns....: *
 #
 ##########################################################################*/
-void TScheduler::AddCore(TAcpiProcessor *proc)
+bool TScheduler::AddCore(TAcpiProcessor *proc)
 {
     if (FCoreSize > FCoreCount)
     {
         printf("Added core %d\r\n", FCoreCount);
         FCoreArr[FCoreCount] = new TCore(proc);
         FCoreCount++;
+        return true;
     }
+    else
+        return false;
 }
 
 /*##########################################################################
