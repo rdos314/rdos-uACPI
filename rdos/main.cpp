@@ -342,7 +342,7 @@ static void TaskHandler(void *ptr)
             entry = &TaskQueueArr[index];
             HandleTaskQueue(entry);
             entry->Op = 0;
-            index = (index + 1) % 1024;
+            index = (index + 1) % 512;
         }
         else
             ServUacpiWaitTaskQueue(index);
