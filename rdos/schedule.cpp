@@ -64,6 +64,7 @@ static void ThreadStartup(void *ptr)
 #
 ##########################################################################*/
 TScheduler::TScheduler()
+ : FSection("Sched.Sect")
 {
     int i;
 
@@ -133,9 +134,10 @@ bool TScheduler::AddCore(TAcpiProcessor *proc)
 {
     if (FCoreSize > FCoreCount)
     {
-        printf("Added core %d\r\n", FCoreCount);
+        FSection.Enter();
         FCoreArr[FCoreCount] = new TCore(proc);
         FCoreCount++;
+        FSection.Leave();
         return true;
     }
     else
@@ -192,31 +194,6 @@ void TScheduler::GrowThreadArr()
 
 /*##########################################################################
 #
-#   Name       : TScheduler::FindThread
-#
-#   Purpose....: Find thread
-#
-#   In params..: *
-#   Out params.: *
-#   Returns....: *
-#
-##########################################################################*/
-TThreadState *TScheduler::FindThread(short int id)
-{
-    int i;
-    TThreadState *state;    
-
-    for (i = 0; i < FThreadSize; i++)
-    {
-        state = FThreadArr[i];
-        if (state && state->GetId() == id)
-            return state;
-    }
-    return 0;
-}
-
-/*##########################################################################
-#
 #   Name       : TScheduler::AddThread
 #
 #   Purpose....: Add new thread
@@ -232,6 +209,8 @@ TThreadState *TScheduler::AddThread(int handle)
     TThreadState *state;
     short int coreid;
     TCore *core;
+
+    FSection.Enter();
 
     while (index >= FThreadSize)
         GrowThreadArr();
@@ -255,6 +234,9 @@ TThreadState *TScheduler::AddThread(int handle)
             printf("core not found\r\n");
     }
 
+    FSection.Leave();
+
+
     return state;
 }
 
@@ -272,9 +254,13 @@ TThreadState *TScheduler::AddThread(int handle)
 void TScheduler::RemoveThread(int handle)
 {
     int index = handle >> 16;
-    TThreadState *state = FThreadArr[index];
+    TThreadState *state;
     short int coreid;
     TCore *core;
+
+    FSection.Enter();
+
+    state = FThreadArr[index];
 
     FThreadArr[index] = 0;
 
@@ -292,6 +278,8 @@ void TScheduler::RemoveThread(int handle)
 
     delete state;
     FThreadCount--;
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -307,8 +295,12 @@ void TScheduler::RemoveThread(int handle)
 ##########################################################################*/
 void TScheduler::Moved(TThreadState *thread, short int to)
 {
-    short int from = thread->GetCore();
+    short int from;
     TCore *core;
+
+    FSection.Enter();
+
+    from = thread->GetCore();
 
     core = FCoreArr[from];
     if (core)
@@ -318,7 +310,9 @@ void TScheduler::Moved(TThreadState *thread, short int to)
     if (core)
         core->AddThread(thread);
 
-    printf("Thread %s moved from core %d to core %d\r\n", thread->GetName(), from, to);
+    FSection.Leave();
+
+//    printf("Thread %s moved from core %d to core %d\r\n", thread->GetName(), from, to);
 
 }
 
@@ -335,10 +329,14 @@ void TScheduler::Moved(TThreadState *thread, short int to)
 ##########################################################################*/
 void TScheduler::AddIrq(TPciFunction *pci, int irq)
 {
+    FSection.Enter();
+
     if (!FIrqArr[irq])
         FIrqArr[irq] = new TIrq();
 
     FIrqArr[irq]->SetPciFunction(pci);
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -356,6 +354,8 @@ void TScheduler::AddServer(int irq, TThreadState *thread)
 {
     bool changed;
 
+    FSection.Enter();
+
     if (!FIrqArr[irq])
         FIrqArr[irq] = new TIrq();
 
@@ -366,6 +366,8 @@ void TScheduler::AddServer(int irq, TThreadState *thread)
         thread->SetIrq((unsigned char)irq);
         printf("Added server %d <%s> for IRQ %02hX\r\n", thread->GetId(), thread->GetName(), irq);
     }
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -384,9 +386,13 @@ void TScheduler::DeleteServer(TThreadState *thread)
     int i;
     bool changed = false;
 
+    FSection.Enter();
+
     for (i = 0; i < 256; i++)
         if (FIrqArr[i])
             changed |= FIrqArr[i]->DeleteServer(thread);
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -405,6 +411,8 @@ void TScheduler::StartCore()
     int i;
     TCore *core;
 
+    FSection.Enter();
+
     for (i = 0; i < FCoreCount; i++)
     {
         core = FCoreArr[i];
@@ -418,6 +426,8 @@ void TScheduler::StartCore()
             }
         }
     }
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -436,11 +446,14 @@ void TScheduler::MoveIrq(int nr, int core)
     TIrq *irq = FIrqArr[nr];
     TPciFunction *func = irq->GetPciFunction();
 
+    FSection.Enter();
+
     if (func)
         func->MoveIrq((unsigned char)nr, core);
     else
         printf("Move IRQ %02hX to core %d\r\n", nr, core);
 
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -460,6 +473,8 @@ void TScheduler::MoveToCore(TThreadState *state, int core)
     TThreadState *thread;
     int i;
 
+    FSection.Enter();
+
     for (i = 0; i < 256; i++)
     {
         irq = FIrqArr[i];
@@ -473,6 +488,8 @@ void TScheduler::MoveToCore(TThreadState *state, int core)
     }
 
     state->MoveToCore(core);
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -615,11 +632,15 @@ void TScheduler::MoveToScheduleCore()
 {
     int MyId;
 
+    FSection.Enter();
+
     if (GetCoreCount() >= 2)
     {
         MyId = ServUacpiGetThread();
         ServUacpiSetThreadCore(MyId, 1);
     }
+
+    FSection.Leave();
 }
 
 /*##########################################################################
@@ -661,12 +682,11 @@ void TScheduler::Execute()
  
         RdosWaitUntil(msb, lsb);
 
-//        TaskSection.Enter();
+        FSection.Enter();
 
         UpdateThreads();
         UpdateCores();
 
-
-//        TaskSection.Leave();
+        FSection.Leave();
     }
 }

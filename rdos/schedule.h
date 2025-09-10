@@ -35,6 +35,7 @@
 #include "thrstat.h"
 #include "irq.h"
 #include "cpu.h"
+#include "section.h"
 
 class TPciFunction;
 
@@ -51,7 +52,6 @@ public:
     int GetCoreCount();
     void MoveToScheduleCore();
 
-    TThreadState *FindThread(short int id);
     TThreadState *AddThread(int handle);
     void RemoveThread(int handle);
 
@@ -70,6 +70,8 @@ protected:
     void Moved(TThreadState *thread, short int core);
     void AddServer(int irq, TThreadState *thread);
     void DeleteServer(TThreadState *thread);
+
+    TSection FSection;
 
     int FCoreSize;
     int FCoreCount;
