@@ -2405,7 +2405,7 @@ static uacpi_status store_to_reference(
     );
 }
 
-static uacpi_status handle_ref_or_deref_of(struct execution_context *ctx)
+static uacpi_status handle_ref_of(struct execution_context *ctx)
 {
     struct op_context *op_ctx = ctx->cur_op_ctx;
     uacpi_object *dst, *src;
@@ -2416,45 +2416,6 @@ static uacpi_status handle_ref_or_deref_of(struct execution_context *ctx)
         dst = item_array_at(&op_ctx->items, 2)->obj;
     else
         dst = item_array_at(&op_ctx->items, 1)->obj;
-
-    if (op_ctx->op->code == UACPI_AML_OP_DerefOfOp) {
-        uacpi_bool was_a_reference = UACPI_FALSE;
-
-        if (src->type == UACPI_OBJECT_REFERENCE) {
-            was_a_reference = UACPI_TRUE;
-
-            /*
-             * Explicit dereferencing [DerefOf] behavior:
-             * Simply grabs the bottom-most object that is not a reference.
-             * This mimics the behavior of NT Acpi.sys: any DerfOf fetches
-             * the bottom-most reference. Note that this is different from
-             * ACPICA where DerefOf dereferences one level.
-             */
-            src = reference_unwind(src)->inner_object;
-        }
-
-        if (src->type == UACPI_OBJECT_BUFFER_INDEX) {
-            uacpi_buffer_index *buf_idx = &src->buffer_index;
-
-            dst->type = UACPI_OBJECT_INTEGER;
-            uacpi_memcpy_zerout(
-                &dst->integer, buffer_index_cursor(buf_idx),
-                sizeof(dst->integer), 1
-            );
-            return UACPI_STATUS_OK;
-        }
-
-        if (!was_a_reference) {
-            uacpi_error(
-                "invalid DerefOf argument: %s, expected a reference\n",
-                uacpi_object_type_to_string(src->type)
-            );
-            return UACPI_STATUS_AML_INCOMPATIBLE_OBJECT_TYPE;
-        }
-
-        return uacpi_object_assign(dst, src,
-                                   UACPI_ASSIGN_BEHAVIOR_SHALLOW_COPY);
-    }
 
     dst->type = UACPI_OBJECT_REFERENCE;
     dst->inner_object = src;
@@ -3891,18 +3852,118 @@ static uacpi_status field_byte_size(
     return UACPI_STATUS_OK;
 }
 
+static uacpi_status handle_deref_of(struct execution_context *ctx)
+{
+    uacpi_object *src, *unwound_src, *dst;
+    uacpi_object_type read_type;
+    bool is_field;
+    uacpi_status ret;
+
+    struct op_context *op_ctx = ctx->cur_op_ctx;
+
+    src = item_array_at(&op_ctx->items, 0)->obj;
+    dst = item_array_at(&op_ctx->items, 1)->obj;
+
+    if (src->type == UACPI_OBJECT_BUFFER_INDEX) {
+        uacpi_buffer_index *buf_idx = &src->buffer_index;
+
+        dst->type = UACPI_OBJECT_INTEGER;
+        uacpi_memcpy_zerout(
+            &dst->integer, buffer_index_cursor(buf_idx),
+            sizeof(dst->integer), 1
+        );
+        return UACPI_STATUS_OK;
+    }
+
+    /*
+     * Explicit dereferencing [DerefOf] behavior:
+     * Simply grabs the bottom-most object that is not a reference.
+     * This mimics the behavior of NT Acpi.sys: any DerfOf fetches
+     * the bottom-most reference. Note that this is different from
+     * ACPICA where DerefOf dereferences one level.
+     */
+    unwound_src = reference_unwind(src)->inner_object;
+    is_field = uacpi_object_is_one_of(
+        unwound_src,
+        UACPI_OBJECT_BUFFER_FIELD_BIT | UACPI_OBJECT_FIELD_UNIT_BIT
+    );
+
+    /*
+     * If the object is a field, find out how to read it and transform this
+     * DerefOf into a field read op. Otherwise, simply assign this object to the
+     * destination.
+     */
+    if (is_field) {
+        uacpi_aml_op new_op;
+
+        ret = field_get_read_type(unwound_src, &read_type);
+        if (uacpi_unlikely_error(ret)) {
+            uacpi_error(
+                "unable to perform a read from field %p: "
+                "parent opregion gone\n", unwound_src
+            );
+            return ret;
+        }
+
+        switch (read_type) {
+        case UACPI_OBJECT_BUFFER:
+            new_op = UACPI_AML_OP_InternalOpReadFieldAsBuffer;
+            break;
+        case UACPI_OBJECT_INTEGER:
+            new_op = UACPI_AML_OP_InternalOpReadFieldAsInteger;
+            break;
+        default:
+            return UACPI_STATUS_INVALID_ARGUMENT;
+        }
+
+        op_ctx->op = uacpi_get_op_spec(new_op);
+        op_ctx->pc = 0;
+
+        uacpi_object_ref(unwound_src);
+        item_array_at(&op_ctx->items, 0)->obj = unwound_src;
+        uacpi_object_unref(src);
+
+        /*
+         * A proper destination object will be allocated by the op we have just
+         * switched to. This one is not needed anymore.
+         */
+        uacpi_object_unref(dst);
+        item_array_pop(&op_ctx->items);
+
+        return UACPI_STATUS_OK;
+    }
+
+    return uacpi_object_assign(
+        dst, unwound_src,
+        UACPI_ASSIGN_BEHAVIOR_SHALLOW_COPY
+    );
+}
+
 static uacpi_status handle_field_read(struct execution_context *ctx)
 {
     uacpi_status ret;
     struct op_context *op_ctx = ctx->cur_op_ctx;
-    struct uacpi_namespace_node *node;
+    struct item *src_item;
     uacpi_object *src_obj, *dst_obj;
     uacpi_size dst_size;
     void *dst = UACPI_NULL;
     uacpi_data_view wtr_response = { 0 };
 
-    node = item_array_at(&op_ctx->items, 0)->node;
-    src_obj = uacpi_namespace_node_get_object(node);
+    src_item = item_array_at(&op_ctx->items, 0);
+
+    /*
+     * Source may be a namespace node or an object depending on how we ended up
+     * here, check explicitly.
+     */
+    if (src_item->type == ITEM_NAMESPACE_NODE) {
+        uacpi_namespace_node *node;
+
+        node = item_array_at(&op_ctx->items, 0)->node;
+        src_obj = uacpi_namespace_node_get_object(node);
+    } else {
+        src_obj = src_item->obj;
+    }
+
     dst_obj = item_array_at(&op_ctx->items, 1)->obj;
 
     if (op_ctx->op->code == UACPI_AML_OP_InternalOpReadFieldAsBuffer) {
@@ -4636,6 +4697,8 @@ static uacpi_aml_op op_decode_aml_op(struct op_context *op_ctx)
 #define EXEC_OP_DO_ERR(reason, ...) EXEC_OP_DO_LVL(error, reason, __VA_ARGS__)
 #define EXEC_OP_DO_WARN(reason, ...) EXEC_OP_DO_LVL(warn, reason, __VA_ARGS__)
 
+#define EXEC_OP_ERR_3(reason, arg0, arg1, arg2) \
+    EXEC_OP_DO_ERR(reason, ,arg0, arg1, arg2)
 #define EXEC_OP_ERR_2(reason, arg0, arg1) EXEC_OP_DO_ERR(reason, ,arg0, arg1)
 #define EXEC_OP_ERR_1(reason, arg0) EXEC_OP_DO_ERR(reason, ,arg0)
 #define EXEC_OP_ERR(reason) EXEC_OP_DO_ERR(reason)
@@ -4908,7 +4971,8 @@ enum op_handler {
     OP_HANDLER_CREATE_METHOD,
     OP_HANDLER_COPY_OBJECT_OR_STORE,
     OP_HANDLER_INC_DEC,
-    OP_HANDLER_REF_OR_DEREF_OF,
+    OP_HANDLER_REF_OF,
+    OP_HANDLER_DEREF_OF,
     OP_HANDLER_LOGICAL_NOT,
     OP_HANDLER_BINARY_LOGIC,
     OP_HANDLER_NAMED_OBJECT,
@@ -4962,7 +5026,8 @@ static uacpi_status (*op_handlers[])(struct execution_context *ctx) = {
     [OP_HANDLER_CREATE_MUTEX_OR_EVENT] = handle_create_mutex_or_event,
     [OP_HANDLER_COPY_OBJECT_OR_STORE] = handle_copy_object_or_store,
     [OP_HANDLER_INC_DEC] = handle_inc_dec,
-    [OP_HANDLER_REF_OR_DEREF_OF] = handle_ref_or_deref_of,
+    [OP_HANDLER_REF_OF] = handle_ref_of,
+    [OP_HANDLER_DEREF_OF] = handle_deref_of,
     [OP_HANDLER_LOGICAL_NOT] = handle_logical_not,
     [OP_HANDLER_BINARY_LOGIC] = handle_binary_logic,
     [OP_HANDLER_BUFFER] = handle_buffer,
@@ -5047,8 +5112,8 @@ static uacpi_u8 handler_idx_of_op[0x100] = {
     [UACPI_AML_OP_IncrementOp] = OP_HANDLER_INC_DEC,
     [UACPI_AML_OP_DecrementOp] = OP_HANDLER_INC_DEC,
 
-    [UACPI_AML_OP_RefOfOp] = OP_HANDLER_REF_OR_DEREF_OF,
-    [UACPI_AML_OP_DerefOfOp] = OP_HANDLER_REF_OR_DEREF_OF,
+    [UACPI_AML_OP_RefOfOp] = OP_HANDLER_REF_OF,
+    [UACPI_AML_OP_DerefOfOp] = OP_HANDLER_DEREF_OF,
 
     [UACPI_AML_OP_LnotOp] = OP_HANDLER_LOGICAL_NOT,
 
@@ -5110,7 +5175,7 @@ static uacpi_u8 handler_idx_of_op[0x100] = {
 
 static uacpi_u8 handler_idx_of_ext_op[0x100] = {
     [EXT_OP_IDX(UACPI_AML_OP_CreateFieldOp)] = OP_HANDLER_CREATE_BUFFER_FIELD,
-    [EXT_OP_IDX(UACPI_AML_OP_CondRefOfOp)] = OP_HANDLER_REF_OR_DEREF_OF,
+    [EXT_OP_IDX(UACPI_AML_OP_CondRefOfOp)] = OP_HANDLER_REF_OF,
     [EXT_OP_IDX(UACPI_AML_OP_OpRegionOp)] = OP_HANDLER_CREATE_OP_REGION,
     [EXT_OP_IDX(UACPI_AML_OP_DeviceOp)] = OP_HANDLER_CODE_BLOCK,
     [EXT_OP_IDX(UACPI_AML_OP_ProcessorOp)] = OP_HANDLER_CODE_BLOCK,
@@ -5428,7 +5493,7 @@ static uacpi_status exec_op(struct execution_context *ctx)
             break;
 
         case UACPI_PARSE_OP_TYPECHECK: {
-            enum uacpi_object_type expected_type;
+            uacpi_object_type expected_type;
 
             expected_type = op_decode_byte(op_ctx);
 
@@ -5439,6 +5504,44 @@ static uacpi_status exec_op(struct execution_context *ctx)
                 ret = UACPI_STATUS_AML_INCOMPATIBLE_OBJECT_TYPE;
             }
 
+            break;
+        }
+
+        case UACPI_PARSE_OP_TYPECHECK_ONE_OF: {
+            uacpi_object_type_bits expected_mask = 0;
+            uacpi_bool one_of;
+            uacpi_object_type type, types[4];
+            uacpi_u8 num_types, i;
+
+            num_types = op_decode_byte(op_ctx);
+            for (i = 0; i < num_types; i++) {
+                type = op_decode_byte(op_ctx);
+                if (i < UACPI_ARRAY_SIZE(types))
+                    types[i] = type;
+
+                expected_mask |= 1u << type;
+            }
+
+            one_of = uacpi_object_is_one_of(item->obj, expected_mask);
+            if (uacpi_likely(one_of))
+                break;
+
+            ret = UACPI_STATUS_AML_INCOMPATIBLE_OBJECT_TYPE;
+
+            if (i == 2) {
+                EXEC_OP_ERR_3(
+                    "bad object type: expected one of %s/%s, got %s!",
+                    uacpi_object_type_to_string(types[0]),
+                    uacpi_object_type_to_string(types[1]),
+                    uacpi_object_type_to_string(item->obj->type)
+                );
+                break;
+            }
+
+            EXEC_OP_ERR_2(
+                "bad object type: expected one of 0x%08X, got %s!",
+                 expected_mask, uacpi_object_type_to_string(item->obj->type)
+            );
             break;
         }
 
