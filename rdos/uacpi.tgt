@@ -104,8 +104,8 @@ r????WLANG_i
 0
 25
 WString
-26
-"..\include;$(%watcom)/rh"
+39
+"\rdos-kernel;..\include;$(%watcom)/rh"
 26
 WVList
 0
@@ -532,8 +532,8 @@ r????WLANG_i
 0
 121
 WString
-26
-"..\include;$(%watcom)/rh"
+39
+"\rdos-kernel;..\include;$(%watcom)/rh"
 122
 MVState
 123

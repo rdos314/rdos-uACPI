@@ -39,7 +39,7 @@ INCLUDE \rdos-kernel\user.inc
 INCLUDE \rdos-kernel\os.inc
 include acpi.def
 include acpi.inc
-INCLUDE pci.inc
+INCLUDE \rdos-kernel\pci.inc
 INCLUDE \rdos-kernel\os\core.inc
 INCLUDE acpitab.inc
 
